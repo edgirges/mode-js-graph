@@ -506,6 +506,39 @@ function createMetricToggles() {
         // Clear existing content
         togglesContainer.innerHTML = '';
         
+        // Add select/deselect all buttons to the metrics header
+        const metricsHeader = document.querySelector('.metric-controls-title');
+        if (metricsHeader && !document.getElementById('deselect-all-btn')) {
+            const selectAllBtn = document.createElement('button');
+            selectAllBtn.id = 'select-all-btn';
+            selectAllBtn.className = 'select-all-btn';
+            selectAllBtn.textContent = 'Select All';
+            selectAllBtn.onclick = selectAllMetrics;
+            
+            const deselectAllBtn = document.createElement('button');
+            deselectAllBtn.id = 'deselect-all-btn';
+            deselectAllBtn.className = 'deselect-all-btn';
+            deselectAllBtn.textContent = 'Deselect All';
+            deselectAllBtn.onclick = deselectAllMetrics;
+            
+            // Create a header container if it doesn't exist
+            const headerContainer = document.createElement('div');
+            headerContainer.className = 'metrics-header-container';
+            
+            // Create a buttons container
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'metrics-buttons-container';
+            buttonsContainer.appendChild(selectAllBtn);
+            buttonsContainer.appendChild(deselectAllBtn);
+            
+            // Move the title into the container
+            const titleClone = metricsHeader.cloneNode(true);
+            metricsHeader.parentNode.insertBefore(headerContainer, metricsHeader);
+            headerContainer.appendChild(titleClone);
+            headerContainer.appendChild(buttonsContainer);
+            metricsHeader.remove();
+        }
+        
         METRICS.forEach((metric, index) => {
             console.log(`Creating toggle ${index + 1}/${METRICS.length} for: ${metric.name}`);
             const toggleDiv = document.createElement('div');
@@ -563,6 +596,76 @@ function toggleMetric(metricId) {
         chart.data.datasets[datasetIndex].hidden = !metric.visible;
         chart.update('none');
     }
+}
+
+// Deselect all metrics
+function deselectAllMetrics() {
+    console.log('Deselecting all metrics...');
+    
+    // Update all metrics to not visible
+    METRICS.forEach(metric => {
+        metric.visible = false;
+        
+        // Update checkbox state
+        const checkbox = document.getElementById(`metric-${metric.id}`);
+        if (checkbox) {
+            checkbox.checked = false;
+        }
+        
+        // Update visual state
+        const toggleDiv = checkbox ? checkbox.parentElement.parentElement : null;
+        if (toggleDiv) {
+            toggleDiv.classList.remove('active');
+        }
+        
+        // Update chart dataset
+        const datasetIndex = METRICS.findIndex(m => m.id === metric.id);
+        if (datasetIndex !== -1 && chart) {
+            chart.data.datasets[datasetIndex].hidden = true;
+        }
+    });
+    
+    // Update the chart display
+    if (chart) {
+        chart.update('none');
+    }
+    
+    console.log('All metrics deselected');
+}
+
+// Select all metrics
+function selectAllMetrics() {
+    console.log('Selecting all metrics...');
+    
+    // Update all metrics to visible
+    METRICS.forEach(metric => {
+        metric.visible = true;
+        
+        // Update checkbox state
+        const checkbox = document.getElementById(`metric-${metric.id}`);
+        if (checkbox) {
+            checkbox.checked = true;
+        }
+        
+        // Update visual state
+        const toggleDiv = checkbox ? checkbox.parentElement.parentElement : null;
+        if (toggleDiv) {
+            toggleDiv.classList.add('active');
+        }
+        
+        // Update chart dataset
+        const datasetIndex = METRICS.findIndex(m => m.id === metric.id);
+        if (datasetIndex !== -1 && chart) {
+            chart.data.datasets[datasetIndex].hidden = false;
+        }
+    });
+    
+    // Update the chart display
+    if (chart) {
+        chart.update('none');
+    }
+    
+    console.log('All metrics selected');
 }
 
 // Switch time range
@@ -698,6 +801,8 @@ window.ModeChart = {
     resetZoom: resetZoom,
     showMetrics: showMetrics,
     toggleMetric: toggleMetric,
+    selectAll: selectAllMetrics,
+    deselectAll: deselectAllMetrics,
     getChart: () => chart,
     getMetrics: () => METRICS,
     init: () => {
