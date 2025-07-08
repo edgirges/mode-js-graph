@@ -7,6 +7,16 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+    <script>
+        //add stylesheet
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://edgirges.github.io/mode-js-graph/styles.css?v=' + new Date().getTime();
+        document.head.appendChild(link);
+    </script>
+
+
     <div class="chart-container">
         <div class="chart-header">
             <h2 class="chart-title">Custom Interactive Chart</h2>
@@ -22,6 +32,13 @@
         <div class="chart-canvas">
             <canvas id="customChart"></canvas>
         </div>
+        
+        <div class="metric-controls">
+            <h3 class="metric-controls-title">Metrics</h3>
+            <div class="metric-toggles">
+                <!-- Metric toggles will be dynamically generated -->
+            </div>
+        </div>
     </div>
 
     <!-- External JavaScript Libraries -->
@@ -34,8 +51,12 @@
     <!-- Chart.js Annotation Plugin for markers -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     
-    <!-- Custom JavaScript - Replace this URL with your GitHub-hosted JS file -->
-    <script src="./index.js"></script>
+    <script>
+        //add javascript
+        const script = document.createElement('script');
+        script.src = 'https://edgirges.github.io/mode-js-graph/index.js?v=' + new Date().getTime();
+        document.head.appendChild(script);
+    </script>
     
     <!-- For Mode Analytics: Replace the above line with your GitHub raw URL -->
     <!-- <script src="https://raw.githubusercontent.com/yourusername/your-repo/main/index.js"></script> -->
