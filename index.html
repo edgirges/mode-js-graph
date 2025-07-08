@@ -8,13 +8,7 @@
 </head>
 <body>
 
-    <script>
-        //add stylesheet
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'https://edgirges.github.io/mode-js-graph/styles.css?v=' + new Date().getTime();
-        document.head.appendChild(link);
-    </script>
+
 
 
     <div class="chart-container">
@@ -45,18 +39,17 @@
     <!-- Chart.js - Main charting library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     
+    <!-- Chart.js Date adapter for time series -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    
     <!-- Chart.js Zoom Plugin for interactivity -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     
     <!-- Chart.js Annotation Plugin for markers -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     
-    <script>
-        //add javascript
-        const script = document.createElement('script');
-        script.src = 'https://edgirges.github.io/mode-js-graph/index.js?v=' + new Date().getTime();
-        document.head.appendChild(script);
-    </script>
+    <!-- Custom JavaScript -->
+    <script src="index.js"></script>
     
     <!-- For Mode Analytics: Replace the above line with your GitHub raw URL -->
     <!-- <script src="https://raw.githubusercontent.com/yourusername/your-repo/main/index.js"></script> -->

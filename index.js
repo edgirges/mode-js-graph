@@ -103,8 +103,13 @@ const METRICS = [
 
 // Initialize the chart when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    initializeChart();
-    createMetricToggles();
+    console.log('DOM Content Loaded');
+    
+    // Small delay to ensure DOM is fully rendered
+    setTimeout(() => {
+        initializeChart();
+        createMetricToggles();
+    }, 100);
 });
 
 // Generate sample time series data for a specific metric
@@ -189,39 +194,56 @@ function generateAllMetricsData() {
 
 // Create datasets for Chart.js
 function createChartDatasets() {
-    return METRICS.map(metric => ({
-        label: metric.name,
-        data: chartData[currentTimeRange][metric.id],
-        borderColor: metric.color,
-        backgroundColor: metric.backgroundColor,
-        borderWidth: 2,
-        fill: false,
-        tension: 0.1,
-        pointRadius: 0,
-        pointHoverRadius: 6,
-        pointHoverBackgroundColor: metric.color,
-        pointHoverBorderColor: '#ffffff',
-        pointHoverBorderWidth: 2,
-        hidden: !metric.visible
-    }));
+    return METRICS.map(metric => {
+        const data = chartData[currentTimeRange][metric.id];
+        
+        return {
+            label: metric.name,
+            data: data || [],
+            borderColor: metric.color,
+            backgroundColor: metric.backgroundColor,
+            borderWidth: 2,
+            fill: false,
+            tension: 0.1,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: metric.color,
+            pointHoverBorderColor: '#ffffff',
+            pointHoverBorderWidth: 2,
+            hidden: !metric.visible
+        };
+    });
 }
 
 // Initialize the chart
 function initializeChart() {
+    console.log('Starting chart initialization...');
+    
+    // Destroy existing chart if it exists
+    if (chart) {
+        chart.destroy();
+        chart = null;
+    }
+    
     const ctx = document.getElementById('customChart').getContext('2d');
     
     // Register Chart.js plugins
-    Chart.register(ChartZoom);
-    Chart.register(ChartAnnotation);
+    if (typeof ChartZoom !== 'undefined') {
+        Chart.register(ChartZoom);
+    }
+    if (typeof ChartAnnotation !== 'undefined') {
+        Chart.register(ChartAnnotation);
+    }
     
     // Generate initial data
     chartData = generateAllMetricsData();
+    const datasets = createChartDatasets();
     
     // Chart configuration
     const config = {
         type: 'line',
         data: {
-            datasets: createChartDatasets()
+            datasets: datasets
         },
         options: {
             responsive: true,
@@ -251,33 +273,35 @@ function initializeChart() {
                         }
                     }
                 },
-                zoom: {
-                    pan: {
-                        enabled: true,
-                        mode: 'x',
-                        modifierKey: 'ctrl'
-                    },
+                ...(typeof ChartZoom !== 'undefined' ? {
                     zoom: {
-                        wheel: {
-                            enabled: false
+                        pan: {
+                            enabled: true,
+                            mode: 'x',
+                            modifierKey: 'ctrl'
                         },
-                        pinch: {
-                            enabled: false
-                        },
-                        mode: 'x'
+                        zoom: {
+                            wheel: {
+                                enabled: false
+                            },
+                            pinch: {
+                                enabled: false
+                            },
+                            mode: 'x'
+                        }
                     }
-                }
+                } : {})
             },
             scales: {
                 x: {
                     type: 'time',
                     time: {
-                        tooltipFormat: 'MMM DD, YYYY HH:mm',
+                        tooltipFormat: 'MMM dd, yyyy HH:mm',
                         displayFormats: {
                             minute: 'HH:mm',
-                            hour: 'MMM DD HH:mm',
-                            day: 'MMM DD',
-                            month: 'MMM YYYY'
+                            hour: 'MMM dd HH:mm',
+                            day: 'MMM dd',
+                            month: 'MMM yyyy'
                         }
                     },
                     title: {
@@ -308,6 +332,7 @@ function initializeChart() {
     
     // Create the chart
     chart = new Chart(ctx, config);
+    console.log('Chart created successfully');
     
     // Add resize listener for responsiveness
     window.addEventListener('resize', function() {
@@ -524,6 +549,4 @@ document.getElementById('customChart').addEventListener('dblclick', function() {
     resetZoom();
 });
 
-console.log('Custom Mode Analytics Chart with Multiple Metrics initialized successfully!');
-console.log('Available functions:', Object.keys(window.ModeChart));
-console.log('Available metrics:', METRICS.map(m => m.name)); 
+console.log('Custom Mode Analytics Chart with Multiple Metrics initialized successfully!'); 
