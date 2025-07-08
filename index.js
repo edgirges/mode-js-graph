@@ -107,10 +107,49 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Small delay to ensure DOM is fully rendered
     setTimeout(() => {
+        console.log('Starting initialization...');
         initializeChart();
         createMetricToggles();
     }, 100);
 });
+
+// For Mode Analytics - polling mechanism to ensure initialization
+let initAttempts = 0;
+const maxAttempts = 10;
+
+function attemptInitialization() {
+    initAttempts++;
+    console.log(`Initialization attempt ${initAttempts}/${maxAttempts}`);
+    
+    const canvas = document.getElementById('customChart');
+    const togglesContainer = document.querySelector('.metric-toggles');
+    
+    if (canvas && togglesContainer && typeof Chart !== 'undefined') {
+        console.log('All elements found, initializing...');
+        if (!chart) {
+            initializeChart();
+        }
+        if (!togglesContainer.hasChildNodes()) {
+            createMetricToggles();
+        }
+        return; // Success, stop polling
+    }
+    
+    console.log('Missing elements:', {
+        canvas: !!canvas,
+        togglesContainer: !!togglesContainer,
+        Chart: typeof Chart !== 'undefined'
+    });
+    
+    if (initAttempts < maxAttempts) {
+        setTimeout(attemptInitialization, 500);
+    } else {
+        console.error('Max initialization attempts reached');
+    }
+}
+
+// Start polling after a short delay
+setTimeout(attemptInitialization, 200);
 
 // Generate sample time series data for a specific metric
 function generateTimeSeriesData(timeRange, metric) {
@@ -219,25 +258,60 @@ function createChartDatasets() {
 function initializeChart() {
     console.log('Starting chart initialization...');
     
+    // Add loading indicator
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'chart-loading';
+    loadingDiv.innerHTML = 'Loading chart...';
+    loadingDiv.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 4px;';
+    
+    const chartCanvas = document.querySelector('.chart-canvas');
+    if (chartCanvas) {
+        chartCanvas.style.position = 'relative';
+        chartCanvas.appendChild(loadingDiv);
+    }
+    
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js not available!');
+        if (loadingDiv) loadingDiv.innerHTML = 'Error: Chart.js not available';
+        return;
+    }
+    
+    // Check if canvas element exists
+    const canvas = document.getElementById('customChart');
+    if (!canvas) {
+        console.error('Canvas element not found!');
+        if (loadingDiv) loadingDiv.innerHTML = 'Error: Canvas element not found';
+        return;
+    }
+    
     // Destroy existing chart if it exists
     if (chart) {
         chart.destroy();
         chart = null;
     }
     
-    const ctx = document.getElementById('customChart').getContext('2d');
+    const ctx = canvas.getContext('2d');
+    console.log('Canvas context created:', ctx);
     
     // Register Chart.js plugins
     if (typeof ChartZoom !== 'undefined') {
         Chart.register(ChartZoom);
+        console.log('ChartZoom registered');
     }
     if (typeof ChartAnnotation !== 'undefined') {
         Chart.register(ChartAnnotation);
+        console.log('ChartAnnotation registered');
     }
     
     // Generate initial data
+    console.log('Generating data...');
     chartData = generateAllMetricsData();
+    console.log('Chart data generated, keys:', Object.keys(chartData));
+    
     const datasets = createChartDatasets();
+    console.log('Datasets created:', datasets.length, 'datasets');
+    console.log('First dataset sample:', datasets[0]);
     
     // Chart configuration
     const config = {
@@ -331,20 +405,54 @@ function initializeChart() {
     };
     
     // Create the chart
-    chart = new Chart(ctx, config);
-    console.log('Chart created successfully');
+    console.log('Creating chart with config...');
+    try {
+        chart = new Chart(ctx, config);
+        console.log('Chart created successfully:', chart);
+        console.log('Chart datasets:', chart.data.datasets.length);
+        
+        // Force initial render
+        chart.update('none');
+        console.log('Chart updated/rendered');
+        
+        // Remove loading indicator
+        const loadingDiv = document.getElementById('chart-loading');
+        if (loadingDiv) {
+            loadingDiv.remove();
+        }
+        
+    } catch (error) {
+        console.error('Error creating chart:', error);
+        const loadingDiv = document.getElementById('chart-loading');
+        if (loadingDiv) {
+            loadingDiv.innerHTML = 'Error creating chart: ' + error.message;
+        }
+        return;
+    }
     
     // Add resize listener for responsiveness
     window.addEventListener('resize', function() {
-        chart.resize();
+        if (chart) {
+            chart.resize();
+        }
     });
 }
 
 // Create metric toggle controls
 function createMetricToggles() {
+    console.log('Creating metric toggles...');
+    
     const togglesContainer = document.querySelector('.metric-toggles');
+    if (!togglesContainer) {
+        console.error('Metric toggles container not found!');
+        return;
+    }
+    
+    console.log('Found toggles container:', togglesContainer);
+    console.log('Creating toggles for', METRICS.length, 'metrics');
     
     METRICS.forEach(metric => {
+        console.log('Creating toggle for:', metric.name);
         const toggleDiv = document.createElement('div');
         toggleDiv.className = `metric-toggle ${metric.visible ? 'active' : ''}`;
         toggleDiv.innerHTML = `
@@ -366,6 +474,8 @@ function createMetricToggles() {
         
         togglesContainer.appendChild(toggleDiv);
     });
+    
+    console.log('Metric toggles created successfully');
 }
 
 // Toggle metric visibility
@@ -525,7 +635,23 @@ window.ModeChart = {
     showMetrics: showMetrics,
     toggleMetric: toggleMetric,
     getChart: () => chart,
-    getMetrics: () => METRICS
+    getMetrics: () => METRICS,
+    init: () => {
+        console.log('Manual initialization called');
+        initializeChart();
+        createMetricToggles();
+    },
+    debug: () => {
+        console.log('Debug info:');
+        console.log('Chart exists:', !!chart);
+        console.log('Canvas exists:', !!document.getElementById('customChart'));
+        console.log('Toggles container exists:', !!document.querySelector('.metric-toggles'));
+        console.log('Chart.js available:', typeof Chart !== 'undefined');
+        console.log('METRICS length:', METRICS.length);
+        if (chart) {
+            console.log('Chart datasets:', chart.data.datasets.length);
+        }
+    }
 };
 
 // Add some advanced interactions for Grafana-like experience

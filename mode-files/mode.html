@@ -1,0 +1,63 @@
+<script>
+    //add stylesheet
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://edgirges.github.io/mode-js-graph/styles.css?v=' + new Date().getTime();
+    document.head.appendChild(link);
+</script>
+
+<body>
+<div class="chart-container">
+    <div class="chart-header">
+        <h2 class="chart-title">Custom Interactive Chart</h2>
+        <div class="chart-controls">
+            <button class="control-btn active" onclick="switchTimeRange('1D')">1D</button>
+            <button class="control-btn" onclick="switchTimeRange('7D')">7D</button>
+            <button class="control-btn" onclick="switchTimeRange('30D')">30D</button>
+            <button class="control-btn" onclick="switchTimeRange('90D')">90D</button>
+            <button class="control-btn" onclick="toggleZoom()">Zoom</button>
+            <button class="control-btn" onclick="resetZoom()">Reset</button>
+        </div>
+    </div>
+    <div class="chart-canvas">
+        <canvas id="customChart"></canvas>
+    </div>
+    <div class="metric-controls">
+        <h3 class="metric-controls-title">Metrics</h3>
+        <div class="metric-toggles">
+            <!-- Metric toggles will be dynamically generated -->
+        </div>
+    </div>
+</div>
+
+<!-- External JavaScript Libraries -->
+<!-- Chart.js - Main charting library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+
+<!-- Chart.js Date adapter for time series -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+<!-- Chart.js Zoom Plugin for interactivity -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+<!-- Chart.js Annotation Plugin for markers -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+<!-- Custom JavaScript -->
+<script>
+    const script = document.createElement('script');
+    script.src = 'https://edgirges.github.io/mode-js-graph/index.js?v=' + new Date().getTime();
+    document.head.appendChild(script);
+</script>
+
+<!-- For Mode Analytics: Replace the above line with your GitHub raw URL -->
+<!-- <script src="https://raw.githubusercontent.com/yourusername/your-repo/main/index.js"></script> -->
+</body>
+
+
+<h1>JS Graph</h1>
+<div class="mode-grid container">
+<div class="row">
+<div class="col-md-12"><mode-chart id="chart_3e417e5e98d6" dataset="dataset" options="chart_options"></mode-chart></div>
+</div>
+</div>
