@@ -129,8 +129,17 @@ function attemptInitialization() {
         if (!chart) {
             initializeChart();
         }
+        
+        // Debug metric toggles specifically
+        console.log('Checking metric toggles...');
+        console.log('togglesContainer.hasChildNodes():', togglesContainer.hasChildNodes());
+        console.log('togglesContainer.children.length:', togglesContainer.children.length);
+        
         if (!togglesContainer.hasChildNodes()) {
+            console.log('Creating metric toggles...');
             createMetricToggles();
+        } else {
+            console.log('Metric toggles already exist, skipping creation');
         }
         return; // Success, stop polling
     }
@@ -150,6 +159,47 @@ function attemptInitialization() {
 
 // Start polling after a short delay
 setTimeout(attemptInitialization, 200);
+
+// Separate polling mechanism specifically for metric toggles
+let toggleAttempts = 0;
+const maxToggleAttempts = 15;
+
+function ensureMetricToggles() {
+    toggleAttempts++;
+    console.log(`Metric toggles attempt ${toggleAttempts}/${maxToggleAttempts}`);
+    
+    const togglesContainer = document.querySelector('.metric-toggles');
+    
+    if (togglesContainer) {
+        console.log('Found toggles container, checking content...');
+        if (togglesContainer.children.length === 0) {
+            console.log('Toggles container is empty, creating toggles...');
+            const success = createMetricToggles();
+            
+            if (success && togglesContainer.children.length > 0) {
+                console.log('Metric toggles created successfully!');
+                return; // Success
+            } else {
+                console.log('Failed to create metric toggles, will retry...');
+            }
+        } else {
+            console.log('Toggles already exist:', togglesContainer.children.length, 'children');
+            return; // Success
+        }
+    } else {
+        console.log('Toggles container not found yet');
+    }
+    
+    if (toggleAttempts < maxToggleAttempts) {
+        setTimeout(ensureMetricToggles, 300);
+    } else {
+        console.error('Max toggle attempts reached - metric toggles failed to initialize');
+        console.log('Final state: container exists:', !!togglesContainer, 'children:', togglesContainer ? togglesContainer.children.length : 'N/A');
+    }
+}
+
+// Start metric toggles polling after chart initialization
+setTimeout(ensureMetricToggles, 1000);
 
 // Generate sample time series data for a specific metric
 function generateTimeSeriesData(timeRange, metric) {
@@ -445,37 +495,51 @@ function createMetricToggles() {
     const togglesContainer = document.querySelector('.metric-toggles');
     if (!togglesContainer) {
         console.error('Metric toggles container not found!');
-        return;
+        return false;
     }
     
     console.log('Found toggles container:', togglesContainer);
+    console.log('Container innerHTML before:', togglesContainer.innerHTML);
     console.log('Creating toggles for', METRICS.length, 'metrics');
     
-    METRICS.forEach(metric => {
-        console.log('Creating toggle for:', metric.name);
-        const toggleDiv = document.createElement('div');
-        toggleDiv.className = `metric-toggle ${metric.visible ? 'active' : ''}`;
-        toggleDiv.innerHTML = `
-            <input type="checkbox" class="metric-checkbox" id="metric-${metric.id}" ${metric.visible ? 'checked' : ''}>
-            <label for="metric-${metric.id}" class="metric-label">
-                <span class="metric-color" style="background-color: ${metric.color}"></span>
-                ${metric.name}
-            </label>
-        `;
+    try {
+        // Clear existing content
+        togglesContainer.innerHTML = '';
         
-        // Add click event listener
-        toggleDiv.addEventListener('click', function(e) {
-            if (e.target.type !== 'checkbox') {
-                const checkbox = toggleDiv.querySelector('.metric-checkbox');
-                checkbox.checked = !checkbox.checked;
-            }
-            toggleMetric(metric.id);
+        METRICS.forEach((metric, index) => {
+            console.log(`Creating toggle ${index + 1}/${METRICS.length} for: ${metric.name}`);
+            const toggleDiv = document.createElement('div');
+            toggleDiv.className = `metric-toggle ${metric.visible ? 'active' : ''}`;
+            toggleDiv.innerHTML = `
+                <input type="checkbox" class="metric-checkbox" id="metric-${metric.id}" ${metric.visible ? 'checked' : ''}>
+                <label for="metric-${metric.id}" class="metric-label">
+                    <span class="metric-color" style="background-color: ${metric.color}"></span>
+                    ${metric.name}
+                </label>
+            `;
+            
+            // Add click event listener
+            toggleDiv.addEventListener('click', function(e) {
+                if (e.target.type !== 'checkbox') {
+                    const checkbox = toggleDiv.querySelector('.metric-checkbox');
+                    checkbox.checked = !checkbox.checked;
+                }
+                toggleMetric(metric.id);
+            });
+            
+            togglesContainer.appendChild(toggleDiv);
+            console.log(`Toggle appended for ${metric.name}`);
         });
         
-        togglesContainer.appendChild(toggleDiv);
-    });
-    
-    console.log('Metric toggles created successfully');
+        console.log('Final togglesContainer children count:', togglesContainer.children.length);
+        console.log('Container innerHTML after:', togglesContainer.innerHTML.substring(0, 200) + '...');
+        console.log('Metric toggles created successfully');
+        return true;
+        
+    } catch (error) {
+        console.error('Error creating metric toggles:', error);
+        return false;
+    }
 }
 
 // Toggle metric visibility
@@ -641,6 +705,10 @@ window.ModeChart = {
         initializeChart();
         createMetricToggles();
     },
+    createToggles: () => {
+        console.log('Manual toggle creation called');
+        return createMetricToggles();
+    },
     debug: () => {
         console.log('Debug info:');
         console.log('Chart exists:', !!chart);
@@ -650,6 +718,10 @@ window.ModeChart = {
         console.log('METRICS length:', METRICS.length);
         if (chart) {
             console.log('Chart datasets:', chart.data.datasets.length);
+        }
+        const togglesContainer = document.querySelector('.metric-toggles');
+        if (togglesContainer) {
+            console.log('Toggles container children:', togglesContainer.children.length);
         }
     }
 };
