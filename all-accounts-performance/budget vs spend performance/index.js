@@ -151,9 +151,10 @@ function loadModeData() {
                 console.log(`Using dataset: ${datasetName}`);
                 console.log('Dataset structure:', targetDataset);
                 
-                // Extract data from the dataset
-                rawData = targetDataset || [];
+                // Extract data from the dataset - Mode stores data in the 'content' property
+                rawData = targetDataset.content || targetDataset || [];
                 console.log('Mode data loaded:', rawData.length, 'rows');
+                console.log('Dataset columns:', targetDataset.columns);
                 
                 // Debug: Log first few rows
                 if (rawData.length > 0) {
@@ -214,25 +215,40 @@ function processData() {
         return;
     }
     
+    console.log('Raw data type:', typeof rawData);
+    console.log('Raw data is array:', Array.isArray(rawData));
+    console.log('Raw data sample:', rawData.slice(0, 2));
+    
     // Group data by day and aggregate
     const dailyData = {};
     
-    rawData.forEach(row => {
-        const day = row.day;
-        if (!dailyData[day]) {
-            dailyData[day] = {
-                budget: 0,
-                spend: 0,
-                spend_pct_sum: 0,
-                count: 0
-            };
-        }
-        
-        dailyData[day].budget += parseFloat(row.budget || 0);
-        dailyData[day].spend += parseFloat(row.spend || 0);
-        dailyData[day].spend_pct_sum += parseFloat(row["spend pct"] || 0);
-        dailyData[day].count += 1;
-    });
+    try {
+        rawData.forEach((row, index) => {
+            if (index < 3) {
+                console.log(`Row ${index} structure:`, row);
+                console.log(`Row ${index} keys:`, Object.keys(row));
+            }
+            
+            const day = row.day;
+            if (!dailyData[day]) {
+                dailyData[day] = {
+                    budget: 0,
+                    spend: 0,
+                    spend_pct_sum: 0,
+                    count: 0
+                };
+            }
+            
+            dailyData[day].budget += parseFloat(row.budget || 0);
+            dailyData[day].spend += parseFloat(row.spend || 0);
+            dailyData[day].spend_pct_sum += parseFloat(row["spend pct"] || 0);
+            dailyData[day].count += 1;
+        });
+    } catch (error) {
+        console.error('Error processing raw data:', error);
+        console.log('Raw data structure:', rawData);
+        return;
+    }
     
     // Convert to arrays sorted by date
     const sortedDays = Object.keys(dailyData).sort();
