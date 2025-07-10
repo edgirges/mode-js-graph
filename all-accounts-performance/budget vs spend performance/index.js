@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
         createMetricToggles();
         
         // Try to load data from Mode Analytics if available
-        if (typeof mode !== 'undefined' && mode.datasets) {
+        if (typeof datasets !== 'undefined') {
             loadModeData();
         }
     }, 100);
@@ -80,7 +80,7 @@ function attemptInitialization() {
         }
         
         // Try to load data from Mode Analytics
-        if (typeof mode !== 'undefined' && mode.datasets) {
+        if (typeof datasets !== 'undefined') {
             loadModeData();
         } else {
             // Start polling for Mode data
@@ -104,35 +104,70 @@ function loadModeData() {
     console.log('Loading data from Mode Analytics...');
     
     // Debug: Check what's actually available
-    console.log('Mode object:', typeof mode !== 'undefined' ? mode : 'undefined');
-    console.log('Mode datasets:', typeof mode !== 'undefined' && mode.datasets ? mode.datasets : 'undefined');
+    console.log('Datasets object:', typeof datasets !== 'undefined' ? datasets : 'undefined');
     
     try {
-        // Mode Analytics typically provides data in mode.datasets
-        if (mode && mode.datasets && mode.datasets.length > 0) {
-            console.log('Found', mode.datasets.length, 'datasets');
+        // Mode Analytics provides data via global datasets object
+        if (typeof datasets !== 'undefined') {
+            console.log('Found datasets object');
             
-            // Debug: Log dataset structure
-            mode.datasets.forEach((dataset, index) => {
-                console.log(`Dataset ${index}:`, dataset);
-                console.log(`Dataset ${index} data:`, dataset.data || 'no data property');
-            });
+            // Debug: Log available datasets
+            console.log('Available datasets:', Object.keys(datasets));
             
-            const dataset = mode.datasets[0]; // First dataset
-            rawData = dataset.data || [];
-            console.log('Mode data loaded:', rawData.length, 'rows');
+            // Try to find the budget query dataset
+            let targetDataset = null;
+            let datasetName = null;
             
-            // Debug: Log first few rows
-            if (rawData.length > 0) {
-                console.log('First 3 rows:', rawData.slice(0, 3));
+            // Method 1: Look for budget/spend related query names
+            const queryNames = Object.keys(datasets);
+            const budgetQueryName = queryNames.find(name => 
+                name.toLowerCase().includes('budget') || 
+                name.toLowerCase().includes('spend') ||
+                name.toLowerCase().includes('daily')
+            );
+            
+            if (budgetQueryName) {
+                console.log('Found budget query dataset:', budgetQueryName);
+                targetDataset = datasets[budgetQueryName];
+                datasetName = budgetQueryName;
+            } else {
+                // Method 2: Use first available dataset
+                const firstQueryName = queryNames[0];
+                if (firstQueryName) {
+                    console.log('Using first available dataset:', firstQueryName);
+                    targetDataset = datasets[firstQueryName];
+                    datasetName = firstQueryName;
+                } else {
+                    // Method 3: Try datasets[0] if no named queries
+                    if (datasets[0]) {
+                        console.log('Using datasets[0]');
+                        targetDataset = datasets[0];
+                        datasetName = 'datasets[0]';
+                    }
+                }
             }
             
-            processData();
-            updateChart();
+            if (targetDataset) {
+                console.log(`Using dataset: ${datasetName}`);
+                console.log('Dataset structure:', targetDataset);
+                
+                // Extract data from the dataset
+                rawData = targetDataset || [];
+                console.log('Mode data loaded:', rawData.length, 'rows');
+                
+                // Debug: Log first few rows
+                if (rawData.length > 0) {
+                    console.log('First 3 rows:', rawData.slice(0, 3));
+                }
+                
+                processData();
+                updateChart();
+            } else {
+                console.warn('No suitable dataset found');
+                console.log('Available dataset names:', Object.keys(datasets));
+            }
         } else {
-            console.warn('No datasets found in Mode Analytics');
-            console.log('Mode available:', typeof mode !== 'undefined');
-            console.log('Mode.datasets available:', typeof mode !== 'undefined' && mode.datasets);
+            console.warn('No datasets object found in Mode Analytics');
         }
     } catch (error) {
         console.error('Error loading Mode data:', error);
@@ -148,112 +183,27 @@ function pollForModeData() {
         pollAttempts++;
         console.log(`Polling for Mode data - attempt ${pollAttempts}/${maxPollAttempts}`);
         
-        // Check various ways Mode might provide data
-        if (typeof mode !== 'undefined') {
-            console.log('Mode object found, checking for datasets...');
-            
-            // Method 1: Standard mode.datasets
-            if (mode.datasets && mode.datasets.length > 0) {
-                console.log('Found datasets via mode.datasets');
-                loadModeData();
-                return;
-            }
-            
-            // Method 2: Check for queries
-            if (mode.queries && Object.keys(mode.queries).length > 0) {
-                console.log('Found queries via mode.queries');
-                loadModeDataFromQueries();
-                return;
-            }
-            
-            // Method 3: Check for query results
-            if (mode.query && mode.query.results) {
-                console.log('Found results via mode.query.results');
-                loadModeDataFromQuery();
-                return;
-            }
-            
-            console.log('Mode object exists but no data found yet');
+        // Check if datasets object is available
+        if (typeof datasets !== 'undefined') {
+            console.log('Datasets object found!');
+            loadModeData();
+            return;
         }
+        
+        console.log('Datasets object not yet available...');
         
         if (pollAttempts < maxPollAttempts) {
             setTimeout(checkForModeData, 1000);
         } else {
-            console.error('Max polling attempts reached - no Mode data found');
+            console.error('Max polling attempts reached - no Mode datasets found');
+            console.log('Please check that your SQL query is running and named properly');
         }
     }
     
     checkForModeData();
 }
 
-// Alternative method to load data from Mode queries
-function loadModeDataFromQueries() {
-    console.log('Loading data from Mode queries...');
-    
-    try {
-        const queryKeys = Object.keys(mode.queries);
-        console.log('Available queries:', queryKeys);
-        
-        // Try to find the budget query
-        const budgetQuery = queryKeys.find(key => 
-            key.toLowerCase().includes('budget') || 
-            key.toLowerCase().includes('spend') ||
-            key.toLowerCase().includes('daily')
-        );
-        
-        if (budgetQuery) {
-            console.log('Found budget query:', budgetQuery);
-            const queryData = mode.queries[budgetQuery];
-            if (queryData && queryData.results) {
-                rawData = queryData.results;
-                console.log('Mode query data loaded:', rawData.length, 'rows');
-                
-                if (rawData.length > 0) {
-                    console.log('First 3 rows from query:', rawData.slice(0, 3));
-                }
-                
-                processData();
-                updateChart();
-            }
-        } else {
-            // Use first available query
-            const firstQuery = queryKeys[0];
-            if (firstQuery) {
-                console.log('Using first available query:', firstQuery);
-                const queryData = mode.queries[firstQuery];
-                if (queryData && queryData.results) {
-                    rawData = queryData.results;
-                    console.log('Mode query data loaded:', rawData.length, 'rows');
-                    processData();
-                    updateChart();
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error loading Mode data from queries:', error);
-    }
-}
 
-// Alternative method to load data from Mode query
-function loadModeDataFromQuery() {
-    console.log('Loading data from Mode query...');
-    
-    try {
-        if (mode.query && mode.query.results) {
-            rawData = mode.query.results;
-            console.log('Mode query data loaded:', rawData.length, 'rows');
-            
-            if (rawData.length > 0) {
-                console.log('First 3 rows from query:', rawData.slice(0, 3));
-            }
-            
-            processData();
-            updateChart();
-        }
-    } catch (error) {
-        console.error('Error loading Mode data from query:', error);
-    }
-}
 
 // Process raw data into chart-friendly format
 function processData() {
@@ -752,13 +702,19 @@ window.BudgetSpendChart = {
         console.log('=== DEBUG INFO ===');
         console.log('Chart exists:', !!chart);
         console.log('Canvas exists:', !!document.getElementById('budgetSpendChart'));
-        console.log('Mode available:', typeof mode !== 'undefined');
+        console.log('Datasets available:', typeof datasets !== 'undefined');
         
-        if (typeof mode !== 'undefined') {
-            console.log('Mode object:', mode);
-            console.log('Mode.datasets:', mode.datasets);
-            console.log('Mode.queries:', mode.queries);
-            console.log('Mode.query:', mode.query);
+        if (typeof datasets !== 'undefined') {
+            console.log('Datasets object:', datasets);
+            console.log('Available dataset names:', Object.keys(datasets));
+            
+            // Show each dataset structure
+            Object.keys(datasets).forEach(name => {
+                console.log(`Dataset "${name}":`, datasets[name]);
+                if (datasets[name] && datasets[name].length > 0) {
+                    console.log(`First row of "${name}":`, datasets[name][0]);
+                }
+            });
         }
         
         console.log('Raw data length:', rawData.length);
