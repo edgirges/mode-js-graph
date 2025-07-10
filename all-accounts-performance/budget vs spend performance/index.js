@@ -5,7 +5,7 @@
 let chart;
 let rawData = [];
 let processedData = {};
-let currentTimeRange = 'ALL';
+let currentTimeRange = '7D';
 let isZoomEnabled = false;
 
 // Define the three metrics for this specific chart
@@ -224,18 +224,12 @@ function processData() {
     
     try {
         rawData.forEach((row, index) => {
-            if (index < 5) {
+            if (index < 3) {
                 console.log(`Row ${index} structure:`, row);
                 console.log(`Row ${index} keys:`, Object.keys(row));
-                console.log(`Row ${index} values:`, Object.values(row));
             }
             
             const day = row.day;
-            if (!day) {
-                console.warn(`Row ${index} missing day value:`, row);
-                return;
-            }
-            
             if (!dailyData[day]) {
                 dailyData[day] = {
                     budget: 0,
@@ -245,28 +239,11 @@ function processData() {
                 };
             }
             
-            const budget = parseFloat(row.budget || 0);
-            const spend = parseFloat(row.spend || 0);
-            const spendPct = parseFloat(row["spend pct"] || 0);
-            
-            if (index < 5) {
-                console.log(`Row ${index} parsed values:`, {
-                    day: day,
-                    budget: budget,
-                    spend: spend,
-                    spendPct: spendPct
-                });
-            }
-            
-            dailyData[day].budget += budget;
-            dailyData[day].spend += spend;
-            dailyData[day].spend_pct_sum += spendPct;
+            dailyData[day].budget += parseFloat(row.budget || 0);
+            dailyData[day].spend += parseFloat(row.spend || 0);
+            dailyData[day].spend_pct_sum += parseFloat(row["spend pct"] || 0);
             dailyData[day].count += 1;
         });
-        
-        console.log('Daily data aggregated:', Object.keys(dailyData).length, 'days');
-        console.log('Sample daily data:', Object.entries(dailyData).slice(0, 3));
-        
     } catch (error) {
         console.error('Error processing raw data:', error);
         console.log('Raw data structure:', rawData);
@@ -284,23 +261,11 @@ function processData() {
     };
     
     console.log('Data processed:', processedData.labels.length, 'days');
-    console.log('Budget range:', Math.min(...processedData.budget), 'to', Math.max(...processedData.budget));
-    console.log('Spend range:', Math.min(...processedData.spend), 'to', Math.max(...processedData.spend));
-    console.log('Spend % range:', Math.min(...processedData.spend_pct), 'to', Math.max(...processedData.spend_pct));
-    console.log('Sample processed data:', {
-        labels: processedData.labels.slice(0, 3),
-        budget: processedData.budget.slice(0, 3),
-        spend: processedData.spend.slice(0, 3),
-        spend_pct: processedData.spend_pct.slice(0, 3)
-    });
 }
 
 // Filter data based on time range
 function getFilteredData() {
     if (!processedData.labels) return processedData;
-    
-    console.log('Filtering data for time range:', currentTimeRange);
-    console.log('Available date range:', processedData.labels[0], 'to', processedData.labels[processedData.labels.length - 1]);
     
     const now = new Date();
     let startDate;
@@ -317,31 +282,20 @@ function getFilteredData() {
             break;
         case 'ALL':
         default:
-            console.log('Using ALL data - no filtering');
             return processedData;
     }
     
     const startDateStr = startDate.toISOString().split('T')[0];
-    console.log('Filtering from date:', startDateStr);
     const startIndex = processedData.labels.findIndex(date => date >= startDateStr);
     
-    console.log('Start index found:', startIndex);
+    if (startIndex === -1) return processedData;
     
-    if (startIndex === -1) {
-        console.log('No data found after filter date, returning all data');
-        return processedData;
-    }
-    
-    const filtered = {
+    return {
         labels: processedData.labels.slice(startIndex),
         budget: processedData.budget.slice(startIndex),
         spend: processedData.spend.slice(startIndex),
         spend_pct: processedData.spend_pct.slice(startIndex)
     };
-    
-    console.log('Filtered data:', filtered.labels.length, 'days');
-    
-    return filtered;
 }
 
 // Create datasets for Chart.js
@@ -563,15 +517,6 @@ function updateChart() {
     
     const filteredData = getFilteredData();
     const datasets = createChartDatasets();
-    
-    console.log('Updating chart with:', {
-        labelCount: filteredData.labels ? filteredData.labels.length : 0,
-        datasetCount: datasets.length,
-        sampleLabels: filteredData.labels ? filteredData.labels.slice(0, 3) : [],
-        sampleBudget: filteredData.budget ? filteredData.budget.slice(0, 3) : [],
-        sampleSpend: filteredData.spend ? filteredData.spend.slice(0, 3) : [],
-        sampleSpendPct: filteredData.spend_pct ? filteredData.spend_pct.slice(0, 3) : []
-    });
     
     chart.data.labels = filteredData.labels;
     chart.data.datasets = datasets;
