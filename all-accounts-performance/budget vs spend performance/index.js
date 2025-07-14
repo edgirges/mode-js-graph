@@ -114,36 +114,26 @@ function loadModeData() {
             // Debug: Log available datasets
             console.log('Available datasets:', Object.keys(datasets));
             
-            // Try to find the budget query dataset
+            // Target the specific budget query dataset
+            const targetQueryName = 'Daily BW Budget vs Spend (channel filter does not apply)';
             let targetDataset = null;
             let datasetName = null;
             
-            // Method 1: Look for budget/spend related query names
-            const queryNames = Object.keys(datasets);
-            const budgetQueryName = queryNames.find(name => 
-                name.toLowerCase().includes('budget') || 
-                name.toLowerCase().includes('spend') ||
-                name.toLowerCase().includes('daily')
-            );
+            console.log('Looking for specific query:', targetQueryName);
             
-            if (budgetQueryName) {
-                console.log('Found budget query dataset:', budgetQueryName);
-                targetDataset = datasets[budgetQueryName];
-                datasetName = budgetQueryName;
+            if (datasets[targetQueryName]) {
+                console.log('Found target query dataset:', targetQueryName);
+                targetDataset = datasets[targetQueryName];
+                datasetName = targetQueryName;
             } else {
-                // Method 2: Use first available dataset
-                const firstQueryName = queryNames[0];
-                if (firstQueryName) {
-                    console.log('Using first available dataset:', firstQueryName);
-                    targetDataset = datasets[firstQueryName];
-                    datasetName = firstQueryName;
+                console.warn('Target query not found, available queries:', Object.keys(datasets));
+                // Fallback to index 0 as specified
+                if (datasets[0]) {
+                    console.log('Fallback: Using datasets[0]');
+                    targetDataset = datasets[0];
+                    datasetName = 'datasets[0] (fallback)';
                 } else {
-                    // Method 3: Try datasets[0] if no named queries
-                    if (datasets[0]) {
-                        console.log('Using datasets[0]');
-                        targetDataset = datasets[0];
-                        datasetName = 'datasets[0]';
-                    }
+                    console.error('No datasets available at all');
                 }
             }
             
@@ -404,7 +394,7 @@ function initializeChart() {
                         label: function(context) {
                             const value = context.parsed.y;
                             if (context.dataset.label === 'Spend %') {
-                                return `${context.dataset.label}: ${(value * 100).toFixed(1)}%`;
+                                return `${context.dataset.label}: ${value.toFixed(3)}`;
                             } else {
                                 return `${context.dataset.label}: $${value.toLocaleString()}`;
                             }
@@ -475,14 +465,14 @@ function initializeChart() {
                     position: 'right',
                     title: {
                         display: true,
-                        text: 'Spend Percentage'
+                        text: 'Spend Rate (Decimal)'
                     },
                     grid: {
                         drawOnChartArea: false,
                     },
                     ticks: {
                         callback: function(value) {
-                            return (value * 100).toFixed(0) + '%';
+                            return value.toFixed(2);
                         }
                     }
                 }
