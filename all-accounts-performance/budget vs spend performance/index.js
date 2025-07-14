@@ -13,8 +13,8 @@ const METRICS = [
     {
         id: 'budget',
         name: 'Budget',
-        color: '#007bff',
-        backgroundColor: 'rgba(0, 123, 255, 0.8)',
+        color: '#28a745',
+        backgroundColor: 'rgba(40, 167, 69, 0.8)',
         visible: true,
         type: 'bar',
         yAxisID: 'y',
@@ -23,8 +23,8 @@ const METRICS = [
     {
         id: 'spend',
         name: 'Spend',
-        color: '#28a745',
-        backgroundColor: 'rgba(40, 167, 69, 0.8)',
+        color: '#007bff',
+        backgroundColor: 'rgba(0, 123, 255, 0.8)',
         visible: true,
         type: 'bar',
         yAxisID: 'y',
@@ -217,6 +217,12 @@ function processData() {
             if (index < 3) {
                 console.log(`Row ${index} structure:`, row);
                 console.log(`Row ${index} keys:`, Object.keys(row));
+                console.log(`Row ${index} raw values:`, {
+                    day: row.day,
+                    budget: row.budget,
+                    spend: row.spend,
+                    spend_pct: row["spend pct"]
+                });
             }
             
             const day = row.day;
@@ -229,11 +235,39 @@ function processData() {
                 };
             }
             
-            dailyData[day].budget += parseFloat(row.budget || 0);
-            dailyData[day].spend += parseFloat(row.spend || 0);
-            dailyData[day].spend_pct_sum += parseFloat(row["spend pct"] || 0);
+            const budget = parseFloat(row.budget || 0);
+            const spend = parseFloat(row.spend || 0);
+            const spend_pct = parseFloat(row["spend pct"] || 0);
+            
+            dailyData[day].budget += budget;
+            dailyData[day].spend += spend;
+            dailyData[day].spend_pct_sum += spend_pct;
             dailyData[day].count += 1;
+            
+            if (index < 5) {
+                console.log(`Row ${index} - Day: ${day}, Budget: ${budget}, Spend: ${spend}, Running totals - Budget: ${dailyData[day].budget}, Spend: ${dailyData[day].spend}, Count: ${dailyData[day].count}`);
+            }
         });
+        
+        console.log('Sample daily aggregated data:');
+        Object.entries(dailyData).slice(0, 3).forEach(([day, data]) => {
+            console.log(`${day}: Budget=${data.budget}, Spend=${data.spend}, Count=${data.count} campaign groups`);
+        });
+        
+        // Check if we're over-aggregating
+        const totalCampaignGroups = Object.values(dailyData).reduce((sum, day) => sum + day.count, 0);
+        console.log(`Total campaign group records: ${totalCampaignGroups} across ${Object.keys(dailyData).length} days`);
+        console.log(`Average campaign groups per day: ${totalCampaignGroups / Object.keys(dailyData).length}`);
+        
+        // Show comparison with Mode chart expectation
+        const firstDay = Object.keys(dailyData)[0];
+        if (firstDay) {
+            const firstDayData = dailyData[firstDay];
+            console.log(`First day (${firstDay}): Our values - Budget=${firstDayData.budget}, Spend=${firstDayData.spend}`);
+            console.log(`Mode chart shows: Budget=648k, Spend=584k`);
+            console.log(`Our values are ${(firstDayData.budget/648000).toFixed(1)}x larger for budget, ${(firstDayData.spend/584000).toFixed(1)}x larger for spend`);
+        }
+        
     } catch (error) {
         console.error('Error processing raw data:', error);
         console.log('Raw data structure:', rawData);
@@ -251,6 +285,13 @@ function processData() {
     };
     
     console.log('Data processed:', processedData.labels.length, 'days');
+    console.log('Expected from Mode chart: budget ~648k, spend ~584k');
+    console.log('Our processed values - first few days:');
+    processedData.labels.slice(0, 5).forEach((day, index) => {
+        console.log(`${day}: Budget=${processedData.budget[index]}, Spend=${processedData.spend[index]}, Spend%=${processedData.spend_pct[index]}`);
+    });
+    console.log('Budget range:', Math.min(...processedData.budget), 'to', Math.max(...processedData.budget));
+    console.log('Spend range:', Math.min(...processedData.spend), 'to', Math.max(...processedData.spend));
 }
 
 // Filter data based on time range
