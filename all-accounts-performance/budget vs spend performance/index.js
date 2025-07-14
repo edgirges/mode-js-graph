@@ -279,19 +279,23 @@ function processData() {
     
     processedData = {
         labels: sortedDays,
-        budget: sortedDays.map(day => dailyData[day].budget),
+        budget: sortedDays.map(day => dailyData[day].budget - dailyData[day].spend), // Remaining budget only
         spend: sortedDays.map(day => dailyData[day].spend),
         spend_pct: sortedDays.map(day => dailyData[day].spend_pct_sum / dailyData[day].count)
     };
     
     console.log('Data processed:', processedData.labels.length, 'days');
-    console.log('Expected from Mode chart: budget ~648k, spend ~584k');
-    console.log('Our processed values - first few days:');
+    console.log('Expected from Mode chart: total budget ~648k, spend ~584k');
+    console.log('Our processed values - first few days (Budget = remaining budget only):');
     processedData.labels.slice(0, 5).forEach((day, index) => {
-        console.log(`${day}: Budget=${processedData.budget[index]}, Spend=${processedData.spend[index]}, Spend%=${processedData.spend_pct[index]}`);
+        const remainingBudget = processedData.budget[index];
+        const spend = processedData.spend[index];
+        const totalBudget = remainingBudget + spend;
+        console.log(`${day}: Remaining Budget=${remainingBudget}, Spend=${spend}, Total Budget=${totalBudget}, Spend%=${processedData.spend_pct[index]}`);
     });
-    console.log('Budget range:', Math.min(...processedData.budget), 'to', Math.max(...processedData.budget));
+    console.log('Remaining Budget range:', Math.min(...processedData.budget), 'to', Math.max(...processedData.budget));
     console.log('Spend range:', Math.min(...processedData.spend), 'to', Math.max(...processedData.spend));
+    console.log('Total Budget range:', Math.min(...processedData.budget.map((b, i) => b + processedData.spend[i])), 'to', Math.max(...processedData.budget.map((b, i) => b + processedData.spend[i])));
 }
 
 // Filter data based on time range
@@ -436,6 +440,12 @@ function initializeChart() {
                             const value = context.parsed.y;
                             if (context.dataset.label === 'Spend %') {
                                 return `${context.dataset.label}: ${value.toFixed(3)}`;
+                            } else if (context.dataset.label === 'Budget') {
+                                // For budget, show total budget (remaining + spend)
+                                const dataIndex = context.dataIndex;
+                                const spendValue = context.chart.data.datasets.find(d => d.label === 'Spend').data[dataIndex];
+                                const totalBudget = value + spendValue;
+                                return `${context.dataset.label}: $${totalBudget.toLocaleString()}`;
                             } else {
                                 return `${context.dataset.label}: $${value.toLocaleString()}`;
                             }
