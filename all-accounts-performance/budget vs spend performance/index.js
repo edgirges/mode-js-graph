@@ -11,20 +11,20 @@ let isZoomEnabled = false;
 // Define the three metrics for this specific chart
 const METRICS = [
     {
-        id: 'budget',
-        name: 'Budget',
-        color: '#28a745',
-        backgroundColor: 'rgba(40, 167, 69, 0.8)',
+        id: 'spend',
+        name: 'Spend',
+        color: '#007bff',
+        backgroundColor: 'rgba(0, 123, 255, 0.8)',
         visible: true,
         type: 'bar',
         yAxisID: 'y',
         order: 1
     },
     {
-        id: 'spend',
-        name: 'Spend',
-        color: '#007bff',
-        backgroundColor: 'rgba(0, 123, 255, 0.8)',
+        id: 'budget',
+        name: 'Budget',
+        color: '#28a745',
+        backgroundColor: 'rgba(40, 167, 69, 0.8)',
         visible: true,
         type: 'bar',
         yAxisID: 'y',
@@ -279,14 +279,14 @@ function processData() {
     
     processedData = {
         labels: sortedDays,
-        budget: sortedDays.map(day => dailyData[day].budget - dailyData[day].spend), // Remaining budget only
+        budget: sortedDays.map(day => Math.max(0, dailyData[day].budget - dailyData[day].spend)), // Remaining budget, minimum 0
         spend: sortedDays.map(day => dailyData[day].spend),
         spend_pct: sortedDays.map(day => dailyData[day].spend_pct_sum / dailyData[day].count)
     };
     
     console.log('Data processed:', processedData.labels.length, 'days');
     console.log('Expected from Mode chart: total budget ~648k, spend ~584k');
-    console.log('Our processed values - first few days (Budget = remaining budget only):');
+    console.log('Our processed values - Budget shows remaining budget (stacked on top of spend):');
     processedData.labels.slice(0, 5).forEach((day, index) => {
         const remainingBudget = processedData.budget[index];
         const spend = processedData.spend[index];
@@ -445,7 +445,7 @@ function initializeChart() {
                                 const dataIndex = context.dataIndex;
                                 const spendValue = context.chart.data.datasets.find(d => d.label === 'Spend').data[dataIndex];
                                 const totalBudget = value + spendValue;
-                                return `${context.dataset.label}: $${totalBudget.toLocaleString()}`;
+                                return `Total Budget: $${totalBudget.toLocaleString()} (Remaining: $${value.toLocaleString()})`;
                             } else {
                                 return `${context.dataset.label}: $${value.toLocaleString()}`;
                             }
@@ -497,6 +497,7 @@ function initializeChart() {
                     type: 'linear',
                     display: true,
                     position: 'left',
+                    min: 0,
                     title: {
                         display: true,
                         text: 'Budget / Spend ($)'
