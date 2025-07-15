@@ -44,9 +44,20 @@ const METRICS = [
 
 // Initialize the chart when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Budget vs Spend Chart initializing...');
+    console.log('=== DOMContentLoaded fired ===');
+    console.log('Document ready state:', document.readyState);
+    console.log('Available elements at DOMContentLoaded:');
+    console.log('- Canvas:', !!document.getElementById('budgetSpendChart'));
+    console.log('- Metric toggles container:', !!document.querySelector('.metric-toggles'));
+    console.log('- Metric controls container:', !!document.querySelector('.metric-controls'));
+    console.log('- Chart.js available:', typeof Chart !== 'undefined');
     
     setTimeout(() => {
+        console.log('=== Delayed initialization (100ms) ===');
+        console.log('- Canvas:', !!document.getElementById('budgetSpendChart'));
+        console.log('- Metric toggles container:', !!document.querySelector('.metric-toggles'));
+        console.log('- Chart.js available:', typeof Chart !== 'undefined');
+        
         initializeChart();
         createMetricToggles();
         
@@ -63,20 +74,36 @@ const maxAttempts = 10;
 
 function attemptInitialization() {
     initAttempts++;
-    console.log(`Initialization attempt ${initAttempts}/${maxAttempts}`);
+    console.log(`=== Initialization attempt ${initAttempts}/${maxAttempts} ===`);
     
     const canvas = document.getElementById('budgetSpendChart');
     const togglesContainer = document.querySelector('.metric-toggles');
+    const metricsContainer = document.querySelector('.metric-controls');
+    
+    console.log('Element status in attemptInitialization:');
+    console.log('- Canvas:', !!canvas);
+    console.log('- Toggles container:', !!togglesContainer);
+    console.log('- Metrics container:', !!metricsContainer);
+    console.log('- Chart.js available:', typeof Chart !== 'undefined');
+    console.log('- Current chart exists:', !!chart);
+    
+    if (togglesContainer) {
+        console.log('- Toggles container has children:', togglesContainer.hasChildNodes());
+        console.log('- Toggles container innerHTML:', togglesContainer.innerHTML);
+    }
     
     if (canvas && togglesContainer && typeof Chart !== 'undefined') {
-        console.log('All elements found, initializing...');
+        console.log('✅ All elements found, proceeding with initialization...');
         if (!chart) {
+            console.log('Creating chart...');
             initializeChart();
         }
         
         if (!togglesContainer.hasChildNodes()) {
-            console.log('Creating metric toggles...');
+            console.log('Creating metric toggles via attemptInitialization...');
             createMetricToggles();
+        } else {
+            console.log('Toggles container already has children, skipping toggle creation');
         }
         
         // Try to load data from Mode Analytics
@@ -537,7 +564,7 @@ function initializeChart() {
                     afterDataLimits: function(scale) {
                         // Auto-scale y1 axis based on spend percentage data range
                         const datasets = scale.chart.data.datasets;
-                        const spendPctDataset = datasets.find(d => d.label === 'Spend %');
+                        const spendPctDataset = datasets.find(d => d.label === 'Avg. Spend %');
                         
                         if (spendPctDataset && spendPctDataset.data && spendPctDataset.data.length > 0) {
                             const values = spendPctDataset.data.filter(v => v != null && !isNaN(v));
@@ -600,15 +627,40 @@ function updateChart() {
 
 // Create metric toggle controls
 function createMetricToggles() {
-    console.log('Creating metric toggles...');
+    console.log('=== Creating metric toggles ===');
+    console.log('Document state:', document.readyState);
+    console.log('Body exists:', !!document.body);
+    console.log('Head exists:', !!document.head);
+    
+    // Debug: Log all available elements
+    console.log('All elements with class containing "metric":', document.querySelectorAll('[class*="metric"]'));
+    console.log('Available divs:', document.querySelectorAll('div').length);
+    console.log('Document HTML preview:', document.documentElement.outerHTML.substring(0, 500) + '...');
     
     const togglesContainer = document.querySelector('.metric-toggles');
+    const metricsContainer = document.querySelector('.metric-controls');
+    
+    console.log('Container search results:');
+    console.log('- .metric-toggles found:', !!togglesContainer);
+    console.log('- .metric-controls found:', !!metricsContainer);
+    
     if (!togglesContainer) {
-        console.error('Metric toggles container not found!');
+        console.error('❌ Metric toggles container (.metric-toggles) not found!');
+        console.log('Available classes in document:');
+        const allElements = document.querySelectorAll('*');
+        const classes = new Set();
+        allElements.forEach(el => {
+            if (el.className) {
+                el.className.split(' ').forEach(cls => classes.add(cls));
+            }
+        });
+        console.log('All classes found:', Array.from(classes).sort());
         return;
     }
     
-    console.log('Found toggles container:', togglesContainer);
+    console.log('✅ Found toggles container:', togglesContainer);
+    console.log('Container parent:', togglesContainer.parentElement);
+    console.log('Container existing innerHTML:', togglesContainer.innerHTML);
     togglesContainer.innerHTML = '';
     
     // Add select/deselect all buttons
