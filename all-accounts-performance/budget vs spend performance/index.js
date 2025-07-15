@@ -32,13 +32,13 @@ const METRICS = [
     },
     {
         id: 'spend_pct',
-        name: 'Spend %',
+        name: 'Avg. Spend %',
         color: '#ffc107',
         backgroundColor: 'rgba(255, 193, 7, 0.1)',
         visible: true,
         type: 'line',
         yAxisID: 'y1',
-        order: 3
+        order: 0
     }
 ];
 
@@ -600,9 +600,15 @@ function updateChart() {
 
 // Create metric toggle controls
 function createMetricToggles() {
-    const togglesContainer = document.querySelector('.metric-toggles');
-    if (!togglesContainer) return;
+    console.log('Creating metric toggles...');
     
+    const togglesContainer = document.querySelector('.metric-toggles');
+    if (!togglesContainer) {
+        console.error('Metric toggles container not found!');
+        return;
+    }
+    
+    console.log('Found toggles container:', togglesContainer);
     togglesContainer.innerHTML = '';
     
     // Add select/deselect all buttons
@@ -628,7 +634,10 @@ function createMetricToggles() {
         
         // Insert after the title
         metricsHeader.parentNode.insertBefore(buttonsContainer, togglesContainer);
+        console.log('Created select/deselect buttons');
     }
+    
+    console.log('Creating toggles for metrics:', METRICS.map(m => m.name));
     
     METRICS.forEach(metric => {
         const toggleDiv = document.createElement('div');
@@ -650,7 +659,10 @@ function createMetricToggles() {
         });
         
         togglesContainer.appendChild(toggleDiv);
+        console.log('Created toggle for:', metric.name);
     });
+    
+    console.log('Metric toggles creation complete');
 }
 
 // Toggle metric visibility
