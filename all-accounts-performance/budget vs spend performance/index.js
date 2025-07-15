@@ -99,11 +99,13 @@ function attemptInitialization() {
             initializeChart();
         }
         
-        if (!togglesContainer.hasChildNodes()) {
+        // Check for actual HTML elements, not comments or text nodes
+        const hasActualElements = togglesContainer.children.length > 0;
+        if (!hasActualElements) {
             console.log('Creating metric toggles via attemptInitialization...');
             createMetricToggles();
         } else {
-            console.log('Toggles container already has children, skipping toggle creation');
+            console.log('Toggles container already has actual elements, skipping toggle creation');
         }
         
         // Try to load data from Mode Analytics
