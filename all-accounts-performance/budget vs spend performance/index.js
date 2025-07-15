@@ -281,7 +281,7 @@ function processData() {
         labels: sortedDays,
         budget: sortedDays.map(day => Math.max(0, dailyData[day].budget - dailyData[day].spend)), // Remaining budget, minimum 0
         spend: sortedDays.map(day => dailyData[day].spend),
-        spend_pct: sortedDays.map(day => dailyData[day].spend / dailyData[day].budget) // Total spend / total budget for each day
+        spend_pct: sortedDays.map(day => dailyData[day].spend_pct_sum / dailyData[day].count) // Average of individual spend percentages
     };
     
     console.log('Data processed:', processedData.labels.length, 'days');
