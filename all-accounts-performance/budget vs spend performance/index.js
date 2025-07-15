@@ -282,10 +282,8 @@ function processData() {
         budget: sortedDays.map(day => Math.max(0, dailyData[day].budget - dailyData[day].spend)), // Remaining budget, minimum 0
         spend: sortedDays.map(day => dailyData[day].spend),
         spend_pct: sortedDays.map(day => {
-            const totalBudget = dailyData[day].budget;
-            const totalSpend = dailyData[day].spend;
-            return totalBudget > 0 ? totalSpend / totalBudget : 0;
-        }) // Total spend / total budget (matching SQL NULLIF logic)
+            return dailyData[day].count > 0 ? dailyData[day].spend_pct_sum / dailyData[day].count : 0;
+        }) // Average of individual campaign group spend percentages (matching Mode's "average and continuous")
     };
     
     console.log('Data processed:', processedData.labels.length, 'days');
