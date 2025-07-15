@@ -533,6 +533,24 @@ function initializeChart() {
                         callback: function(value) {
                             return value.toFixed(2);
                         }
+                    },
+                    afterDataLimits: function(scale) {
+                        // Auto-scale y1 axis based on spend percentage data range
+                        const datasets = scale.chart.data.datasets;
+                        const spendPctDataset = datasets.find(d => d.label === 'Spend %');
+                        
+                        if (spendPctDataset && spendPctDataset.data && spendPctDataset.data.length > 0) {
+                            const values = spendPctDataset.data.filter(v => v != null && !isNaN(v));
+                            if (values.length > 0) {
+                                const min = Math.min(...values);
+                                const max = Math.max(...values);
+                                const range = max - min;
+                                const padding = range * 0.05; // 5% padding
+                                
+                                scale.min = Math.max(0, min - padding);
+                                scale.max = Math.min(1, max + padding);
+                            }
+                        }
                     }
                 }
             },
