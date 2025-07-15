@@ -225,6 +225,15 @@ function processData() {
                 });
             }
             
+            const budget = parseFloat(row.budget || 0);
+            const spend = parseFloat(row.spend || 0);
+            const spend_pct = parseFloat(row["spend pct"] || 0);
+            
+            // Skip rows with zero budget or invalid spend_pct (matching Mode Analytics filtering)
+            if (budget <= 0 || isNaN(spend_pct) || row["spend pct"] === "" || row["spend pct"] == null) {
+                return;
+            }
+            
             const day = row.day;
             if (!dailyData[day]) {
                 dailyData[day] = {
@@ -234,10 +243,6 @@ function processData() {
                     count: 0
                 };
             }
-            
-            const budget = parseFloat(row.budget || 0);
-            const spend = parseFloat(row.spend || 0);
-            const spend_pct = parseFloat(row["spend pct"] || 0);
             
             dailyData[day].budget += budget;
             dailyData[day].spend += spend;
