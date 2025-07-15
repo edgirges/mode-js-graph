@@ -706,17 +706,29 @@ function createMetricToggles() {
         `;
         
         toggleDiv.addEventListener('click', function(e) {
-            if (e.target.type !== 'checkbox') {
-                const checkbox = toggleDiv.querySelector('.metric-checkbox');
-                checkbox.checked = !checkbox.checked;
-                // Update the toggle div active state to match checkbox
-                if (checkbox.checked) {
-                    toggleDiv.classList.add('active');
-                } else {
-                    toggleDiv.classList.remove('active');
-                }
+            // Prevent default behavior for checkboxes to avoid double-toggling
+            if (e.target.type === 'checkbox') {
+                e.preventDefault();
             }
-            toggleMetric(metric.id);
+            
+            // Always toggle the metric state directly
+            const checkbox = toggleDiv.querySelector('.metric-checkbox');
+            
+            // Toggle the METRICS array state
+            metric.visible = !metric.visible;
+            
+            // Update checkbox to match metric state
+            checkbox.checked = metric.visible;
+            
+            // Update visual state
+            if (metric.visible) {
+                toggleDiv.classList.add('active');
+            } else {
+                toggleDiv.classList.remove('active');
+            }
+            
+            // Update the chart
+            updateChart();
         });
         
         togglesContainer.appendChild(toggleDiv);
