@@ -683,6 +683,7 @@ function createMetricToggles() {
         // Create buttons container
         const buttonsContainer = document.createElement('div');
         buttonsContainer.className = 'metrics-buttons-container';
+        buttonsContainer.style.marginBottom = '15px'; // Add spacing between buttons and toggles
         buttonsContainer.appendChild(selectAllBtn);
         buttonsContainer.appendChild(deselectAllBtn);
         
@@ -708,6 +709,12 @@ function createMetricToggles() {
             if (e.target.type !== 'checkbox') {
                 const checkbox = toggleDiv.querySelector('.metric-checkbox');
                 checkbox.checked = !checkbox.checked;
+                // Update the toggle div active state to match checkbox
+                if (checkbox.checked) {
+                    toggleDiv.classList.add('active');
+                } else {
+                    toggleDiv.classList.remove('active');
+                }
             }
             toggleMetric(metric.id);
         });
