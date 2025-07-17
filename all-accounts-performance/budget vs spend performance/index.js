@@ -357,16 +357,34 @@ function getFilteredData() {
     }
     
     const startDateStr = startDate.toISOString().split('T')[0];
+    
+    console.log(`=== Filtering for ${currentTimeRange} ===`);
+    console.log('Now:', now.toISOString().split('T')[0]);
+    console.log('Start date calculated:', startDateStr);
+    console.log('Available dates (first 5):', processedData.labels.slice(0, 5));
+    console.log('Available dates (last 5):', processedData.labels.slice(-5));
+    
     const startIndex = processedData.labels.findIndex(date => date >= startDateStr);
     
-    if (startIndex === -1) return processedData;
+    console.log('Start index found:', startIndex);
+    console.log('Data length before filter:', processedData.labels.length);
     
-    return {
+    if (startIndex === -1) {
+        console.log('No matching start date found, returning all data');
+        return processedData;
+    }
+    
+    const filtered = {
         labels: processedData.labels.slice(startIndex),
         budget: processedData.budget.slice(startIndex),
         spend: processedData.spend.slice(startIndex),
         spend_pct: processedData.spend_pct.slice(startIndex)
     };
+    
+    console.log('Data length after filter:', filtered.labels.length);
+    console.log('Filtered date range:', filtered.labels[0], 'to', filtered.labels[filtered.labels.length - 1]);
+    
+    return filtered;
 }
 
 // Create datasets for Chart.js
