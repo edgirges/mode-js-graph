@@ -708,10 +708,15 @@ function createMetricToggles() {
         toggleDiv.addEventListener('click', function(e) {
             const checkbox = toggleDiv.querySelector('.metric-checkbox');
             
-            // If clicking anything other than the checkbox, just click the checkbox
-            if (e.target.type !== 'checkbox') {
-                checkbox.click();
+            // If the clicked element is the checkbox itself, let it handle naturally
+            if (e.target === checkbox) {
+                return;
             }
+            
+            // For any other click in the toggle div, click the checkbox
+            e.preventDefault();
+            e.stopPropagation();
+            checkbox.click();
         });
         
         // Add separate listener for checkbox changes
