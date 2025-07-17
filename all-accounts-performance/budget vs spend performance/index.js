@@ -338,41 +338,29 @@ function processData() {
 function getFilteredData() {
     if (!processedData.labels) return processedData;
     
-    const now = new Date();
-    let startDate;
+    let daysToShow;
     
     switch (currentTimeRange) {
         case '7D':
-            startDate = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+            daysToShow = 7;
             break;
         case '30D':
-            startDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+            daysToShow = 30;
             break;
         case '90D':
-            startDate = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
+            daysToShow = 90;
             break;
         case 'ALL':
         default:
             return processedData;
     }
     
-    const startDateStr = startDate.toISOString().split('T')[0];
+    console.log(`=== Filtering for ${currentTimeRange} (last ${daysToShow} days) ===`);
+    console.log('Total available days:', processedData.labels.length);
+    console.log('Available date range:', processedData.labels[0], 'to', processedData.labels[processedData.labels.length - 1]);
     
-    console.log(`=== Filtering for ${currentTimeRange} ===`);
-    console.log('Now:', now.toISOString().split('T')[0]);
-    console.log('Start date calculated:', startDateStr);
-    console.log('Available dates (first 5):', processedData.labels.slice(0, 5));
-    console.log('Available dates (last 5):', processedData.labels.slice(-5));
-    
-    const startIndex = processedData.labels.findIndex(date => date >= startDateStr);
-    
-    console.log('Start index found:', startIndex);
-    console.log('Data length before filter:', processedData.labels.length);
-    
-    if (startIndex === -1) {
-        console.log('No matching start date found, returning all data');
-        return processedData;
-    }
+    // Take the last N days of available data
+    const startIndex = Math.max(0, processedData.labels.length - daysToShow);
     
     const filtered = {
         labels: processedData.labels.slice(startIndex),
@@ -381,6 +369,7 @@ function getFilteredData() {
         spend_pct: processedData.spend_pct.slice(startIndex)
     };
     
+    console.log('Start index:', startIndex);
     console.log('Data length after filter:', filtered.labels.length);
     console.log('Filtered date range:', filtered.labels[0], 'to', filtered.labels[filtered.labels.length - 1]);
     
