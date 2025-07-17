@@ -5,7 +5,7 @@
 let chart;
 let rawData = [];
 let processedData = {};
-let currentTimeRange = '7D';
+let currentTimeRange = '90D';
 let isZoomEnabled = false;
 
 // Define the three metrics for this specific chart
