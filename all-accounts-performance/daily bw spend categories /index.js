@@ -257,152 +257,68 @@
     // Start polling after a short delay
     setTimeout(attemptInitialization, 200);
 
+
+
     // =============================================================================
     // MODE ANALYTICS DATA LOADING
     // =============================================================================
 
     function loadModeData() {
-        console.log('=== SPEND CATEGORIES CHART: Loading data from Mode Analytics ===');
+        console.log('Loading data from Mode Analytics...');
         
         try {
             if (typeof datasets !== 'undefined') {
                 console.log('Found datasets object');
                 console.log('Available datasets:', Object.keys(datasets));
-                console.log('Total datasets count:', Object.keys(datasets).length);
                 
-                // Enhanced debugging - show all datasets structure and look for our query
-                const targetQueryName = 'Daily BW Budget vs Spend Ratio Count';
-                let foundWorkingDataset = null;
-                
-                Object.keys(datasets).forEach((key, index) => {
-                    const dataset = datasets[key];
-                    const hasContent = !!(dataset && dataset.content && dataset.content.length > 0);
-                    const queryName = dataset ? dataset.queryName : 'unknown';
-                    const state = dataset ? dataset.state : 'unknown';
-                    
-                    console.log(`Dataset ${index} (key: "${key}"):`, {
-                        hasContent: hasContent,
-                        isArray: Array.isArray(dataset),
-                        length: dataset ? (dataset.content ? dataset.content.length : dataset.length) : 'no length',
-                        firstRow: dataset ? (dataset.content ? dataset.content[0] : dataset[0]) : 'no data',
-                        queryName: queryName,
-                        state: state
-                    });
-                    
-                    // Look for working datasets with similar names
-                    if (hasContent && queryName && queryName.includes(targetQueryName)) {
-                        console.log(`🎯 Found working dataset with similar name at index ${index}: "${queryName}"`);
-                        foundWorkingDataset = { index, dataset, queryName };
-                    }
-                });
-                
-                if (foundWorkingDataset) {
-                    console.log(`🎯 Recommending dataset ${foundWorkingDataset.index} instead of dataset 1`);
-                }
-                
+                // Target the specific spend categories query dataset
+                const targetQueryName = 'Daily BW Budget vs Spend Ratio Count (channel filter does not apply)';
                 let targetDataset = null;
                 let datasetName = null;
                 
-                // Strategy 1: Try exact match with configured name
-                const configuredName = CHART_CONFIG.modeDatasetName;
-                console.log('Looking for exact match:', configuredName);
+                console.log('Looking for specific query:', targetQueryName);
                 
-                if (datasets[configuredName]) {
-                    console.log('✓ Found exact match for configured dataset name');
-                    targetDataset = datasets[configuredName];
-                    datasetName = configuredName;
-                }
-                
-                // Strategy 2: Try index 1 (as specified by user)
-                if (!targetDataset && datasets[1]) {
-                    // Check if dataset[1] actually has data and didn't fail
-                    if (datasets[1].state === 'failed' || (datasets[1].content && datasets[1].content.length === 0)) {
-                        console.warn('⚠️ Dataset[1] is specified but failed or empty. State:', datasets[1].state);
-                        console.log('Dataset[1] query name:', datasets[1].queryName);
-                        
-                        // Try to find a working dataset with similar name
-                        if (foundWorkingDataset) {
-                            console.log(`✓ Using working alternative: datasets[${foundWorkingDataset.index}]`);
-                            targetDataset = foundWorkingDataset.dataset;
-                            datasetName = `datasets[${foundWorkingDataset.index}] (working alternative)`;
-                        }
-                    } else {
-                        console.log('✓ Using datasets[1] as specified by user');
+                if (datasets[targetQueryName]) {
+                    console.log('Found target query dataset:', targetQueryName);
+                    targetDataset = datasets[targetQueryName];
+                    datasetName = targetQueryName;
+                } else {
+                    console.warn('Target query not found, available queries:', Object.keys(datasets));
+                    // Fallback to index 1 as specified
+                    if (datasets[1]) {
+                        console.log('Fallback: Using datasets[1]');
                         targetDataset = datasets[1];
-                        datasetName = 'datasets[1] (user specified)';
+                        datasetName = 'datasets[1] (fallback)';
+                    } else {
+                        console.error('No datasets available at index 1');
                     }
-                }
-                
-                // Strategy 3: Try partial match on the SQL file name
-                if (!targetDataset) {
-                    const sqlFileName = 'Daily BW Budget vs Spend Ratio Count';
-                    for (const [key, value] of Object.entries(datasets)) {
-                        if (key.includes(sqlFileName)) {
-                            console.log('✓ Found partial match:', key);
-                            targetDataset = value;
-                            datasetName = key;
-                            break;
-                        }
-                    }
-                }
-                
-                // Strategy 4: Fallback to first dataset
-                if (!targetDataset && CHART_CONFIG.fallbackToFirstDataset && datasets[0]) {
-                    console.log('⚠ Fallback: Using datasets[0]');
-                    targetDataset = datasets[0];
-                    datasetName = 'datasets[0] (fallback)';
                 }
                 
                 if (targetDataset) {
-                    console.log(`✓ Using dataset: ${datasetName}`);
+                    console.log(`Using dataset: ${datasetName}`);
                     console.log('Dataset structure:', targetDataset);
-                    console.log('Dataset keys:', Object.keys(targetDataset));
-                    console.log('Dataset.content:', targetDataset.content);
-                    console.log('Dataset as array:', Array.isArray(targetDataset));
-                    console.log('Dataset.length:', targetDataset.length);
                     
-                    // Extract data - handle multiple formats
-                    if (targetDataset.content && Array.isArray(targetDataset.content)) {
-                        rawData = targetDataset.content;
-                        console.log('✓ Using dataset.content (array)');
-                    } else if (Array.isArray(targetDataset)) {
-                        rawData = targetDataset;
-                        console.log('✓ Using dataset directly (array)');
-                    } else if (targetDataset.rows && Array.isArray(targetDataset.rows)) {
-                        rawData = targetDataset.rows;
-                        console.log('✓ Using dataset.rows (array)');
-                    } else if (targetDataset.data && Array.isArray(targetDataset.data)) {
-                        rawData = targetDataset.data;
-                        console.log('✓ Using dataset.data (array)');
-                    } else {
-                        rawData = [];
-                        console.warn('❌ Could not find array data in dataset');
-                        console.log('Available properties:', Object.keys(targetDataset));
-                    }
-                    
+                    // Extract data from the dataset - Mode stores data in the 'content' property
+                    rawData = targetDataset.content || targetDataset || [];
                     console.log('Mode data loaded:', rawData.length, 'rows');
+                    console.log('Dataset columns:', targetDataset.columns);
                     
+                    // Debug: Log first few rows
                     if (rawData.length > 0) {
                         console.log('First 3 rows:', rawData.slice(0, 3));
-                        console.log('Column names:', Object.keys(rawData[0] || {}));
-                    } else {
-                        console.warn('No data rows found in dataset');
-                        console.log('Dataset structure for debugging:', JSON.stringify(targetDataset, null, 2));
                     }
                     
                     processData();
                     updateChart();
                 } else {
-                    console.error('❌ No suitable dataset found');
+                    console.warn('No suitable dataset found');
                     console.log('Available dataset names:', Object.keys(datasets));
-                    console.log('Configured name:', configuredName);
                 }
             } else {
-                console.warn('❌ No datasets object found in Mode Analytics');
+                console.warn('No datasets object found in Mode Analytics');
             }
         } catch (error) {
-            console.error('❌ Error loading Mode data:', error);
-            console.error('Error stack:', error.stack);
+            console.error('Error loading Mode data:', error);
         }
     }
 
@@ -1153,6 +1069,59 @@
         forceLoad: () => {
             console.log('=== FORCING DATA RELOAD ===');
             loadModeData();
+        },
+        
+        // Search all datasets for spend categories data
+        findSpendCategoriesData: () => {
+            console.log('=== SEARCHING ALL DATASETS FOR SPEND CATEGORIES DATA ===');
+            if (typeof datasets === 'undefined') {
+                console.error('Datasets not available');
+                return;
+            }
+            
+            const expectedColumns = ['total', 'no_budget', 'overspend', 'spend_90_pct', 'spend_90_pct_less'];
+            let foundDatasets = [];
+            
+            Object.keys(datasets).forEach((key, index) => {
+                const dataset = datasets[key];
+                if (dataset && dataset.content && Array.isArray(dataset.content) && dataset.content.length > 0) {
+                    const availableColumns = Object.keys(dataset.content[0] || {});
+                    const hasExpectedColumns = expectedColumns.filter(col => availableColumns.includes(col));
+                    
+                    if (hasExpectedColumns.length > 0) {
+                        foundDatasets.push({
+                            index,
+                            queryName: dataset.queryName || 'unknown',
+                            state: dataset.state || 'unknown',
+                            rowCount: dataset.content.length,
+                            matchingColumns: hasExpectedColumns,
+                            allColumns: availableColumns,
+                            firstRow: dataset.content[0]
+                        });
+                        
+                        console.log(`🎯 Dataset ${index} contains spend categories data:`, {
+                            queryName: dataset.queryName,
+                            state: dataset.state,
+                            rows: dataset.content.length,
+                            matchingColumns: hasExpectedColumns,
+                            firstRow: dataset.content[0]
+                        });
+                    }
+                }
+            });
+            
+            if (foundDatasets.length === 0) {
+                console.warn('❌ No datasets found with spend categories columns');
+                console.log('Expected columns:', expectedColumns);
+            } else {
+                console.log(`✅ Found ${foundDatasets.length} dataset(s) with spend categories data`);
+                
+                // Find the best match (most matching columns)
+                const bestMatch = foundDatasets.sort((a, b) => b.matchingColumns.length - a.matchingColumns.length)[0];
+                console.log(`🏆 Best match is dataset ${bestMatch.index} with ${bestMatch.matchingColumns.length}/${expectedColumns.length} matching columns`);
+                
+                return foundDatasets;
+            }
         },
         
         // Test with specific dataset index
