@@ -323,9 +323,30 @@
                 if (targetDataset) {
                     console.log(`✓ Using dataset: ${datasetName}`);
                     console.log('Dataset structure:', targetDataset);
+                    console.log('Dataset keys:', Object.keys(targetDataset));
+                    console.log('Dataset.content:', targetDataset.content);
+                    console.log('Dataset as array:', Array.isArray(targetDataset));
+                    console.log('Dataset.length:', targetDataset.length);
                     
-                    // Extract data - handle both formats
-                    rawData = targetDataset.content || targetDataset || [];
+                    // Extract data - handle multiple formats
+                    if (targetDataset.content && Array.isArray(targetDataset.content)) {
+                        rawData = targetDataset.content;
+                        console.log('✓ Using dataset.content (array)');
+                    } else if (Array.isArray(targetDataset)) {
+                        rawData = targetDataset;
+                        console.log('✓ Using dataset directly (array)');
+                    } else if (targetDataset.rows && Array.isArray(targetDataset.rows)) {
+                        rawData = targetDataset.rows;
+                        console.log('✓ Using dataset.rows (array)');
+                    } else if (targetDataset.data && Array.isArray(targetDataset.data)) {
+                        rawData = targetDataset.data;
+                        console.log('✓ Using dataset.data (array)');
+                    } else {
+                        rawData = [];
+                        console.warn('❌ Could not find array data in dataset');
+                        console.log('Available properties:', Object.keys(targetDataset));
+                    }
+                    
                     console.log('Mode data loaded:', rawData.length, 'rows');
                     
                     if (rawData.length > 0) {
@@ -333,6 +354,7 @@
                         console.log('Column names:', Object.keys(rawData[0] || {}));
                     } else {
                         console.warn('No data rows found in dataset');
+                        console.log('Dataset structure for debugging:', JSON.stringify(targetDataset, null, 2));
                     }
                     
                     processData();
@@ -1104,12 +1126,40 @@
         testDataset: (index) => {
             console.log(`=== TESTING DATASET ${index} ===`);
             if (typeof datasets !== 'undefined' && datasets[index]) {
-                const testData = datasets[index].content || datasets[index] || [];
-                console.log('Test dataset structure:', datasets[index]);
+                const dataset = datasets[index];
+                console.log('Test dataset structure:', dataset);
+                console.log('Test dataset keys:', Object.keys(dataset));
+                console.log('Test dataset.content:', dataset.content);
+                console.log('Test dataset as array:', Array.isArray(dataset));
+                console.log('Test dataset.length:', dataset.length);
+                
+                // Try multiple extraction methods
+                let testData = [];
+                if (dataset.content && Array.isArray(dataset.content)) {
+                    testData = dataset.content;
+                    console.log('✓ Using dataset.content (array)');
+                } else if (Array.isArray(dataset)) {
+                    testData = dataset;
+                    console.log('✓ Using dataset directly (array)');
+                } else if (dataset.rows && Array.isArray(dataset.rows)) {
+                    testData = dataset.rows;
+                    console.log('✓ Using dataset.rows (array)');
+                } else if (dataset.data && Array.isArray(dataset.data)) {
+                    testData = dataset.data;
+                    console.log('✓ Using dataset.data (array)');
+                } else {
+                    console.warn('❌ Could not find array data in dataset');
+                    console.log('Available properties:', Object.keys(dataset));
+                    console.log('Full dataset structure:', JSON.stringify(dataset, null, 2));
+                    return;
+                }
+                
                 console.log('Test data length:', testData.length);
                 if (testData.length > 0) {
                     console.log('Test data first row:', testData[0]);
                     console.log('Test data columns:', Object.keys(testData[0] || {}));
+                } else {
+                    console.warn('Test data is empty');
                 }
                 
                 // Temporarily load this dataset
@@ -1118,6 +1168,11 @@
                 updateChart();
             } else {
                 console.error('Dataset not found at index:', index);
+                if (typeof datasets !== 'undefined') {
+                    console.log('Available datasets:', Object.keys(datasets));
+                } else {
+                    console.log('datasets object not available');
+                }
             }
         }
     };
