@@ -346,7 +346,7 @@
     }
 
     // =============================================================================
-    // FLEXIBLE DATA PROCESSING
+    // SIMPLE DATA PROCESSING (like budget chart)
     // =============================================================================
 
     function processData() {
@@ -357,39 +357,154 @@
             return;
         }
         
-        const { dataStructure, processing } = CHART_CONFIG;
+        console.log('Raw data type:', typeof rawData);
+        console.log('Raw data is array:', Array.isArray(rawData));
+        console.log('Raw data sample:', rawData.slice(0, 2));
         
-        // Step 1: Apply filters if any
-        let filteredData = rawData;
-        if (processing.filters && processing.filters.length > 0) {
-            filteredData = applyFilters(rawData, processing.filters);
-            console.log(`Applied ${processing.filters.length} filters. Rows: ${rawData.length} -> ${filteredData.length}`);
+        // Check what columns we have in the first row
+        if (rawData.length > 0) {
+            const firstRow = rawData[0];
+            const availableColumns = Object.keys(firstRow);
+            console.log('Available columns:', availableColumns);
+            
+            // Check if we have spend categories data or budget data
+            const hasSpendCategories = ['total', 'no_budget', 'overspend', 'spend_90_pct', 'spend_90_pct_less'].some(col => availableColumns.includes(col));
+            const hasBudgetData = ['budget', 'spend'].every(col => availableColumns.includes(col));
+            
+            if (hasSpendCategories) {
+                console.log('✅ Processing as spend categories data');
+                processSpendCategoriesData();
+            } else if (hasBudgetData) {
+                console.log('⚠️ Processing budget data with spend categories chart (fallback mode)');
+                processBudgetDataAsFallback();
+            } else {
+                console.error('❌ Unknown data structure:', availableColumns);
+                return;
+            }
+        }
+    }
+    
+    function processSpendCategoriesData() {
+        // Group data by day and aggregate
+        const dailyData = {};
+        
+        rawData.forEach((row, index) => {
+            const day = row.day;
+            if (!day) return;
+            
+            if (!dailyData[day]) {
+                dailyData[day] = {
+                    total: 0,
+                    no_budget: 0,
+                    overspend: 0,
+                    spend_90_pct: 0,
+                    spend_90_pct_less: 0,
+                    count: 0
+                };
+            }
+            
+            dailyData[day].total += parseInt(row.total || 0);
+            dailyData[day].no_budget += parseInt(row.no_budget || 0);
+            dailyData[day].overspend += parseInt(row.overspend || 0);
+            dailyData[day].spend_90_pct += parseInt(row.spend_90_pct || 0);
+            dailyData[day].spend_90_pct_less += parseInt(row.spend_90_pct_less || 0);
+            dailyData[day].count += 1;
+        });
+        
+        // Convert to arrays sorted by date
+        const sortedDays = Object.keys(dailyData).sort();
+        
+        // Filter by time range
+        const filteredDays = filterDaysByTimeRange(sortedDays);
+        
+        processedData = {
+            labels: filteredDays,
+            total: filteredDays.map(day => dailyData[day].total),
+            no_budget: filteredDays.map(day => dailyData[day].no_budget),
+            overspend: filteredDays.map(day => dailyData[day].overspend),
+            spend_90_pct: filteredDays.map(day => dailyData[day].spend_90_pct),
+            spend_90_pct_less: filteredDays.map(day => dailyData[day].spend_90_pct_less)
+        };
+        
+        console.log('Spend categories data processed:', processedData.labels.length, 'days');
+    }
+    
+    function processBudgetDataAsFallback() {
+        // Process budget data similar to budget chart but adapt for spend categories display
+        const dailyData = {};
+        
+        rawData.forEach((row, index) => {
+            const budget = parseFloat(row.budget || 0);
+            const spend = parseFloat(row.spend || 0);
+            const spend_pct = parseFloat(row["spend pct"] || 0);
+            
+            // Skip invalid rows
+            if (budget <= 0 || isNaN(spend_pct)) {
+                return;
+            }
+            
+            const day = row.day;
+            if (!dailyData[day]) {
+                dailyData[day] = {
+                    budget: 0,
+                    spend: 0,
+                    spend_pct_sum: 0,
+                    count: 0
+                };
+            }
+            
+            dailyData[day].budget += budget;
+            dailyData[day].spend += spend;
+            dailyData[day].spend_pct_sum += spend_pct;
+            dailyData[day].count += 1;
+        });
+        
+        // Convert to arrays sorted by date
+        const sortedDays = Object.keys(dailyData).sort();
+        
+        // Filter by time range
+        const filteredDays = filterDaysByTimeRange(sortedDays);
+        
+        // Adapt budget data to spend categories format
+        processedData = {
+            labels: filteredDays,
+            total: filteredDays.map(day => dailyData[day].count), // Use count as total
+            no_budget: filteredDays.map(() => 0), // No data for this
+            overspend: filteredDays.map(day => dailyData[day].spend_pct_sum / dailyData[day].count > 1 ? dailyData[day].count : 0),
+            spend_90_pct: filteredDays.map(day => {
+                const avgPct = dailyData[day].spend_pct_sum / dailyData[day].count;
+                return (avgPct >= 0.9 && avgPct <= 1.0) ? dailyData[day].count : 0;
+            }),
+            spend_90_pct_less: filteredDays.map(day => {
+                const avgPct = dailyData[day].spend_pct_sum / dailyData[day].count;
+                return avgPct < 0.9 ? dailyData[day].count : 0;
+            })
+        };
+        
+        console.log('Budget data adapted to spend categories format:', processedData.labels.length, 'days');
+    }
+    
+    function filterDaysByTimeRange(sortedDays) {
+        let daysToShow;
+        
+        switch (currentTimeRange) {
+            case '7D':
+                daysToShow = 7;
+                break;
+            case '30D':
+                daysToShow = 30;
+                break;
+            case '90D':
+                daysToShow = 90;
+                break;
+            case 'ALL':
+            default:
+                return sortedDays;
         }
         
-        // Step 2: Apply calculations if any
-        if (processing.calculations && processing.calculations.length > 0) {
-            filteredData = applyCalculations(filteredData, processing.calculations);
-            console.log(`Applied ${processing.calculations.length} calculations`);
-        }
-        
-        // Step 3: Aggregate data by date and optional groupBy columns
-        let aggregatedData;
-        if (processing.aggregation && processing.aggregation.enabled) {
-            aggregatedData = aggregateData(filteredData, dataStructure, processing.aggregation.method);
-            console.log(`Aggregated data by ${processing.aggregation.method}. Unique dates: ${Object.keys(aggregatedData).length}`);
-        } else {
-            // No aggregation - format data directly
-            aggregatedData = formatDataWithoutAggregation(filteredData, dataStructure);
-            console.log(`No aggregation applied. Rows: ${Object.keys(aggregatedData).length}`);
-        }
-        
-        // Step 4: Filter by time range
-        const timeFilteredData = filterByTimeRange(aggregatedData, currentTimeRange);
-        console.log(`Applied time filter (${currentTimeRange}). Dates: ${Object.keys(timeFilteredData).length}`);
-        
-        // Step 5: Format for Chart.js
-        processedData = formatForChart(timeFilteredData, CHART_CONFIG.metrics);
-        console.log('Data processing complete. Chart data points:', processedData.labels?.length || 0);
+        // Take the last N days of available data
+        const startIndex = Math.max(0, sortedDays.length - daysToShow);
+        return sortedDays.slice(startIndex);
     }
 
     // Helper function to apply filters
@@ -801,10 +916,14 @@
     function updateChart() {
         if (!chart) return;
         
-        const filteredData = processedData;
-        const datasets = createDatasets(filteredData);
+        if (!processedData || !processedData.labels) {
+            console.warn('No processed data available for chart update');
+            return;
+        }
         
-        chart.data.labels = filteredData.labels;
+        const datasets = createDatasets();
+        
+        chart.data.labels = processedData.labels;
         chart.data.datasets = datasets;
         
         // Show/hide y-axis based on visible metrics
@@ -812,54 +931,31 @@
         chart.options.scales.y.display = hasVisibleMetrics;
         
         chart.update('active');
+        
+        console.log('Chart updated with', processedData.labels.length, 'data points');
     }
 
-    function createDatasets(data) {
-        if (!data || !data.metricData) return [];
-        
+    function createDatasets() {
         const datasets = [];
-        const chartType = CHART_TYPES[CHART_CONFIG.chartType] || CHART_TYPES.line;
         
         CHART_CONFIG.metrics.forEach(metric => {
             if (!metric.visible) return;
             
-            const metricData = data.metricData[metric.id] || [];
-            
-            // Determine metric type based on chart type
-            let displayType = metric.type || chartType.defaultMetricType;
-            if (!chartType.allowMixedTypes) {
-                displayType = chartType.defaultMetricType;
-            }
-            
-            // Determine y-axis
-            let yAxisID = 'y'; // Default to primary axis
-            const valueColumn = CHART_CONFIG.dataStructure.valueColumns[metric.dataKey];
-            if (valueColumn) {
-                if (valueColumn.type === 'percentage') {
-                    yAxisID = 'y1'; // Secondary axis for percentages
-                    chart.options.scales.y1.display = true;
-                }
-            }
+            // Get data for this metric from processedData
+            const metricData = processedData[metric.dataKey] || [];
             
             const dataset = {
                 label: metric.name,
                 data: metricData,
                 borderColor: metric.color,
-                backgroundColor: displayType === 'line' ? 
-                    (chartType.fillArea ? metric.backgroundColor : 'transparent') : 
-                    metric.backgroundColor,
-                borderWidth: displayType === 'line' ? 2 : 1,
-                type: displayType,
-                yAxisID: yAxisID,
+                backgroundColor: metric.backgroundColor,
+                borderWidth: 2,
+                type: metric.type,
+                yAxisID: 'y',
                 order: metric.order || 0,
-                fill: chartType.fillArea && displayType === 'line',
+                fill: false,
                 tension: 0.1
             };
-            
-            // Handle stacked bars
-            if (chartType.stackBars && displayType === 'bar') {
-                dataset.stack = 'stack1';
-            }
             
             datasets.push(dataset);
         });
