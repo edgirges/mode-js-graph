@@ -284,13 +284,39 @@
                     datasetName = targetQueryName;
                 } else {
                     console.warn('Target query not found, available queries:', Object.keys(datasets));
-                    // Fallback to index 1 as specified
-                    if (datasets[1]) {
-                        console.log('Fallback: Using datasets[1]');
+                    
+                    // Try multiple fallback strategies like the budget chart
+                    let found = false;
+                    
+                    // Strategy 1: Try index 1 but check if it has data and didn't fail
+                    if (datasets[1] && datasets[1].state !== 'failed' && datasets[1].content && datasets[1].content.length > 0) {
+                        console.log('Fallback: Using datasets[1] (has data)');
                         targetDataset = datasets[1];
                         datasetName = 'datasets[1] (fallback)';
-                    } else {
-                        console.error('No datasets available at index 1');
+                        found = true;
+                    } else if (datasets[1]) {
+                        console.warn('datasets[1] exists but failed or has no data. State:', datasets[1].state, 'Rows:', datasets[1].content ? datasets[1].content.length : 'no content');
+                    }
+                    
+                    // Strategy 2: Search for any working dataset with data
+                    if (!found) {
+                        console.log('Searching for any working dataset with data...');
+                        for (let i = 0; i < Object.keys(datasets).length; i++) {
+                            const dataset = datasets[i];
+                            if (dataset && dataset.state !== 'failed' && dataset.content && dataset.content.length > 0) {
+                                console.log(`Found working dataset at index ${i} with ${dataset.content.length} rows`);
+                                console.log('Query name:', dataset.queryName || 'unknown');
+                                console.log('Sample row:', dataset.content[0]);
+                                targetDataset = dataset;
+                                datasetName = `datasets[${i}] (working fallback)`;
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!found) {
+                        console.error('No working datasets found with data');
                     }
                 }
                 
