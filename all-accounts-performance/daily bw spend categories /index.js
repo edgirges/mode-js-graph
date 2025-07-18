@@ -359,33 +359,40 @@
         
         console.log('Raw data type:', typeof rawData);
         console.log('Raw data is array:', Array.isArray(rawData));
-        console.log('Raw data sample:', rawData.slice(0, 2));
+        console.log('Raw data sample:', rawData.slice(0, 5));
         
         // Check what columns we have in the first row
         if (rawData.length > 0) {
             const firstRow = rawData[0];
             const availableColumns = Object.keys(firstRow);
             console.log('Available columns:', availableColumns);
+            console.log('First few rows with column names:', rawData.slice(0, 3));
             
-            // Check if we have spend categories data or budget data
-            const hasSpendCategories = ['total', 'no_budget', 'overspend', 'spend_90_pct', 'spend_90_pct_less'].some(col => availableColumns.includes(col));
+            // Check if we have spend categories data in different formats
+            const hasSpendCategoriesWide = ['total', 'no_budget', 'overspend', 'spend_90_pct', 'spend_90_pct_less'].some(col => availableColumns.includes(col));
+            const hasSpendCategoriesLong = availableColumns.includes('Measure Names') && availableColumns.includes('Measure Values');
             const hasBudgetData = ['budget', 'spend'].every(col => availableColumns.includes(col));
             
-            if (hasSpendCategories) {
-                console.log('✅ Processing as spend categories data');
+            if (hasSpendCategoriesWide) {
+                console.log('✅ Processing as spend categories data (wide format)');
                 processSpendCategoriesData();
+            } else if (hasSpendCategoriesLong) {
+                console.log('✅ Processing as spend categories data (long format - Mode pivot)');
+                processSpendCategoriesLongFormat();
             } else if (hasBudgetData) {
                 console.log('⚠️ Processing budget data with spend categories chart (fallback mode)');
                 processBudgetDataAsFallback();
             } else {
                 console.error('❌ Unknown data structure:', availableColumns);
+                console.log('Available columns:', availableColumns);
+                console.log('Sample rows:', rawData.slice(0, 3));
                 return;
             }
         }
     }
     
     function processSpendCategoriesData() {
-        // Group data by day and aggregate
+        // Group data by day and aggregate (wide format)
         const dailyData = {};
         
         rawData.forEach((row, index) => {
@@ -426,7 +433,85 @@
             spend_90_pct_less: filteredDays.map(day => dailyData[day].spend_90_pct_less)
         };
         
-        console.log('Spend categories data processed:', processedData.labels.length, 'days');
+        console.log('Spend categories data processed (wide format):', processedData.labels.length, 'days');
+    }
+    
+    function processSpendCategoriesLongFormat() {
+        // Handle long format data (Mode pivot table style)
+        const dailyData = {};
+        
+        console.log('Processing long format data. Sample rows:', rawData.slice(0, 10));
+        
+        rawData.forEach((row, index) => {
+            // Handle different possible date column names
+            const day = row['DAY(day)'] || row.day || row['Day'] || row.date;
+            const measureName = row['Measure Names'] || row.measure_names;
+            const measureValue = parseInt(row['Measure Values'] || row.measure_values || 0);
+            
+            if (!day || !measureName) {
+                if (index < 5) console.log(`Skipping row ${index}: missing day or measure name`, { day, measureName });
+                return;
+            }
+            
+            // Extract just the date part if it's a full datetime
+            const dayKey = day.includes(' ') ? day.split(' ')[0] : day;
+            
+            if (!dailyData[dayKey]) {
+                dailyData[dayKey] = {
+                    total: 0,
+                    no_budget: 0,
+                    overspend: 0,
+                    spend_90_pct: 0,
+                    spend_90_pct_less: 0
+                };
+            }
+            
+            // Map measure names to our expected format
+            switch (measureName) {
+                case 'total':
+                    dailyData[dayKey].total = measureValue;
+                    break;
+                case 'no_budget':
+                    dailyData[dayKey].no_budget = measureValue;
+                    break;
+                case 'overspend':
+                    dailyData[dayKey].overspend = measureValue;
+                    break;
+                case 'spend_90_pct':
+                    dailyData[dayKey].spend_90_pct = measureValue;
+                    break;
+                case 'spend_90_pct_less':
+                    dailyData[dayKey].spend_90_pct_less = measureValue;
+                    break;
+                default:
+                    if (index < 5) console.log(`Unknown measure name: ${measureName}`);
+            }
+        });
+        
+        console.log('Processed daily data:', Object.keys(dailyData).length, 'days');
+        console.log('Sample daily data:', Object.keys(dailyData).slice(0, 3).map(day => ({ day, data: dailyData[day] })));
+        
+        // Convert to arrays sorted by date
+        const sortedDays = Object.keys(dailyData).sort();
+        
+        // Filter by time range
+        const filteredDays = filterDaysByTimeRange(sortedDays);
+        
+        processedData = {
+            labels: filteredDays,
+            total: filteredDays.map(day => dailyData[day].total),
+            no_budget: filteredDays.map(day => dailyData[day].no_budget),
+            overspend: filteredDays.map(day => dailyData[day].overspend),
+            spend_90_pct: filteredDays.map(day => dailyData[day].spend_90_pct),
+            spend_90_pct_less: filteredDays.map(day => dailyData[day].spend_90_pct_less)
+        };
+        
+        console.log('Spend categories data processed (long format):', processedData.labels.length, 'days');
+        console.log('Sample processed data:', {
+            labels: processedData.labels.slice(0, 3),
+            total: processedData.total.slice(0, 3),
+            overspend: processedData.overspend.slice(0, 3)
+        });
     }
     
     function processBudgetDataAsFallback() {
