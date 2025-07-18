@@ -717,10 +717,15 @@ function switchTimeRange(timeRange) {
     currentTimeRange = timeRange;
     
     // Update active button - scope to this chart's container only
-    document.querySelectorAll('.budget-spend-controls .control-btn').forEach(btn => {
+    const controlButtons = document.querySelectorAll('.budget-spend-controls .control-btn');
+    controlButtons.forEach(btn => {
         btn.classList.remove('active');
+        // Add active class to the button that matches the timeRange
+        if (btn.textContent.trim() === timeRange || 
+            (timeRange === 'ALL' && btn.textContent.trim() === 'All')) {
+            btn.classList.add('active');
+        }
     });
-    event.target.classList.add('active');
     
     updateChart();
 }
@@ -758,17 +763,21 @@ function resetZoom() {
     }
     
     // Reset zoom button state - scope to this chart's container only
-    const zoomBtn = document.querySelector('.budget-spend-controls .control-btn[onclick*="toggleZoom"]');
-    if (zoomBtn && zoomBtn.textContent.includes('Zoom')) {
-        zoomBtn.classList.remove('active');
-        zoomBtn.textContent = 'Zoom';
-        isZoomEnabled = false;
-        
-        if (chart.options.plugins.zoom) {
-            chart.options.plugins.zoom.zoom.wheel.enabled = false;
-            chart.options.plugins.zoom.zoom.pinch.enabled = false;
+    const controlButtons = document.querySelectorAll('.budget-spend-controls .control-btn');
+    controlButtons.forEach(btn => {
+        if (btn.textContent.includes('Zoom')) {
+            btn.classList.remove('active');
+            btn.textContent = 'Zoom';
+            isZoomEnabled = false;
+            
+            if (chart.options.plugins.zoom) {
+                chart.options.plugins.zoom.zoom.wheel.enabled = false;
+                chart.options.plugins.zoom.zoom.pinch.enabled = false;
+            }
         }
-        
+    });
+    
+    if (chart) {
         chart.update('none');
     }
 }
