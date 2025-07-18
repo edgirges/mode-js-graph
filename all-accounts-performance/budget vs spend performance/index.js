@@ -63,8 +63,8 @@ function attemptInitialization() {
     initAttempts++;
     
     const canvas = document.getElementById('budgetSpendChart');
-    const togglesContainer = document.querySelector('.metric-toggles');
-    const metricsContainer = document.querySelector('.metric-controls');
+    const togglesContainer = document.querySelector('.budget-spend-toggles');
+    const metricsContainer = document.querySelector('.budget-spend-metrics');
     
     if (canvas && togglesContainer && typeof Chart !== 'undefined') {
         if (!chart) {
@@ -597,8 +597,8 @@ function updateChart() {
 
 // Create metric toggle controls
 function createMetricToggles() {
-    const togglesContainer = document.querySelector('.metric-toggles');
-    const metricsContainer = document.querySelector('.metric-controls');
+    const togglesContainer = document.querySelector('.budget-spend-toggles');
+    const metricsContainer = document.querySelector('.budget-spend-metrics');
     
     if (!togglesContainer) {
         return;
@@ -607,7 +607,7 @@ function createMetricToggles() {
     togglesContainer.innerHTML = '';
     
     // Add select/deselect all buttons
-    const metricsHeader = document.querySelector('.metric-controls-title');
+    const metricsHeader = document.querySelector('.budget-spend-metrics-title');
     if (metricsHeader && !document.getElementById('select-all-btn')) {
         const selectAllBtn = document.createElement('button');
         selectAllBtn.id = 'select-all-btn';

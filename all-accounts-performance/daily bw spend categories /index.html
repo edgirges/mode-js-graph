@@ -1,0 +1,90 @@
+<script>
+    //add stylesheet
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://edgirges.github.io/mode-js-graph/styles.css?v=' + new Date().getTime();
+    document.head.appendChild(link);
+</script>
+
+<body>
+<div class="chart-container">
+    <div class="chart-header">
+        <h2 class="chart-title">Daily BW Spend Categories</h2>
+        <div class="chart-controls">
+            <button class="control-btn" onclick="switchTimeRange('7D')">7D</button>
+            <button class="control-btn" onclick="switchTimeRange('30D')">30D</button>
+            <button class="control-btn active" onclick="switchTimeRange('90D')">90D</button>
+            <button class="control-btn" onclick="switchTimeRange('ALL')">All</button>
+            <button class="control-btn" onclick="toggleZoom()">Zoom</button>
+            <button class="control-btn" onclick="resetZoom()">Reset</button>
+        </div>
+    </div>
+    <div class="chart-canvas">
+        <canvas id="budgetSpendChart"></canvas>
+    </div>
+    <div class="metric-controls">
+        <h3 class="metric-controls-title">Metrics</h3>
+        <div class="metric-toggles">
+            <!-- Metric toggles will be dynamically generated -->
+        </div>
+    </div>
+</div>
+
+<!-- External JavaScript Libraries -->
+<!-- Chart.js - Main charting library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+
+<!-- Chart.js Date adapter for time series -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+<!-- Chart.js Zoom Plugin for interactivity -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+<!-- Chart.js Annotation Plugin for markers -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+
+<!-- Reusable Chart System JavaScript -->
+<script>
+    const script2 = document.createElement('script');
+    script2.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/daily%20bw%20spend%20categories%20/index.js?v=' + new Date().getTime();
+    document.head.appendChild(script2);
+</script>
+
+<!-- Configuration Override for Different Chart Types (Optional) -->
+<script>
+    // Optional: Override chart configuration after the main script loads
+    // Uncomment and modify any of these to customize the chart:
+    
+    /*
+    window.addEventListener('load', function() {
+        // Wait for ReusableChart to be available
+        setTimeout(() => {
+            if (window.ReusableChart) {
+                // Example: Change to line chart
+                // ReusableChart.setChartType('line');
+                
+                // Example: Enable trend lines
+                // ReusableChart.updateConfig({
+                //     trendLines: {
+                //         enabled: true,
+                //         metrics: ['spend'],
+                //         color: '#ff6b6b',
+                //         style: 'dashed'
+                //     }
+                // });
+                
+                // Example: Change dataset name for different SQL query
+                // ReusableChart.updateConfig({
+                //     modeDatasetName: 'Your Different Query Name',
+                //     columnMapping: {
+                //         dateColumn: 'your_date_column',
+                //         primaryMetric: 'your_metric'
+                //     }
+                // });
+            }
+        }, 1000);
+    });
+    */
+</script>
+
+</body>

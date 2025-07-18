@@ -7,30 +7,85 @@
 </script>
 
 <body>
-<div class="chart-container">
-    <div class="chart-header">
-        <h2 class="chart-title">Custom Interactive Chart</h2>
-        <div class="chart-controls">
-            <button class="control-btn active" onclick="switchTimeRange('1D')">1D</button>
-            <button class="control-btn" onclick="switchTimeRange('7D')">7D</button>
-            <button class="control-btn" onclick="switchTimeRange('30D')">30D</button>
-            <button class="control-btn" onclick="switchTimeRange('90D')">90D</button>
-            <button class="control-btn" onclick="toggleZoom()">Zoom</button>
-            <button class="control-btn" onclick="resetZoom()">Reset</button>
+<!-- =============================================================================
+     MULTIPLE CHARTS IN SINGLE MODE REPORT
+     =============================================================================
+     Each chart has unique IDs and classes to prevent conflicts.
+     Add new charts by copying the chart container pattern below.
+     ============================================================================= -->
+
+<!-- Chart 1: Budget vs Spend Performance -->
+<div class="chart-container budget-spend-container">
+    <div class="chart-header budget-spend-header">
+        <h2 class="chart-title budget-spend-title">Budget vs Spend Performance</h2>
+        <div class="chart-controls budget-spend-controls">
+            <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('7D')">7D</button>
+            <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('30D')">30D</button>
+            <button class="control-btn active" onclick="BudgetSpendChart.switchTimeRange('90D')">90D</button>
+            <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('ALL')">All</button>
+            <button class="control-btn" onclick="BudgetSpendChart.toggleZoom()">Zoom</button>
+            <button class="control-btn" onclick="BudgetSpendChart.resetZoom()">Reset</button>
         </div>
     </div>
-    <div class="chart-canvas">
-        <canvas id="customChart"></canvas>
+    <div class="chart-canvas budget-spend-canvas">
+        <canvas id="budgetSpendChart"></canvas>
     </div>
-    <div class="metric-controls">
-        <h3 class="metric-controls-title">Metrics</h3>
-        <div class="metric-toggles">
-            <!-- Metric toggles will be dynamically generated -->
+    <div class="metric-controls budget-spend-metrics">
+        <h3 class="metric-controls-title budget-spend-metrics-title">Metrics</h3>
+        <div class="metric-toggles budget-spend-toggles">
+            <!-- Budget vs Spend metric toggles will be dynamically generated -->
         </div>
     </div>
 </div>
 
-<!-- External JavaScript Libraries -->
+<!-- Chart 2: Daily BW Spend Categories -->
+<div class="chart-container spend-categories-container">
+    <div class="chart-header spend-categories-header">
+        <h2 class="chart-title spend-categories-title">Daily BW Spend Categories</h2>
+        <div class="chart-controls spend-categories-controls">
+            <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('7D')">7D</button>
+            <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('30D')">30D</button>
+            <button class="control-btn active" onclick="SpendCategoriesChart.switchTimeRange('90D')">90D</button>
+            <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('ALL')">All</button>
+            <button class="control-btn" onclick="SpendCategoriesChart.toggleZoom()">Zoom</button>
+            <button class="control-btn" onclick="SpendCategoriesChart.resetZoom()">Reset</button>
+        </div>
+    </div>
+    <div class="chart-canvas spend-categories-canvas">
+        <canvas id="spendCategoriesChart"></canvas>
+    </div>
+    <div class="metric-controls spend-categories-metrics">
+        <h3 class="metric-controls-title spend-categories-metrics-title">Metrics</h3>
+        <div class="metric-toggles spend-categories-toggles">
+            <!-- Spend Categories metric toggles will be dynamically generated -->
+        </div>
+    </div>
+</div>
+
+<!-- =============================================================================
+     ADD FUTURE CHARTS HERE FOLLOWING THE SAME PATTERN:
+     
+     <div class="chart-container your-chart-container">
+         <div class="chart-header your-chart-header">
+             <h2 class="chart-title your-chart-title">Your Chart Name</h2>
+             <div class="chart-controls your-chart-controls">
+                 <button onclick="YourChart.switchTimeRange('7D')">7D</button>
+                 <!-- ... more buttons ... -->
+             </div>
+         </div>
+         <div class="chart-canvas your-chart-canvas">
+             <canvas id="yourChart"></canvas>
+         </div>
+         <div class="metric-controls your-chart-metrics">
+             <h3 class="metric-controls-title your-chart-metrics-title">Metrics</h3>
+             <div class="metric-toggles your-chart-toggles">
+                 <!-- Your chart toggles will be dynamically generated -->
+             </div>
+         </div>
+     </div>
+     ============================================================================= -->
+
+<!-- External JavaScript Libraries (loaded once for all charts) -->
 <!-- Chart.js - Main charting library -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
 
@@ -43,21 +98,38 @@
 <!-- Chart.js Annotation Plugin for markers -->
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
 
-<!-- Custom JavaScript -->
+<!-- Chart-specific JavaScript files -->
+<!-- Budget vs Spend Performance Chart -->
 <script>
-    const script = document.createElement('script');
-    script.src = 'https://edgirges.github.io/mode-js-graph/index.js?v=' + new Date().getTime();
-    document.head.appendChild(script);
+    const budgetSpendScript = document.createElement('script');
+    budgetSpendScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/budget%20vs%20spend%20performance/index.js?v=' + new Date().getTime();
+    budgetSpendScript.onload = function() {
+        console.log('Budget vs Spend chart script loaded');
+    };
+    document.head.appendChild(budgetSpendScript);
 </script>
 
-<!-- For Mode Analytics: Replace the above line with your GitHub raw URL -->
-<!-- <script src="https://raw.githubusercontent.com/yourusername/your-repo/main/index.js"></script> -->
+<!-- Daily BW Spend Categories Chart -->
+<script>
+    const spendCategoriesScript = document.createElement('script');
+    spendCategoriesScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/daily%20bw%20spend%20categories%20/index.js?v=' + new Date().getTime();
+    spendCategoriesScript.onload = function() {
+        console.log('Spend Categories chart script loaded');
+    };
+    document.head.appendChild(spendCategoriesScript);
+</script>
+
+<!-- =============================================================================
+     ADD FUTURE CHART SCRIPTS HERE:
+     
+     <script>
+         const yourChartScript = document.createElement('script');
+         yourChartScript.src = 'https://edgirges.github.io/mode-js-graph/path/to/your/chart/index.js?v=' + new Date().getTime();
+         yourChartScript.onload = function() {
+             console.log('Your chart script loaded');
+         };
+         document.head.appendChild(yourChartScript);
+     </script>
+     ============================================================================= -->
+
 </body>
-
-
-<h1>JS Graph</h1>
-<div class="mode-grid container">
-<div class="row">
-<div class="col-md-12"><mode-chart id="chart_3e417e5e98d6" dataset="dataset" options="chart_options"></mode-chart></div>
-</div>
-</div>
