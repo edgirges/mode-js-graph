@@ -270,15 +270,35 @@
                 console.log('Available datasets:', Object.keys(datasets));
                 console.log('Total datasets count:', Object.keys(datasets).length);
                 
-                // Enhanced debugging - show all datasets structure
+                // Enhanced debugging - show all datasets structure and look for our query
+                const targetQueryName = 'Daily BW Budget vs Spend Ratio Count';
+                let foundWorkingDataset = null;
+                
                 Object.keys(datasets).forEach((key, index) => {
+                    const dataset = datasets[key];
+                    const hasContent = !!(dataset && dataset.content && dataset.content.length > 0);
+                    const queryName = dataset ? dataset.queryName : 'unknown';
+                    const state = dataset ? dataset.state : 'unknown';
+                    
                     console.log(`Dataset ${index} (key: "${key}"):`, {
-                        hasContent: !!(datasets[key] && datasets[key].content),
-                        isArray: Array.isArray(datasets[key]),
-                        length: datasets[key] ? (datasets[key].content ? datasets[key].content.length : datasets[key].length) : 'no length',
-                        firstRow: datasets[key] ? (datasets[key].content ? datasets[key].content[0] : datasets[key][0]) : 'no data'
+                        hasContent: hasContent,
+                        isArray: Array.isArray(dataset),
+                        length: dataset ? (dataset.content ? dataset.content.length : dataset.length) : 'no length',
+                        firstRow: dataset ? (dataset.content ? dataset.content[0] : dataset[0]) : 'no data',
+                        queryName: queryName,
+                        state: state
                     });
+                    
+                    // Look for working datasets with similar names
+                    if (hasContent && queryName && queryName.includes(targetQueryName)) {
+                        console.log(`🎯 Found working dataset with similar name at index ${index}: "${queryName}"`);
+                        foundWorkingDataset = { index, dataset, queryName };
+                    }
                 });
+                
+                if (foundWorkingDataset) {
+                    console.log(`🎯 Recommending dataset ${foundWorkingDataset.index} instead of dataset 1`);
+                }
                 
                 let targetDataset = null;
                 let datasetName = null;
@@ -295,9 +315,22 @@
                 
                 // Strategy 2: Try index 1 (as specified by user)
                 if (!targetDataset && datasets[1]) {
-                    console.log('✓ Using datasets[1] as specified by user');
-                    targetDataset = datasets[1];
-                    datasetName = 'datasets[1] (user specified)';
+                    // Check if dataset[1] actually has data and didn't fail
+                    if (datasets[1].state === 'failed' || (datasets[1].content && datasets[1].content.length === 0)) {
+                        console.warn('⚠️ Dataset[1] is specified but failed or empty. State:', datasets[1].state);
+                        console.log('Dataset[1] query name:', datasets[1].queryName);
+                        
+                        // Try to find a working dataset with similar name
+                        if (foundWorkingDataset) {
+                            console.log(`✓ Using working alternative: datasets[${foundWorkingDataset.index}]`);
+                            targetDataset = foundWorkingDataset.dataset;
+                            datasetName = `datasets[${foundWorkingDataset.index}] (working alternative)`;
+                        }
+                    } else {
+                        console.log('✓ Using datasets[1] as specified by user');
+                        targetDataset = datasets[1];
+                        datasetName = 'datasets[1] (user specified)';
+                    }
                 }
                 
                 // Strategy 3: Try partial match on the SQL file name
