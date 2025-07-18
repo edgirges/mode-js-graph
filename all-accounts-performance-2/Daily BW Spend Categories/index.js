@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const rawData = datasets["name-of-query"]; // Change to actual Mode query name
+    const rawData = datasets["Daily BW Budget vs Spend Ratio Count (channel filter does not apply)"]; // Change to actual Mode query name
   
     const parsed = rawData.map(row => ({
       date: new Date(row.day),
