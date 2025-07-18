@@ -337,41 +337,92 @@ setTimeout(attemptInitialization, 200);
 // =============================================================================
 
 function loadModeData() {
-    console.log('Loading data from Mode Analytics...');
+    console.log('=== SPEND CATEGORIES CHART: Loading data from Mode Analytics ===');
     
     try {
         if (typeof datasets !== 'undefined') {
             console.log('Found datasets object');
             console.log('Available datasets:', Object.keys(datasets));
+            console.log('Total datasets count:', Object.keys(datasets).length);
+            
+            // Enhanced debugging - show all datasets structure
+            Object.keys(datasets).forEach((key, index) => {
+                console.log(`Dataset ${index} (key: "${key}"):`, {
+                    hasContent: !!(datasets[key] && datasets[key].content),
+                    isArray: Array.isArray(datasets[key]),
+                    length: datasets[key] ? (datasets[key].content ? datasets[key].content.length : datasets[key].length) : 'no length',
+                    firstRow: datasets[key] ? (datasets[key].content ? datasets[key].content[0] : datasets[key][0]) : 'no data'
+                });
+            });
             
             let targetDataset = null;
             let datasetName = null;
             
-            // Try to find the configured dataset
-            if (datasets[CHART_CONFIG.modeDatasetName]) {
-                console.log('Found target query dataset:', CHART_CONFIG.modeDatasetName);
-                targetDataset = datasets[CHART_CONFIG.modeDatasetName];
-                datasetName = CHART_CONFIG.modeDatasetName;
-            } else if (CHART_CONFIG.fallbackToFirstDataset && datasets[0]) {
-                console.log('Fallback: Using datasets[0]');
+            // Strategy 1: Try exact match with configured name
+            const configuredName = CHART_CONFIG.modeDatasetName;
+            console.log('Looking for exact match:', configuredName);
+            
+            if (datasets[configuredName]) {
+                console.log('✓ Found exact match for configured dataset name');
+                targetDataset = datasets[configuredName];
+                datasetName = configuredName;
+            }
+            
+            // Strategy 2: Try index 1 (as specified by user)
+            if (!targetDataset && datasets[1]) {
+                console.log('✓ Using datasets[1] as specified by user');
+                targetDataset = datasets[1];
+                datasetName = 'datasets[1] (user specified)';
+            }
+            
+            // Strategy 3: Try partial match on the SQL file name
+            if (!targetDataset) {
+                const sqlFileName = 'Daily BW Budget vs Spend Ratio Count';
+                for (const [key, value] of Object.entries(datasets)) {
+                    if (key.includes(sqlFileName)) {
+                        console.log('✓ Found partial match:', key);
+                        targetDataset = value;
+                        datasetName = key;
+                        break;
+                    }
+                }
+            }
+            
+            // Strategy 4: Fallback to first dataset
+            if (!targetDataset && CHART_CONFIG.fallbackToFirstDataset && datasets[0]) {
+                console.log('⚠ Fallback: Using datasets[0]');
                 targetDataset = datasets[0];
                 datasetName = 'datasets[0] (fallback)';
             }
             
             if (targetDataset) {
-                console.log(`Using dataset: ${datasetName}`);
+                console.log(`✓ Using dataset: ${datasetName}`);
+                console.log('Dataset structure:', targetDataset);
+                
+                // Extract data - handle both formats
                 rawData = targetDataset.content || targetDataset || [];
                 console.log('Mode data loaded:', rawData.length, 'rows');
+                
+                if (rawData.length > 0) {
+                    console.log('First 3 rows:', rawData.slice(0, 3));
+                    console.log('Column names:', Object.keys(rawData[0] || {}));
+                } else {
+                    console.warn('No data rows found in dataset');
+                }
                 
                 processData();
                 updateChart();
             } else {
-                console.warn('No suitable dataset found');
+                console.error('❌ No suitable dataset found');
                 console.log('Available dataset names:', Object.keys(datasets));
+                console.log('Configured name:', configuredName);
             }
+        } else {
+            console.warn('❌ No datasets object found in Mode Analytics');
         }
     } catch (error) {
-        console.error('Error loading Mode data:', error);
+        console.error('❌ Error loading Mode data:', error);
+        console.error('Error stack:', error.stack);
     }
 }
 
@@ -1303,12 +1354,62 @@ window.SpendCategoriesChart = {
     },
     
     debug: () => {
-        console.log('=== REUSABLE CHART DEBUG ===');
+        console.log('=== SPEND CATEGORIES CHART DEBUG ===');
         console.log('Chart Config:', CHART_CONFIG);
         console.log('Chart exists:', !!chart);
+        console.log('Canvas exists:', !!document.getElementById('spendCategoriesChart'));
+        console.log('Datasets available:', typeof datasets !== 'undefined');
+        
+        if (typeof datasets !== 'undefined') {
+            console.log('Datasets object:', datasets);
+            console.log('Available dataset names:', Object.keys(datasets));
+            console.log('Dataset count:', Object.keys(datasets).length);
+            
+            // Show each dataset structure
+            Object.keys(datasets).forEach((name, index) => {
+                console.log(`Dataset ${index} "${name}":`, datasets[name]);
+                if (datasets[name] && datasets[name].length > 0) {
+                    console.log(`First row of "${name}":`, datasets[name][0]);
+                } else if (datasets[name] && datasets[name].content && datasets[name].content.length > 0) {
+                    console.log(`First row of "${name}" (content):`, datasets[name].content[0]);
+                }
+            });
+        }
+        
         console.log('Raw data length:', rawData.length);
+        if (rawData.length > 0) {
+            console.log('First few raw data rows:', rawData.slice(0, 3));
+        }
         console.log('Processed data:', processedData);
         console.log('Current time range:', currentTimeRange);
+        console.log('Toggle container exists:', !!document.querySelector('.spend-categories-toggles'));
+    },
+    
+    // Force reload data
+    forceLoad: () => {
+        console.log('=== FORCING DATA RELOAD ===');
+        loadModeData();
+    },
+    
+    // Test with specific dataset index
+    testDataset: (index) => {
+        console.log(`=== TESTING DATASET ${index} ===`);
+        if (typeof datasets !== 'undefined' && datasets[index]) {
+            const testData = datasets[index].content || datasets[index] || [];
+            console.log('Test dataset structure:', datasets[index]);
+            console.log('Test data length:', testData.length);
+            if (testData.length > 0) {
+                console.log('Test data first row:', testData[0]);
+                console.log('Test data columns:', Object.keys(testData[0] || {}));
+            }
+            
+            // Temporarily load this dataset
+            rawData = testData;
+            processData();
+            updateChart();
+        } else {
+            console.error('Dataset not found at index:', index);
+        }
     }
 };
 
