@@ -1188,8 +1188,8 @@ function deselectAllMetrics() {
 function switchTimeRange(timeRange) {
     currentTimeRange = timeRange;
     
-    // Update active button
-    document.querySelectorAll('.control-btn').forEach(btn => {
+    // Update active button - scope to this chart's container only
+    document.querySelectorAll('.spend-categories-controls .control-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     event.target.classList.add('active');
@@ -1229,8 +1229,8 @@ function resetZoom() {
         chart.resetZoom();
     }
     
-    // Reset zoom button state
-    const zoomBtn = document.querySelector('.control-btn');
+    // Reset zoom button state - scope to this chart's container only
+    const zoomBtn = document.querySelector('.spend-categories-controls .control-btn[onclick*="toggleZoom"]');
     if (zoomBtn && zoomBtn.textContent.includes('Zoom')) {
         zoomBtn.classList.remove('active');
         zoomBtn.textContent = 'Zoom';

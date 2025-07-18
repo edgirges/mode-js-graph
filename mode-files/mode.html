@@ -1,135 +1,206 @@
-<script>
-    //add stylesheet
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://edgirges.github.io/mode-js-graph/styles.css?v=' + new Date().getTime();
-    document.head.appendChild(link);
-</script>
-
-<body>
-<!-- =============================================================================
-     MULTIPLE CHARTS IN SINGLE MODE REPORT
-     =============================================================================
-     Each chart has unique IDs and classes to prevent conflicts.
-     Add new charts by copying the chart container pattern below.
-     ============================================================================= -->
-
-<!-- Chart 1: Budget vs Spend Performance -->
-<div class="chart-container budget-spend-container">
-    <div class="chart-header budget-spend-header">
-        <h2 class="chart-title budget-spend-title">Budget vs Spend Performance</h2>
-        <div class="chart-controls budget-spend-controls">
-            <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('7D')">7D</button>
-            <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('30D')">30D</button>
-            <button class="control-btn active" onclick="BudgetSpendChart.switchTimeRange('90D')">90D</button>
-            <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('ALL')">All</button>
-            <button class="control-btn" onclick="BudgetSpendChart.toggleZoom()">Zoom</button>
-            <button class="control-btn" onclick="BudgetSpendChart.resetZoom()">Reset</button>
-        </div>
+<style>
+    .mode-grid.container,
+    .mode-grid .row,
+    .mode-grid .col-md-12 {
+      box-sizing: border-box;
+    }
+  
+    /* Make the main chart container full width */
+    .mode-grid.container {
+      width: 100% !important;
+      /* Your original attempt, now more effective with other overrides */
+      max-width: none !important;
+      /* Crucial: Remove Mode's default max-width */
+      padding-left: 15px !important;
+      /* Adjust or remove as needed for desired page padding */
+      padding-right: 15px !important;
+      /* Adjust or remove as needed */
+      margin-left: auto !important;
+      /* Keep it centered if you have padding */
+      margin-right: auto !important;
+      /* Keep it centered if you have padding */
+    }
+  </style>
+  <div class="mode-header embed-hidden">
+    <h1>{{ title }}</h1>
+    <p>{{ description }}</p>
+  
+  </div>
+  
+  
+  <!-- TESTING CUSTOM GRAPH WITHIN REPORT BEGIN-->
+  <script>
+          //add stylesheet
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = 'https://edgirges.github.io/mode-js-graph/styles.css?v=' + new Date().getTime();
+          document.head.appendChild(link);
+  </script>
+  
+  <body>
+    <!-- CHART 1: DAILY BW BUDGET V. SPEND / SPEND PCT -->
+      <div class="chart-container budget-spend-container">
+          <div class="chart-header budget-spend-header">
+              <h2 class="chart-title budget-spend-title">Daily BW Budget V. Spend / Spend Pct</h2>
+              <div class="chart-controls budget-spend-controls">
+                  <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('7D')">7D</button>
+                  <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('30D')">30D</button>
+                  <button class="control-btn active" onclick="BudgetSpendChart.switchTimeRange('90D')">90D</button>
+                  <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('ALL')">All</button>
+                  <button class="control-btn" onclick="BudgetSpendChart.toggleZoom()">Zoom</button>
+                  <button class="control-btn" onclick="BudgetSpendChart.resetZoom()">Reset</button>
+              </div>
+          </div>
+          <div class="chart-canvas budget-spend-canvas">
+              <canvas id="budgetSpendChart"></canvas>
+          </div>
+          <div class="metric-controls budget-spend-metrics">
+              <h3 class="metric-controls-title budget-spend-metrics-title">Metrics</h3>
+              <div class="metric-toggles budget-spend-toggles">
+                  <!-- Metric toggles will be dynamically generated -->
+              </div>
+          </div>
+      </div>
+      
+          <!-- Chart 2: Daily BW Spend Categories -->
+      <div class="chart-container spend-categories-container">
+          <div class="chart-header spend-categories-header">
+              <h2 class="chart-title spend-categories-title">Daily BW Spend Categories</h2>
+              <div class="chart-controls spend-categories-controls">
+                  <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('7D')">7D</button>
+                  <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('30D')">30D</button>
+                  <button class="control-btn active" onclick="SpendCategoriesChart.switchTimeRange('90D')">90D</button>
+                  <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('ALL')">All</button>
+                  <button class="control-btn" onclick="SpendCategoriesChart.toggleZoom()">Zoom</button>
+                  <button class="control-btn" onclick="SpendCategoriesChart.resetZoom()">Reset</button>
+              </div>
+          </div>
+          <div class="chart-canvas spend-categories-canvas">
+              <canvas id="spendCategoriesChart"></canvas>
+          </div>
+          <div class="metric-controls spend-categories-metrics">
+              <h3 class="metric-controls-title spend-categories-metrics-title">Metrics</h3>
+              <div class="metric-toggles spend-categories-toggles">
+                  <!-- Spend Categories metric toggles will be dynamically generated -->
+              </div>
+          </div>
+      </div>
+  
+      <!-- External JavaScript Libraries -->
+      <!-- Chart.js - Main charting library -->
+      <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+      
+      <!-- Chart.js Date adapter for time series -->
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+      
+      <!-- Chart.js Zoom Plugin for interactivity -->
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+      
+      <!-- Chart.js Annotation Plugin for markers -->
+      <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+      
+      <!-- Chart Specific Custom JS -->
+      <!-- Budget vs Spend Performance Chart -->
+      <script>
+          const budgetSpendScript = document.createElement('script');
+          budgetSpendScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/budget%20vs%20spend%20performance/index.js?v=' + new Date().getTime();
+          budgetSpendScript.onload = function() {
+              console.log('Budget vs Spend chart script loaded');
+          };
+          document.head.appendChild(budgetSpendScript);
+      </script>
+      
+      <!-- Daily BW Spend Categories Chart -->
+      <script>
+          const spendCategoriesScript = document.createElement('script');
+          spendCategoriesScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/daily%20bw%20spend%20categories%20/index.js?v=' + new Date().getTime();
+          spendCategoriesScript.onload = function() {
+              console.log('Spend Categories chart script loaded');
+          };
+          document.head.appendChild(spendCategoriesScript);
+      </script>
+      
+      <!-- For Mode Analytics: Replace the above line with your GitHub raw URL -->
+      <!-- <script src="https://raw.githubusercontent.com/yourusername/your-repo/main/index.js"></script> -->
+  </body>
+  
+  <!-- TESTING CUSTOM GRAPH WITHIN REPORT END-->
+  
+  
+  <div class="mode-grid container" style="width: 100% !important;">
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_23dd2098662d" dataset="dataset" options="chart_options"></mode-chart></div>
     </div>
-    <div class="chart-canvas budget-spend-canvas">
-        <canvas id="budgetSpendChart"></canvas>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_381fb32fccd7" dataset="dataset" options="chart_options"></mode-chart></div>
     </div>
-    <div class="metric-controls budget-spend-metrics">
-        <h3 class="metric-controls-title budget-spend-metrics-title">Metrics</h3>
-        <div class="metric-toggles budget-spend-toggles">
-            <!-- Budget vs Spend metric toggles will be dynamically generated -->
-        </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_c980b3e49be8" dataset="dataset" options="chart_options"></mode-chart></div>
     </div>
-</div>
-
-<!-- Chart 2: Daily BW Spend Categories -->
-<div class="chart-container spend-categories-container">
-    <div class="chart-header spend-categories-header">
-        <h2 class="chart-title spend-categories-title">Daily BW Spend Categories</h2>
-        <div class="chart-controls spend-categories-controls">
-            <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('7D')">7D</button>
-            <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('30D')">30D</button>
-            <button class="control-btn active" onclick="SpendCategoriesChart.switchTimeRange('90D')">90D</button>
-            <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('ALL')">All</button>
-            <button class="control-btn" onclick="SpendCategoriesChart.toggleZoom()">Zoom</button>
-            <button class="control-btn" onclick="SpendCategoriesChart.resetZoom()">Reset</button>
-        </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_5eb707a8fb33" dataset="dataset" options="chart_options"></mode-chart></div>
     </div>
-    <div class="chart-canvas spend-categories-canvas">
-        <canvas id="spendCategoriesChart"></canvas>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_c5463ea0810a" dataset="dataset" options="chart_options"></mode-chart></div>
     </div>
-    <div class="metric-controls spend-categories-metrics">
-        <h3 class="metric-controls-title spend-categories-metrics-title">Metrics</h3>
-        <div class="metric-toggles spend-categories-toggles">
-            <!-- Spend Categories metric toggles will be dynamically generated -->
-        </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_47dd0935f309" dataset="dataset" options="chart_options"></mode-chart></div>
     </div>
-</div>
-
-<!-- =============================================================================
-     ADD FUTURE CHARTS HERE FOLLOWING THE SAME PATTERN:
-     
-     <div class="chart-container your-chart-container">
-         <div class="chart-header your-chart-header">
-             <h2 class="chart-title your-chart-title">Your Chart Name</h2>
-             <div class="chart-controls your-chart-controls">
-                 <button onclick="YourChart.switchTimeRange('7D')">7D</button>
-                 <!-- ... more buttons ... -->
-             </div>
-         </div>
-         <div class="chart-canvas your-chart-canvas">
-             <canvas id="yourChart"></canvas>
-         </div>
-         <div class="metric-controls your-chart-metrics">
-             <h3 class="metric-controls-title your-chart-metrics-title">Metrics</h3>
-             <div class="metric-toggles your-chart-toggles">
-                 <!-- Your chart toggles will be dynamically generated -->
-             </div>
-         </div>
-     </div>
-     ============================================================================= -->
-
-<!-- External JavaScript Libraries (loaded once for all charts) -->
-<!-- Chart.js - Main charting library -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-
-<!-- Chart.js Date adapter for time series -->
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-
-<!-- Chart.js Zoom Plugin for interactivity -->
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
-
-<!-- Chart.js Annotation Plugin for markers -->
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-
-<!-- Chart-specific JavaScript files -->
-<!-- Budget vs Spend Performance Chart -->
-<script>
-    const budgetSpendScript = document.createElement('script');
-    budgetSpendScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/budget%20vs%20spend%20performance/index.js?v=' + new Date().getTime();
-    budgetSpendScript.onload = function() {
-        console.log('Budget vs Spend chart script loaded');
-    };
-    document.head.appendChild(budgetSpendScript);
-</script>
-
-<!-- Daily BW Spend Categories Chart -->
-<script>
-    const spendCategoriesScript = document.createElement('script');
-    spendCategoriesScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/daily%20bw%20spend%20categories%20/index.js?v=' + new Date().getTime();
-    spendCategoriesScript.onload = function() {
-        console.log('Spend Categories chart script loaded');
-    };
-    document.head.appendChild(spendCategoriesScript);
-</script>
-
-<!-- =============================================================================
-     ADD FUTURE CHART SCRIPTS HERE:
-     
-     <script>
-         const yourChartScript = document.createElement('script');
-         yourChartScript.src = 'https://edgirges.github.io/mode-js-graph/path/to/your/chart/index.js?v=' + new Date().getTime();
-         yourChartScript.onload = function() {
-             console.log('Your chart script loaded');
-         };
-         document.head.appendChild(yourChartScript);
-     </script>
-     ============================================================================= -->
-
-</body>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_e1b9d8d05845" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_f8266354a80f" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_65b5f2b5aaef" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_70882d32e325" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_66b5e799f2d1" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_637709e1010c" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_eeb251e059a9" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_f233e7f67066" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_5c2b89b52206" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_d7a63f2f08c7" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_6a2406716e94" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_95a644a36dee" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_adc5f55541e9" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_6f5d5995d1cc" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_fc92edf66ddf" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row" style="width: 100%;" data-row-height="large">
+      <div class="col-md-12"><mode-chart id="chart_86274654a357" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_55858331641b" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_1bfa70bad679" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_4c62406f1439" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+  </div>
