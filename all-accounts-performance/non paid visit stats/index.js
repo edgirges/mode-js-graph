@@ -50,7 +50,7 @@
                 position: 'left',
                 title: 'Percentage',
                 min: 0,
-                max: 0.05, // 5% as specified by user
+                // max will be calculated dynamically based on data
                 formatter: (value) => (value * 100).toFixed(2) + '%'
             }
         }
@@ -482,7 +482,14 @@
                             text: 'Date'
                         }
                     },
-                    y: CHART_CONFIG.yAxes.primary
+                    y: {
+                        ...CHART_CONFIG.yAxes.primary,
+                        ticks: {
+                            callback: function(value) {
+                                return (value * 100).toFixed(2) + '%';
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -499,6 +506,9 @@
         }
         
         const datasets = createDatasets();
+        
+        // Update y-axis scale based on visible data
+        updateYAxisScale();
         
         chart.data.labels = processedData.labels;
         chart.data.datasets = datasets;
@@ -532,6 +542,49 @@
         });
         
         return datasets.sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
+
+    function updateYAxisScale() {
+        if (!chart || !processedData) return;
+        
+        // Find the maximum value among all visible metrics
+        let maxValue = 0;
+        
+        dynamicMetrics.forEach(metric => {
+            if (!metric.visible) return;
+            
+            const metricData = processedData[metric.id] || [];
+            const metricMax = Math.max(...metricData.filter(val => !isNaN(val) && val !== null));
+            
+            if (metricMax > maxValue) {
+                maxValue = metricMax;
+            }
+        });
+        
+        // If no visible metrics or all values are 0, use a default scale
+        if (maxValue <= 0) {
+            maxValue = 0.05; // Default 5%
+        }
+        
+        // Add 20% padding above the maximum value for better visualization
+        const paddedMax = maxValue * 1.2;
+        
+        // Round up to a nice number
+        const niceMax = Math.ceil(paddedMax * 1000) / 1000; // Round to 3 decimal places
+        
+        // Update the chart's y-axis configuration
+        if (chart.options.scales && chart.options.scales.y) {
+            chart.options.scales.y.max = niceMax;
+            
+            // Update the tick callback to show percentages
+            chart.options.scales.y.ticks = {
+                callback: function(value) {
+                    return (value * 100).toFixed(2) + '%';
+                }
+            };
+        }
+        
+        console.log(`Y-axis scale updated: 0 to ${(niceMax * 100).toFixed(2)}% (max data value: ${(maxValue * 100).toFixed(2)}%)`);
     }
 
     // =============================================================================
