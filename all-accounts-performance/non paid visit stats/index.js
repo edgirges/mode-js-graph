@@ -48,7 +48,7 @@
             primary: {
                 id: 'y',
                 position: 'left',
-                title: 'Percentage',
+                title: 'Decimal Value',
                 min: 0,
                 // max will be calculated dynamically based on data
                 formatter: (value) => (value * 100).toFixed(2) + '%'
@@ -384,8 +384,11 @@
     }
 
     function filterDaysByTimeRange(sortedDays) {
-        let daysToShow;
+        if (currentTimeRange === 'ALL') {
+            return sortedDays;
+        }
         
+        let daysToShow;
         switch (currentTimeRange) {
             case '7D':
                 daysToShow = 7;
@@ -396,14 +399,22 @@
             case '90D':
                 daysToShow = 90;
                 break;
-            case 'ALL':
             default:
                 return sortedDays;
         }
         
-        // Take the last N days of available data
-        const startIndex = Math.max(0, sortedDays.length - daysToShow);
-        return sortedDays.slice(startIndex);
+        // Calculate date range from the most recent date with data, not from today
+        if (sortedDays.length === 0) return [];
+        
+        const mostRecentDate = new Date(sortedDays[sortedDays.length - 1]);
+        const startDate = new Date(mostRecentDate);
+        startDate.setDate(startDate.getDate() - (daysToShow - 1));
+        
+        // Filter to only include days within the date range that have actual data
+        return sortedDays.filter(day => {
+            const dayDate = new Date(day);
+            return dayDate >= startDate && dayDate <= mostRecentDate;
+        });
     }
 
     // =============================================================================
@@ -486,7 +497,7 @@
                         ...CHART_CONFIG.yAxes.primary,
                         ticks: {
                             callback: function(value) {
-                                return (value * 100).toFixed(2) + '%';
+                                return value.toFixed(2);
                             }
                         }
                     }
@@ -563,28 +574,28 @@
         
         // If no visible metrics or all values are 0, use a default scale
         if (maxValue <= 0) {
-            maxValue = 0.05; // Default 5%
+            maxValue = 0.05; // Default
         }
         
-        // Add 20% padding above the maximum value for better visualization
-        const paddedMax = maxValue * 1.2;
+        // Add 15% padding above the maximum value for better visualization
+        const paddedMax = maxValue * 1.15;
         
-        // Round up to a nice number
-        const niceMax = Math.ceil(paddedMax * 1000) / 1000; // Round to 3 decimal places
+        // Round up to the nearest 0.01 for cleaner grid lines
+        const niceMax = Math.ceil(paddedMax * 100) / 100; // Round to 2 decimal places (0.01 increments)
         
         // Update the chart's y-axis configuration
         if (chart.options.scales && chart.options.scales.y) {
             chart.options.scales.y.max = niceMax;
             
-            // Update the tick callback to show percentages
+            // Update the tick callback to show decimal values
             chart.options.scales.y.ticks = {
                 callback: function(value) {
-                    return (value * 100).toFixed(2) + '%';
+                    return value.toFixed(2);
                 }
             };
         }
         
-        console.log(`Y-axis scale updated: 0 to ${(niceMax * 100).toFixed(2)}% (max data value: ${(maxValue * 100).toFixed(2)}%)`);
+        console.log(`Y-axis scale updated: 0 to ${niceMax.toFixed(2)} (max data value: ${maxValue.toFixed(3)})`);
     }
 
     // =============================================================================
