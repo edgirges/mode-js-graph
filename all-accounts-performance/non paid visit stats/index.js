@@ -1,45 +1,79 @@
-// Non Paid Visit Stats Chart
-// Handles data from "Non Paid Visit Stats" query
+// =============================================================================
+// REUSABLE CHART SYSTEM FOR MODE ANALYTICS - NON PAID VISIT STATS
+// =============================================================================
+// Wrapped in IIFE to prevent global variable conflicts
+// =============================================================================
 
 (function() {
     'use strict';
     
-    // Global variables (namespaced to avoid conflicts)
+    // =============================================================================
+    // CONFIGURATION SECTION - MODIFY THIS FOR DIFFERENT CHARTS/QUERIES
+    // =============================================================================
+
+    const CHART_CONFIG = {
+        // Chart basic settings
+        chartTitle: 'Non Paid Visit Stats',
+        chartType: 'line',
+        defaultTimeRange: '90D',
+        
+        // Mode Analytics integration
+        modeDatasetName: 'Non Paid Visit STATs', // Name of your SQL query in Mode
+        fallbackDatasetIndex: 2, // Fallback to datasets[2] if specific dataset not found
+        
+        // Data Structure Definition - Describes your SQL output
+        dataStructure: {
+            dateColumn: 'date',                    // Primary date column name
+            alternateDateColumns: ['day', 'date'], // Alternative date column names to try
+            
+            // For dynamic metric detection, we'll look for percentage columns
+            metricDetection: {
+                enabled: true,
+                includePatterns: ['_pct$', 'percentage', 'percent'], // Regex patterns for metric columns
+                excludePatterns: ['^id$', '^date', '^day', '^time'], // Patterns to exclude
+                expectedMetrics: ['nonpaid_visits_pct', 'psa_visits_pct'], // Expected metrics for validation
+            }
+        },
+        
+        // Chart Styling
+        styling: {
+            height: 400,
+            showLegend: false,
+            gridColor: 'rgba(0, 0, 0, 0.1)',
+            backgroundColor: '#ffffff'
+        },
+        
+        // Y-Axis Configuration
+        yAxes: {
+            primary: {
+                id: 'y',
+                position: 'left',
+                title: 'Percentage',
+                min: 0,
+                max: 0.05, // 5% as specified by user
+                formatter: (value) => (value * 100).toFixed(2) + '%'
+            }
+        }
+    };
+
+    // =============================================================================
+    // NAMESPACED GLOBAL VARIABLES (to avoid conflicts with other charts)
+    // =============================================================================
+
     let chart;
     let rawData = [];
     let processedData = {};
-    let currentTimeRange = '90D';
+    let currentTimeRange = CHART_CONFIG.defaultTimeRange;
     let isZoomEnabled = false;
+    let dynamicMetrics = []; // Will be populated from data
 
-    // Define the two metrics for this chart
-    const METRICS = [
-        {
-            id: 'nonpaid_visits_pct',
-            name: 'Non-Paid Visits %',
-            color: '#007bff',
-            backgroundColor: 'rgba(0, 123, 255, 0.1)',
-            visible: true,
-            type: 'line',
-            yAxisID: 'y',
-            order: 1
-        },
-        {
-            id: 'psa_visits_pct',
-            name: 'PSA Visits %',
-            color: '#28a745',
-            backgroundColor: 'rgba(40, 167, 69, 0.1)',
-            visible: true,
-            type: 'line',
-            yAxisID: 'y',
-            order: 2
-        }
-    ];
+    // =============================================================================
+    // INITIALIZATION
+    // =============================================================================
 
-    // Initialize the chart when the page loads
     document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             initializeChart();
-            createMetricToggles();
             
             // Try to load data from Mode Analytics if available
             if (typeof datasets !== 'undefined') {
@@ -63,11 +97,6 @@
                 initializeChart();
             }
             
-            const hasActualElements = togglesContainer.children.length > 0;
-            if (!hasActualElements) {
-                createMetricToggles();
-            }
-            
             // Try to load data from Mode Analytics
             if (typeof datasets !== 'undefined') {
                 loadModeData();
@@ -85,7 +114,10 @@
     // Start polling after a short delay
     setTimeout(attemptInitialization, 200);
 
-    // Function to load data from Mode Analytics
+    // =============================================================================
+    // MODE ANALYTICS DATA LOADING
+    // =============================================================================
+
     function loadModeData() {
         console.log('Loading data from Mode Analytics...');
         
@@ -95,7 +127,7 @@
                 console.log('Available datasets:', Object.keys(datasets));
                 
                 // Target the specific Non Paid Visit Stats query dataset
-                const targetQueryName = 'Non Paid Visit STATs';
+                const targetQueryName = CHART_CONFIG.modeDatasetName;
                 let targetDataset = null;
                 let datasetName = null;
                 
@@ -107,13 +139,13 @@
                     datasetName = targetQueryName;
                 } else {
                     console.warn('Target query not found, available queries:', Object.keys(datasets));
-                    // Fallback to index 2 (assuming this is the third chart)
-                    if (datasets[2]) {
-                        console.log('Fallback: Using datasets[2]');
-                        targetDataset = datasets[2];
-                        datasetName = 'datasets[2] (fallback)';
+                    // Fallback to specified index
+                    if (datasets[CHART_CONFIG.fallbackDatasetIndex]) {
+                        console.log(`Fallback: Using datasets[${CHART_CONFIG.fallbackDatasetIndex}]`);
+                        targetDataset = datasets[CHART_CONFIG.fallbackDatasetIndex];
+                        datasetName = `datasets[${CHART_CONFIG.fallbackDatasetIndex}] (fallback)`;
                     } else {
-                        console.error('No datasets available at index 2');
+                        console.error(`No datasets available at index ${CHART_CONFIG.fallbackDatasetIndex}`);
                     }
                 }
                 
@@ -122,12 +154,25 @@
                     
                     // Extract data from the dataset
                     rawData = targetDataset.content || targetDataset || [];
+                    console.log('Mode data loaded:', rawData.length, 'rows');
                     
-                    processData();
-                    updateChart();
+                    if (rawData.length > 0) {
+                        console.log('Dataset columns:', Object.keys(rawData[0] || {}));
+                        console.log('First few rows:', rawData.slice(0, 3));
+                        
+                        // Dynamically detect metrics from the data
+                        detectMetricsFromData();
+                        
+                        // Create metric toggles now that we have dynamic metrics
+                        createMetricToggles();
+                        
+                        processData();
+                        updateChart();
+                    } else {
+                        console.warn('Dataset is empty');
+                    }
                 } else {
                     console.warn('No suitable dataset found');
-                    console.log('Available dataset names:', Object.keys(datasets));
                 }
             } else {
                 console.warn('No datasets object found in Mode Analytics');
@@ -159,7 +204,89 @@
         checkForModeData();
     }
 
-    // Process raw data into chart-friendly format
+    // =============================================================================
+    // DYNAMIC METRIC DETECTION
+    // =============================================================================
+
+    function detectMetricsFromData() {
+        if (!rawData || rawData.length === 0) {
+            console.warn('No data available for metric detection');
+            return;
+        }
+
+        const sampleRow = rawData[0];
+        const columns = Object.keys(sampleRow);
+        const detection = CHART_CONFIG.dataStructure.metricDetection;
+        
+        console.log('Detecting metrics from columns:', columns);
+        
+        // Find columns that match our patterns for metrics
+        const candidateMetrics = columns.filter(col => {
+            // Check if column matches include patterns
+            const matchesInclude = detection.includePatterns.some(pattern => 
+                new RegExp(pattern, 'i').test(col)
+            );
+            
+            // Check if column matches exclude patterns
+            const matchesExclude = detection.excludePatterns.some(pattern => 
+                new RegExp(pattern, 'i').test(col)
+            );
+            
+            return matchesInclude && !matchesExclude;
+        });
+        
+        console.log('Candidate metric columns:', candidateMetrics);
+        
+        // Create dynamic metrics with colors
+        const colors = [
+            { color: '#007bff', backgroundColor: 'rgba(0, 123, 255, 0.1)' },
+            { color: '#28a745', backgroundColor: 'rgba(40, 167, 69, 0.1)' },
+            { color: '#dc3545', backgroundColor: 'rgba(220, 53, 69, 0.1)' },
+            { color: '#ffc107', backgroundColor: 'rgba(255, 193, 7, 0.1)' },
+            { color: '#6f42c1', backgroundColor: 'rgba(111, 66, 193, 0.1)' },
+            { color: '#fd7e14', backgroundColor: 'rgba(253, 126, 20, 0.1)' },
+            { color: '#20c997', backgroundColor: 'rgba(32, 201, 151, 0.1)' },
+            { color: '#6610f2', backgroundColor: 'rgba(102, 16, 242, 0.1)' }
+        ];
+        
+        dynamicMetrics = candidateMetrics.map((col, index) => {
+            const colorSet = colors[index % colors.length];
+            return {
+                id: col,
+                name: formatMetricName(col),
+                color: colorSet.color,
+                backgroundColor: colorSet.backgroundColor,
+                visible: true,
+                type: 'line',
+                yAxisID: 'y',
+                order: index + 1,
+                dataKey: col
+            };
+        });
+        
+        console.log('Dynamically created metrics:', dynamicMetrics);
+        
+        // Validate that we have the expected metrics
+        if (detection.expectedMetrics) {
+            const foundExpected = detection.expectedMetrics.filter(expected => 
+                candidateMetrics.includes(expected)
+            );
+            console.log(`Found ${foundExpected.length}/${detection.expectedMetrics.length} expected metrics:`, foundExpected);
+        }
+    }
+    
+    function formatMetricName(columnName) {
+        // Convert column names to readable format
+        return columnName
+            .replace(/_/g, ' ')
+            .replace(/pct/g, '%')
+            .replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    // =============================================================================
+    // DATA PROCESSING
+    // =============================================================================
+
     function processData() {
         console.log('Processing data...');
         
@@ -168,27 +295,45 @@
             return;
         }
         
-        // Group data by day
+        if (dynamicMetrics.length === 0) {
+            console.warn('No metrics detected');
+            return;
+        }
+        
+        // Group data by day and calculate values for each metric
         const dailyData = {};
+        const dateColumn = findDateColumn();
+        
+        if (!dateColumn) {
+            console.error('No date column found in data');
+            return;
+        }
+        
+        console.log(`Using date column: ${dateColumn}`);
         
         rawData.forEach((row, index) => {
-            const date = row.date || row.day || row['date'];
-            const nonpaidVisitsPct = parseFloat(row.nonpaid_visits_pct || 0);
-            const psaVisitsPct = parseFloat(row.psa_visits_pct || 0);
-            
+            const date = row[dateColumn];
             if (!date) return;
             
-            if (!dailyData[date]) {
-                dailyData[date] = {
-                    nonpaid_visits_pct: 0,
-                    psa_visits_pct: 0,
-                    count: 0
-                };
+            // Extract just the date part if it's a full datetime
+            const dayKey = date.includes && date.includes(' ') ? date.split(' ')[0] : date;
+            
+            if (!dailyData[dayKey]) {
+                dailyData[dayKey] = {};
+                dynamicMetrics.forEach(metric => {
+                    dailyData[dayKey][metric.id] = 0;
+                    dailyData[dayKey][`${metric.id}_count`] = 0;
+                });
             }
             
-            dailyData[date].nonpaid_visits_pct += nonpaidVisitsPct;
-            dailyData[date].psa_visits_pct += psaVisitsPct;
-            dailyData[date].count += 1;
+            // Sum up values for each metric
+            dynamicMetrics.forEach(metric => {
+                const value = parseFloat(row[metric.id] || 0);
+                if (!isNaN(value)) {
+                    dailyData[dayKey][metric.id] += value;
+                    dailyData[dayKey][`${metric.id}_count`] += 1;
+                }
+            });
         });
         
         // Convert to arrays sorted by date and calculate averages
@@ -197,15 +342,45 @@
         // Filter by time range
         const filteredDays = filterDaysByTimeRange(sortedDays);
         
+        // Build processed data object
         processedData = {
-            labels: filteredDays,
-            nonpaid_visits_pct: filteredDays.map(day => 
-                dailyData[day].count > 0 ? dailyData[day].nonpaid_visits_pct / dailyData[day].count : 0
-            ),
-            psa_visits_pct: filteredDays.map(day => 
-                dailyData[day].count > 0 ? dailyData[day].psa_visits_pct / dailyData[day].count : 0
-            )
+            labels: filteredDays
         };
+        
+        // Add each metric's data
+        dynamicMetrics.forEach(metric => {
+            processedData[metric.id] = filteredDays.map(day => {
+                const count = dailyData[day][`${metric.id}_count`];
+                return count > 0 ? dailyData[day][metric.id] / count : 0;
+            });
+        });
+        
+        console.log('Data processed successfully. Metrics:', Object.keys(processedData).filter(k => k !== 'labels'));
+    }
+    
+    function findDateColumn() {
+        if (!rawData || rawData.length === 0) return null;
+        
+        const sampleRow = rawData[0];
+        const columns = Object.keys(sampleRow);
+        
+        // Try the primary date column first
+        if (columns.includes(CHART_CONFIG.dataStructure.dateColumn)) {
+            return CHART_CONFIG.dataStructure.dateColumn;
+        }
+        
+        // Try alternative date columns
+        for (const altCol of CHART_CONFIG.dataStructure.alternateDateColumns) {
+            if (columns.includes(altCol)) {
+                return altCol;
+            }
+        }
+        
+        // Look for any column that might be a date
+        const datePattern = /date|day|time/i;
+        const dateColumn = columns.find(col => datePattern.test(col));
+        
+        return dateColumn || null;
     }
 
     function filterDaysByTimeRange(sortedDays) {
@@ -231,7 +406,10 @@
         return sortedDays.slice(startIndex);
     }
 
-    // Initialize the chart
+    // =============================================================================
+    // CHART INITIALIZATION AND UPDATES
+    // =============================================================================
+
     function initializeChart() {
         console.log('Initializing chart...');
         
@@ -272,7 +450,7 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Non Paid Visit Stats'
+                        text: CHART_CONFIG.chartTitle
                     },
                     legend: {
                         display: false
@@ -304,22 +482,7 @@
                             text: 'Date'
                         }
                     },
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Percentage'
-                        },
-                        min: 0,
-                        max: 0.05,
-                        ticks: {
-                            callback: function(value) {
-                                return (value * 100).toFixed(2) + '%';
-                            }
-                        }
-                    }
+                    y: CHART_CONFIG.yAxes.primary
                 }
             }
         });
@@ -327,12 +490,64 @@
         console.log('Chart created successfully');
     }
 
-    // Create metric toggles
+    function updateChart() {
+        if (!chart) return;
+        
+        if (!processedData || !processedData.labels) {
+            console.warn('No processed data available for chart update');
+            return;
+        }
+        
+        const datasets = createDatasets();
+        
+        chart.data.labels = processedData.labels;
+        chart.data.datasets = datasets;
+        
+        chart.update('active');
+        console.log('Chart updated with', datasets.length, 'visible metrics');
+    }
+
+    function createDatasets() {
+        const datasets = [];
+        
+        dynamicMetrics.forEach(metric => {
+            if (!metric.visible) return;
+            
+            const metricData = processedData[metric.id] || [];
+            
+            const dataset = {
+                label: metric.name,
+                data: metricData,
+                borderColor: metric.color,
+                backgroundColor: metric.backgroundColor,
+                borderWidth: 2,
+                type: metric.type,
+                yAxisID: metric.yAxisID,
+                order: metric.order || 0,
+                fill: false,
+                tension: 0.1
+            };
+            
+            datasets.push(dataset);
+        });
+        
+        return datasets.sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
+
+    // =============================================================================
+    // METRIC TOGGLES AND CONTROLS
+    // =============================================================================
+
     function createMetricToggles() {
         const togglesContainer = document.querySelector('.non-paid-visit-stats-toggles');
         if (!togglesContainer) return;
         
         togglesContainer.innerHTML = '';
+        
+        if (dynamicMetrics.length === 0) {
+            togglesContainer.innerHTML = '<p>No metrics detected. Check data loading.</p>';
+            return;
+        }
         
         // Create select all / deselect all buttons
         const metricsHeader = document.querySelector('.non-paid-visit-stats-metrics-title');
@@ -356,7 +571,7 @@
             metricsHeader.parentNode.insertBefore(buttonsContainer, togglesContainer);
         }
         
-        METRICS.forEach(metric => {
+        dynamicMetrics.forEach(metric => {
             const toggleDiv = document.createElement('div');
             toggleDiv.className = `metric-toggle ${metric.visible ? 'active' : ''}`;
             toggleDiv.innerHTML = `
@@ -382,55 +597,12 @@
             
             togglesContainer.appendChild(toggleDiv);
         });
+        
+        console.log('Created metric toggles for', dynamicMetrics.length, 'metrics');
     }
 
-    // Update chart with current data
-    function updateChart() {
-        if (!chart) return;
-        
-        if (!processedData || !processedData.labels) {
-            console.warn('No processed data available for chart update');
-            return;
-        }
-        
-        const datasets = createDatasets();
-        
-        chart.data.labels = processedData.labels;
-        chart.data.datasets = datasets;
-        
-        chart.update('active');
-    }
-
-    function createDatasets() {
-        const datasets = [];
-        
-        METRICS.forEach(metric => {
-            if (!metric.visible) return;
-            
-            const metricData = processedData[metric.id] || [];
-            
-            const dataset = {
-                label: metric.name,
-                data: metricData,
-                borderColor: metric.color,
-                backgroundColor: metric.backgroundColor,
-                borderWidth: 2,
-                type: metric.type,
-                yAxisID: metric.yAxisID,
-                order: metric.order || 0,
-                fill: false,
-                tension: 0.1
-            };
-            
-            datasets.push(dataset);
-        });
-        
-        return datasets.sort((a, b) => (a.order || 0) - (b.order || 0));
-    }
-
-    // Toggle metric visibility
     function toggleMetric(metricId) {
-        const metric = METRICS.find(m => m.id === metricId);
+        const metric = dynamicMetrics.find(m => m.id === metricId);
         const toggleDiv = document.getElementById(`metric-${metricId}`).parentElement;
         const checkbox = document.getElementById(`metric-${metricId}`);
         
@@ -445,9 +617,8 @@
         updateChart();
     }
 
-    // Select all metrics
     function selectAllMetrics() {
-        METRICS.forEach(metric => {
+        dynamicMetrics.forEach(metric => {
             metric.visible = true;
             const checkbox = document.getElementById(`metric-${metric.id}`);
             const toggleDiv = checkbox.parentElement;
@@ -459,9 +630,8 @@
         updateChart();
     }
 
-    // Deselect all metrics
     function deselectAllMetrics() {
-        METRICS.forEach(metric => {
+        dynamicMetrics.forEach(metric => {
             metric.visible = false;
             const checkbox = document.getElementById(`metric-${metric.id}`);
             const toggleDiv = checkbox.parentElement;
@@ -473,7 +643,10 @@
         updateChart();
     }
 
-    // Switch time range
+    // =============================================================================
+    // CONTROL FUNCTIONS
+    // =============================================================================
+
     function switchTimeRange(timeRange) {
         currentTimeRange = timeRange;
         
@@ -492,7 +665,6 @@
         updateChart();
     }
 
-    // Toggle zoom functionality
     function toggleZoom() {
         isZoomEnabled = !isZoomEnabled;
         
@@ -518,7 +690,6 @@
         chart.update('none');
     }
 
-    // Reset zoom
     function resetZoom() {
         if (chart && chart.resetZoom) {
             chart.resetZoom();
@@ -532,7 +703,7 @@
                 btn.textContent = 'Zoom';
                 isZoomEnabled = false;
                 
-                if (chart.options.plugins.zoom) {
+                if (chart && chart.options.plugins.zoom) {
                     chart.options.plugins.zoom.zoom.wheel.enabled = false;
                     chart.options.plugins.zoom.zoom.pinch.enabled = false;
                 }
@@ -544,7 +715,10 @@
         }
     }
 
-    // Export functions for Mode Analytics usage
+    // =============================================================================
+    // EXPORT FOR MODE ANALYTICS
+    // =============================================================================
+
     window.NonPaidVisitStatsChart = {
         loadData: loadModeData,
         switchTimeRange: switchTimeRange,
@@ -554,8 +728,23 @@
         selectAll: selectAllMetrics,
         deselectAll: deselectAllMetrics,
         getChart: () => chart,
-        getMetrics: () => METRICS,
-        getCurrentData: () => processedData
+        getMetrics: () => dynamicMetrics,
+        getCurrentData: () => processedData,
+        detectMetrics: detectMetricsFromData,
+        debug: {
+            showDatasets: () => {
+                if (typeof datasets !== 'undefined') {
+                    console.log('Available datasets:', Object.keys(datasets));
+                    Object.keys(datasets).forEach((name, index) => {
+                        console.log(`Dataset ${index} "${name}":`, datasets[name]);
+                    });
+                }
+            },
+            forceLoad: () => {
+                console.log('=== FORCING DATA RELOAD ===');
+                loadModeData();
+            }
+        }
     };
 
     console.log('Non Paid Visit Stats Chart initialized successfully!');
