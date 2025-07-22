@@ -95,7 +95,7 @@
                 console.log('Available datasets:', Object.keys(datasets));
                 
                 // Target the specific Non Paid Visit Stats query dataset
-                const targetQueryName = 'Non Paid Visit Stats';
+                const targetQueryName = 'Non Paid Visit STATs';
                 let targetDataset = null;
                 let datasetName = null;
                 
