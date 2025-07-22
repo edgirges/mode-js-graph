@@ -284,39 +284,13 @@
                     datasetName = targetQueryName;
                 } else {
                     console.warn('Target query not found, available queries:', Object.keys(datasets));
-                    
-                    // Try multiple fallback strategies like the budget chart
-                    let found = false;
-                    
-                    // Strategy 1: Try index 1 but check if it has data and didn't fail
-                    if (datasets[1] && datasets[1].state !== 'failed' && datasets[1].content && datasets[1].content.length > 0) {
-                        console.log('Fallback: Using datasets[1] (has data)');
+                    // Fallback to index 1 as specified
+                    if (datasets[1]) {
+                        console.log('Fallback: Using datasets[1]');
                         targetDataset = datasets[1];
                         datasetName = 'datasets[1] (fallback)';
-                        found = true;
-                    } else if (datasets[1]) {
-                        console.warn('datasets[1] exists but failed or has no data. State:', datasets[1].state, 'Rows:', datasets[1].content ? datasets[1].content.length : 'no content');
-                    }
-                    
-                    // Strategy 2: Search for any working dataset with data
-                    if (!found) {
-                        console.log('Searching for any working dataset with data...');
-                        for (let i = 0; i < Object.keys(datasets).length; i++) {
-                            const dataset = datasets[i];
-                            if (dataset && dataset.state !== 'failed' && dataset.content && dataset.content.length > 0) {
-                                console.log(`Found working dataset at index ${i} with ${dataset.content.length} rows`);
-                                console.log('Query name:', dataset.queryName || 'unknown');
-                                console.log('Sample row:', dataset.content[0]);
-                                targetDataset = dataset;
-                                datasetName = `datasets[${i}] (working fallback)`;
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (!found) {
-                        console.error('No working datasets found with data');
+                    } else {
+                        console.error('No datasets available at index 1');
                     }
                 }
                 
@@ -324,15 +298,8 @@
                     console.log(`Using dataset: ${datasetName}`);
                     console.log('Dataset structure:', targetDataset);
                     
-                    // Extract data from the dataset - Mode stores data in the 'content' property
-                    rawData = targetDataset.content || targetDataset || [];
-                    console.log('Mode data loaded:', rawData.length, 'rows');
-                    console.log('Dataset columns:', targetDataset.columns);
-                    
-                    // Debug: Log first few rows
-                    if (rawData.length > 0) {
-                        console.log('First 3 rows:', rawData.slice(0, 3));
-                    }
+                                    // Extract data from the dataset - Mode stores data in the 'content' property
+                rawData = targetDataset.content || targetDataset || [];
                     
                     processData();
                     updateChart();
@@ -383,16 +350,15 @@
             return;
         }
         
-        console.log('Raw data type:', typeof rawData);
-        console.log('Raw data is array:', Array.isArray(rawData));
-        console.log('Raw data sample:', rawData.slice(0, 5));
+        if (!rawData || rawData.length === 0) {
+            console.warn('No data to process');
+            return;
+        }
         
         // Check what columns we have in the first row
         if (rawData.length > 0) {
             const firstRow = rawData[0];
             const availableColumns = Object.keys(firstRow);
-            console.log('Available columns:', availableColumns);
-            console.log('First few rows with column names:', rawData.slice(0, 3));
             
             // Check if we have spend categories data in different formats
             const hasSpendCategoriesWide = ['total', 'no_budget', 'overspend', 'spend_90_pct', 'spend_90_pct_less'].some(col => availableColumns.includes(col));
@@ -400,18 +366,13 @@
             const hasBudgetData = ['budget', 'spend'].every(col => availableColumns.includes(col));
             
             if (hasSpendCategoriesWide) {
-                console.log('✅ Processing as spend categories data (wide format)');
                 processSpendCategoriesData();
             } else if (hasSpendCategoriesLong) {
-                console.log('✅ Processing as spend categories data (long format - Mode pivot)');
                 processSpendCategoriesLongFormat();
             } else if (hasBudgetData) {
-                console.log('⚠️ Processing budget data with spend categories chart (fallback mode)');
                 processBudgetDataAsFallback();
             } else {
-                console.error('❌ Unknown data structure:', availableColumns);
-                console.log('Available columns:', availableColumns);
-                console.log('Sample rows:', rawData.slice(0, 3));
+                console.error('Unknown data structure:', availableColumns);
                 return;
             }
         }
@@ -459,14 +420,12 @@
             spend_90_pct_less: filteredDays.map(day => dailyData[day].spend_90_pct_less)
         };
         
-        console.log('Spend categories data processed (wide format):', processedData.labels.length, 'days');
+
     }
     
     function processSpendCategoriesLongFormat() {
         // Handle long format data (Mode pivot table style)
         const dailyData = {};
-        
-        console.log('Processing long format data. Sample rows:', rawData.slice(0, 10));
         
         rawData.forEach((row, index) => {
             // Handle different possible date column names
@@ -475,7 +434,6 @@
             const measureValue = parseInt(row['Measure Values'] || row.measure_values || 0);
             
             if (!day || !measureName) {
-                if (index < 5) console.log(`Skipping row ${index}: missing day or measure name`, { day, measureName });
                 return;
             }
             
@@ -510,12 +468,9 @@
                     dailyData[dayKey].spend_90_pct_less = measureValue;
                     break;
                 default:
-                    if (index < 5) console.log(`Unknown measure name: ${measureName}`);
+                    break;
             }
         });
-        
-        console.log('Processed daily data:', Object.keys(dailyData).length, 'days');
-        console.log('Sample daily data:', Object.keys(dailyData).slice(0, 3).map(day => ({ day, data: dailyData[day] })));
         
         // Convert to arrays sorted by date
         const sortedDays = Object.keys(dailyData).sort();
@@ -531,13 +486,6 @@
             spend_90_pct: filteredDays.map(day => dailyData[day].spend_90_pct),
             spend_90_pct_less: filteredDays.map(day => dailyData[day].spend_90_pct_less)
         };
-        
-        console.log('Spend categories data processed (long format):', processedData.labels.length, 'days');
-        console.log('Sample processed data:', {
-            labels: processedData.labels.slice(0, 3),
-            total: processedData.total.slice(0, 3),
-            overspend: processedData.overspend.slice(0, 3)
-        });
     }
     
     function processBudgetDataAsFallback() {
@@ -592,7 +540,7 @@
             })
         };
         
-        console.log('Budget data adapted to spend categories format:', processedData.labels.length, 'days');
+
     }
     
     function filterDaysByTimeRange(sortedDays) {
@@ -1042,8 +990,6 @@
         chart.options.scales.y.display = hasVisibleMetrics;
         
         chart.update('active');
-        
-        console.log('Chart updated with', processedData.labels.length, 'data points');
     }
 
     function createDatasets() {
