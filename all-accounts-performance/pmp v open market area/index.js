@@ -86,6 +86,9 @@
                 );
             },
 
+            // METRIC FILTERING - Specify which metrics to display
+            displayMetrics: ['pmp_spend_pct', 'open_spend_pct'], // Only show these specific metrics
+            
             // Cached metrics - will be populated dynamically
             metrics: [] // This will be populated dynamically
         },
@@ -237,6 +240,15 @@
         console.log('=== Creating dynamic metrics from extraction ===');
         console.log('Extracted metrics:', extractedMetrics);
         
+        // Filter metrics based on displayMetrics configuration
+        const displayMetrics = CHART_CONFIG.dataStructure.displayMetrics;
+        const filteredMetrics = displayMetrics && displayMetrics.length > 0 
+            ? extractedMetrics.filter(metric => displayMetrics.includes(metric))
+            : extractedMetrics;
+            
+        console.log('Display metrics filter:', displayMetrics);
+        console.log('Filtered metrics to display:', filteredMetrics);
+        
         // Create color palette
         const colors = [
             { color: '#007bff', backgroundColor: 'rgba(0, 123, 255, 0.3)' },
@@ -247,7 +259,7 @@
             { color: '#fd7e14', backgroundColor: 'rgba(253, 126, 20, 0.3)' }
         ];
         
-        dynamicMetrics = extractedMetrics.map((metric, index) => {
+        dynamicMetrics = filteredMetrics.map((metric, index) => {
             const colorSet = colors[index % colors.length];
             return {
                 id: metric,
@@ -263,6 +275,17 @@
         });
         
         console.log('Created dynamic metrics:', dynamicMetrics);
+        
+        // Validation: Check if all requested metrics were found
+        if (displayMetrics && displayMetrics.length > 0) {
+            const foundRequestedMetrics = displayMetrics.filter(metric => extractedMetrics.includes(metric));
+            const missingMetrics = displayMetrics.filter(metric => !extractedMetrics.includes(metric));
+            
+            console.log('Requested metrics found:', foundRequestedMetrics);
+            if (missingMetrics.length > 0) {
+                console.warn('Requested metrics NOT found in dataset:', missingMetrics);
+            }
+        }
     }
 
     function formatMetricName(columnName) {
