@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMP vs Open Market - Metric Exploration</title>
+    <script>
+        //add stylesheet
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://edgirges.github.io/mode-js-graph/styles.css?v=' + new Date().getTime();
+        document.head.appendChild(link);
+        console.log('=== STYLESHEET ADDED ===');
+    </script>
+</head>
+<body>
+    <div class="chart-container pmp-v-open-market-area-container">
+        <div class="chart-header pmp-v-open-market-area-header">
+            <h2 class="chart-title pmp-v-open-market-area-title">PMP v Open Market Impressions and Spend</h2>
+            <div class="chart-controls pmp-v-open-market-area-controls">
+                <button class="control-btn" onclick="PmpVOpenMarketAreaChart.switchTimeRange('7D')">7D</button>
+                <button class="control-btn" onclick="PmpVOpenMarketAreaChart.switchTimeRange('30D')">30D</button>
+                <button class="control-btn active" onclick="PmpVOpenMarketAreaChart.switchTimeRange('90D')">90D</button>
+                <button class="control-btn" onclick="PmpVOpenMarketAreaChart.switchTimeRange('ALL')">All</button>
+                <button class="control-btn" onclick="PmpVOpenMarketAreaChart.toggleZoom()">Zoom</button>
+                <button class="control-btn" onclick="PmpVOpenMarketAreaChart.resetZoom()">Reset</button>
+            </div>
+        </div>
+        <div class="chart-canvas pmp-v-open-market-area-canvas">
+            <canvas id="pmpVOpenMarketAreaChart"></canvas>
+        </div>
+        <div class="metric-controls pmp-v-open-market-area-metrics">
+            <h3 class="metric-controls-title pmp-v-open-market-area-metrics-title">Metrics</h3>
+            <div class="metric-toggles pmp-v-open-market-area-toggles">
+                <!-- Metric toggles will be dynamically generated -->
+            </div>
+        </div>
+    </div>
+    
+        <!-- External JavaScript Libraries -->
+        <!-- Chart.js - Main charting library -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+        
+        <!-- Chart.js Date adapter for time series -->
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+        
+        <!-- Chart.js Zoom Plugin for interactivity -->
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+        
+        <!-- Chart.js Annotation Plugin for markers -->
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+        
+        <!-- Non Paid Visit Stats Chart Script -->
+        <script src="index.js"></script>
+</body>
+</html> 

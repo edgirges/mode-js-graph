@@ -86,25 +86,50 @@
           </div>
       </div>
       
-        <!-- CHART 3: NON PAID VISIT STATS -->
-      <div class="chart-container non-paid-visit-stats-container">
-          <div class="chart-header non-paid-visit-stats-header">
-              <h2 class="chart-title non-paid-visit-stats-title">Non Paid Visit Stats</h2>
-              <div class="chart-controls non-paid-visit-stats-controls">
-                  <button class="control-btn" onclick="NonPaidVisitStatsChart.switchTimeRange('7D')">7D</button>
-                  <button class="control-btn" onclick="NonPaidVisitStatsChart.switchTimeRange('30D')">30D</button>
-                  <button class="control-btn active" onclick="NonPaidVisitStatsChart.switchTimeRange('90D')">90D</button>
-                  <button class="control-btn" onclick="NonPaidVisitStatsChart.switchTimeRange('ALL')">All</button>
-                  <button class="control-btn" onclick="NonPaidVisitStatsChart.toggleZoom()">Zoom</button>
-                  <button class="control-btn" onclick="NonPaidVisitStatsChart.resetZoom()">Reset</button>
+      
+              <!-- CHART 3: NON PAID VISIT STATS -->
+        <div class="chart-container non-paid-visit-stats-container">
+            <div class="chart-header non-paid-visit-stats-header">
+                <h2 class="chart-title non-paid-visit-stats-title">Non Paid Visit Stats</h2>
+                <div class="chart-controls non-paid-visit-stats-controls">
+                    <button class="control-btn" onclick="NonPaidVisitStatsChart.switchTimeRange('7D')">7D</button>
+                    <button class="control-btn" onclick="NonPaidVisitStatsChart.switchTimeRange('30D')">30D</button>
+                    <button class="control-btn active" onclick="NonPaidVisitStatsChart.switchTimeRange('90D')">90D</button>
+                    <button class="control-btn" onclick="NonPaidVisitStatsChart.switchTimeRange('ALL')">All</button>
+                    <button class="control-btn" onclick="NonPaidVisitStatsChart.toggleZoom()">Zoom</button>
+                    <button class="control-btn" onclick="NonPaidVisitStatsChart.resetZoom()">Reset</button>
+                </div>
+            </div>
+            <div class="chart-canvas non-paid-visit-stats-canvas">
+                <canvas id="nonPaidVisitStatsChart"></canvas>
+            </div>
+            <div class="metric-controls non-paid-visit-stats-metrics">
+                <h3 class="metric-controls-title non-paid-visit-stats-metrics-title">Metrics</h3>
+                <div class="metric-toggles non-paid-visit-stats-toggles">
+                    <!-- Metric toggles will be dynamically generated -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- CHART 7: NON PAID VISIT STATS -->
+      <div class="chart-container pmp-v-open-market-area-container">
+          <div class="chart-header pmp-v-open-market-area-header">
+              <h2 class="chart-title pmp-v-open-market-area-title">PMP v Open Market Impressions and Spend</h2>
+              <div class="chart-controls pmp-v-open-market-area-controls">
+                  <button class="control-btn" onclick="PmpVOpenMarketAreaChart.switchTimeRange('7D')">7D</button>
+                  <button class="control-btn" onclick="PmpVOpenMarketAreaChart.switchTimeRange('30D')">30D</button>
+                  <button class="control-btn active" onclick="PmpVOpenMarketAreaChart.switchTimeRange('90D')">90D</button>
+                  <button class="control-btn" onclick="PmpVOpenMarketAreaChart.switchTimeRange('ALL')">All</button>
+                  <button class="control-btn" onclick="PmpVOpenMarketAreaChart.toggleZoom()">Zoom</button>
+                  <button class="control-btn" onclick="PmpVOpenMarketAreaChart.resetZoom()">Reset</button>
               </div>
           </div>
-          <div class="chart-canvas non-paid-visit-stats-canvas">
-              <canvas id="nonPaidVisitStatsChart"></canvas>
+          <div class="chart-canvas pmp-v-open-market-area-canvas">
+              <canvas id="pmpVOpenMarketAreaChart"></canvas>
           </div>
-          <div class="metric-controls non-paid-visit-stats-metrics">
-              <h3 class="metric-controls-title non-paid-visit-stats-metrics-title">Metrics</h3>
-              <div class="metric-toggles non-paid-visit-stats-toggles">
+          <div class="metric-controls pmp-v-open-market-area-metrics">
+              <h3 class="metric-controls-title pmp-v-open-market-area-metrics-title">Metrics</h3>
+              <div class="metric-toggles pmp-v-open-market-area-toggles">
                   <!-- Metric toggles will be dynamically generated -->
               </div>
           </div>
@@ -124,36 +149,126 @@
       <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
       
       <!-- Chart Specific Custom JS -->
+      <!-- Budget vs Spend Performance Chart -->
       <script>
-      //Budget vs Spend Performance Chart
           const budgetSpendScript = document.createElement('script');
           budgetSpendScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/budget%20vs%20spend%20performance/index.js?v=' + new Date().getTime();
           budgetSpendScript.onload = function() {
               console.log('Budget vs Spend chart script loaded');
           };
           document.head.appendChild(budgetSpendScript);
+      </script>
       
-      //Daily BW Spend Categories Chart
-    
+      <!-- Daily BW Spend Categories Chart -->
+      <script>
           const spendCategoriesScript = document.createElement('script');
           spendCategoriesScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/daily%20bw%20spend%20categories%20/index.js?v=' + new Date().getTime();
           spendCategoriesScript.onload = function() {
               console.log('Spend Categories chart script loaded');
           };
           document.head.appendChild(spendCategoriesScript);
-          
-      //Non Paid Visit Stats
-      
-          const nonPaidVisitStatsScript = document.createElement('script');
-          nonPaidVisitStatsScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/non%20paid%20visit%20stats/index.js?v=' + new Date().getTime();
-          nonPaidVisitStatsScript.onload = function() {
-            console.log('Non Paid Visits Stats Script loaded');
-          };
-          document.head.appendChild(nonPaidVisitStatsScript);
       </script>
       
+      <script>
+            const nonPaidVisitStatsScript = document.createElement('script');
+            nonPaidVisitStatsScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/non%20paid%20visit%20stats/index.js?v=' + new Date().getTime();
+            nonPaidVisitStatsScript.onload = function() {
+              console.log('Non Paid Visits Stats Script loaded');
+            };
+            document.head.appendChild(nonPaidVisitStatsScript);
+      </script>
       
+         <!-- PMP vs Open Market (Area) Chart -->
+      <script>
+          const pmpOpenMarketAreaScript = document.createElement('script');
+          pmpOpenMarketAreaScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/pmp%20v%20open%20market%20area/index.js?v=' + new Date().getTime();
+          pmpOpenMarketAreaScript.onload = function() {
+              console.log('PMP vs Open Market (Area) Chart');
+          };
+          document.head.appendChild(pmpOpenMarketAreaScript);
+      </script>
       
       <!-- For Mode Analytics: Replace the above line with your GitHub raw URL -->
       <!-- <script src="https://raw.githubusercontent.com/yourusername/your-repo/main/index.js"></script> -->
   </body>
+  
+  <!-- TESTING CUSTOM GRAPH WITHIN REPORT END-->
+  
+  
+  <div class="mode-grid container" style="width: 100% !important;">
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_23dd2098662d" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_381fb32fccd7" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_c980b3e49be8" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_5eb707a8fb33" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_c5463ea0810a" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_47dd0935f309" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_e1b9d8d05845" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_f8266354a80f" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_65b5f2b5aaef" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_70882d32e325" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_66b5e799f2d1" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_637709e1010c" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_eeb251e059a9" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_f233e7f67066" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_5c2b89b52206" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_d7a63f2f08c7" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_6a2406716e94" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_95a644a36dee" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_adc5f55541e9" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_6f5d5995d1cc" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_fc92edf66ddf" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row" style="width: 100%;" data-row-height="large">
+      <div class="col-md-12"><mode-chart id="chart_86274654a357" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_55858331641b" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_1bfa70bad679" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+    <div class="row">
+      <div class="col-md-12"><mode-chart id="chart_4c62406f1439" dataset="dataset" options="chart_options"></mode-chart></div>
+    </div>
+  </div>
