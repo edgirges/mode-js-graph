@@ -1,14 +1,18 @@
 // =============================================================================
-// PMP vs Open Market Line Chart - Simplified
+// REUSABLE CHART SYSTEM FOR MODE ANALYTICS - PMP vs Open Market Line
+// =============================================================================
+// Wrapped in IIFE to prevent global variable conflicts
 // =============================================================================
 
 (function() {
     'use strict';
 
     // =============================================================================
-    // DIRECT METRIC EXTRACTION FUNCTION (from working area chart)
+    // DIRECT METRIC EXTRACTION FUNCTION
     // =============================================================================
     function getMetricsFromDataset(datasetName, fallbackIndex = null) {
+        console.log('=== DIRECT METRIC EXTRACTION ===');
+        
         if (typeof datasets === 'undefined') {
             console.warn('datasets object not available yet');
             return [];
@@ -45,65 +49,136 @@
         const metrics = columns.filter(col => !dateTimePattern.test(col));
         
         console.log('Extracted metrics:', metrics);
+        
+        // Validation for expected metrics
+        const expectedMetrics = ['imps_banner_open_market', 'imps_banner_pmp', 'imps_open_market', 'imps_pmp', 'imps_total', 'imps_video_open_market', 'imps_video_pmp'];
+        const foundExpected = expectedMetrics.filter(metric => metrics.includes(metric));
+        console.log('Expected metrics:', expectedMetrics);
+        console.log('Found expected metrics:', foundExpected);
+        
         return metrics;
     }
 
-    // Configuration
-    const CONFIG = {
+    // =============================================================================
+    // CONFIGURATION SECTION - MODIFY THIS FOR DIFFERENT CHARTS/QUERIES
+    // =============================================================================
+
+    const CHART_CONFIG = {
+        // Chart basic settings
         chartTitle: 'PMP v Open Market Impressions',
-        datasetName: 'PMP vs OpenMarket Imps and Spend (Obj filter does not apply)',
-        fallbackIndex: 5,
+        chartType: 'line',
         defaultTimeRange: '90D',
-        // Target metrics we want to display
-        displayMetrics: ['imps_banner_open_market', 'imps_banner_pmp', 'imps_open_market', 'imps_pmp', 'imps_total', 'imps_video_open_market', 'imps_video_pmp'],
-        colors: [
-            '#007bff', '#28a745', '#dc3545', '#ffc107', 
-            '#6f42c1', '#fd7e14', '#343a40'
-        ]
+        
+        // Mode Analytics integration
+        modeDatasetName: 'PMP vs OpenMarket Imps and Spend (Obj filter does not apply)', // Name of your SQL query in Mode
+        fallbackDatasetIndex: 5, // Fallback to datasets[5] if specific dataset not found
+
+        // Data Structure Definition - Describes your SQL output
+        dataStructure: {
+            dateColumn: 'day',                    // Primary date column name
+            alternateDateColumns: ['day', 'date'], // Alternative date column names to try
+            
+            // DIRECT METRIC EXTRACTION - No pattern matching needed!
+            getMetrics: function() {
+                return getMetricsFromDataset(
+                    CHART_CONFIG.modeDatasetName, 
+                    CHART_CONFIG.fallbackDatasetIndex
+                );
+            },
+
+            // METRIC FILTERING - Specify which metrics to display
+            displayMetrics: ['imps_banner_open_market', 'imps_banner_pmp', 'imps_open_market', 'imps_pmp', 'imps_total', 'imps_video_open_market', 'imps_video_pmp'], // Only show these specific metrics
+            
+            // Cached metrics - will be populated dynamically
+            metrics: [] // This will be populated dynamically
+        },
+        
+        // Chart Styling
+        styling: {
+            height: 400,
+            showLegend: false,
+            gridColor: 'rgba(0, 0, 0, 0.1)',
+            backgroundColor: '#ffffff'
+        },
+        
+        // Y-Axis Configuration
+        yAxes: {
+            primary: {
+                id: 'y',
+                position: 'left',
+                title: 'Impressions',
+                min: 0,
+                // max will be calculated dynamically based on data
+                formatter: (value) => value.toLocaleString()
+            }
+        }
     };
 
-    // State
+    // =============================================================================
+    // NAMESPACED GLOBAL VARIABLES
+    // =============================================================================
+
     let chart;
     let rawData = [];
     let processedData = {};
-    let currentTimeRange = CONFIG.defaultTimeRange;
-    let dynamicMetrics = []; // This is what the working area chart uses
+    let currentTimeRange = CHART_CONFIG.defaultTimeRange;
+    let isZoomEnabled = false;
+    let dynamicMetrics = []; // Will be populated from data
 
     // =============================================================================
-    // Initialization
+    // INITIALIZATION
     // =============================================================================
 
-    function init() {
-        const canvas = document.getElementById('pmpVOpenMarketLineChart');
-        const toggles = document.querySelector('.pmp-v-open-market-line-toggles');
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+            initializeChart();
+            
+            // Try to load data from Mode Analytics if available
+            if (typeof datasets !== 'undefined') {
+                loadModeData();
+            } else {
+                pollForModeData();
+            }
+        }, 100);
+    });
+
+    // For Mode Analytics - polling mechanism to ensure initialization
+    let initAttempts = 0;
+    const maxAttempts = 10;
+
+    function attemptInitialization() {
+        initAttempts++;
         
-        if (!canvas || !toggles || typeof Chart === 'undefined') {
-            setTimeout(init, 500);
+        const canvas = document.getElementById('pmpVOpenMarketLineChart');
+        const togglesContainer = document.querySelector('.pmp-v-open-market-line-toggles');
+        
+        if (canvas && togglesContainer && typeof Chart !== 'undefined') {
+            if (!chart) {
+                initializeChart();
+            }
+            
+            // Try to load data from Mode Analytics
+            if (typeof datasets !== 'undefined') {
+                loadModeData();
+            } else {
+                pollForModeData();
+            }
             return;
         }
-
-        createChart();
         
-        if (typeof datasets !== 'undefined') {
-            loadData();
-        } else {
-            pollForData();
+        if (initAttempts < maxAttempts) {
+            setTimeout(attemptInitialization, 500);
         }
     }
 
-    function pollForData() {
-        if (typeof datasets !== 'undefined') {
-            loadData();
-        } else {
-            setTimeout(pollForData, 1000);
-        }
-    }
+    // Start polling after a short delay
+    setTimeout(attemptInitialization, 200);
 
     // =============================================================================
-    // Data Loading & Processing
+    // MODE ANALYTICS DATA LOADING
     // =============================================================================
 
-    function loadData() {
+    function loadModeData() {
         console.log('=== PMP vs Open Market Line: Loading data from Mode Analytics ===');
         
         try {
@@ -111,15 +186,15 @@
                 console.log('Found datasets object');
                 console.log('Available datasets:', Object.keys(datasets));
                 
-                // Get metrics using direct extraction method (from working area chart)
-                const extractedMetrics = getMetricsFromDataset(CONFIG.datasetName, CONFIG.fallbackIndex);
+                // Get metrics using our direct extraction method
+                const extractedMetrics = CHART_CONFIG.dataStructure.getMetrics();
                 
                 if (extractedMetrics.length > 0) {
-                    // Filter to only the metrics we want to display
-                    const filteredMetrics = CONFIG.displayMetrics.filter(metric => extractedMetrics.includes(metric));
+                    // Store the metrics in our config
+                    CHART_CONFIG.dataStructure.metrics = extractedMetrics;
                     
-                    // Create dynamic metrics with colors (from working area chart)
-                    createDynamicMetrics(filteredMetrics);
+                    // Create dynamic metrics with colors
+                    createDynamicMetricsFromExtraction(extractedMetrics);
                     
                     // Load the actual data
                     loadDatasetContent();
@@ -134,7 +209,7 @@
                     console.warn('No metrics extracted from dataset');
                 }
             } else {
-                console.warn('datasets object not available yet');
+                console.warn('No datasets object found in Mode Analytics');
             }
         } catch (error) {
             console.error('Error loading Mode data:', error);
@@ -142,9 +217,17 @@
     }
 
     function loadDatasetContent() {
-        const dataset = datasets[CONFIG.datasetName] || datasets[CONFIG.fallbackIndex];
-        if (dataset) {
-            rawData = dataset.content || dataset || [];
+        const targetQueryName = CHART_CONFIG.modeDatasetName;
+        let targetDataset = null;
+        
+        if (datasets[targetQueryName]) {
+            targetDataset = datasets[targetQueryName];
+        } else if (datasets[CHART_CONFIG.fallbackDatasetIndex]) {
+            targetDataset = datasets[CHART_CONFIG.fallbackDatasetIndex];
+        }
+        
+        if (targetDataset) {
+            rawData = targetDataset.content || targetDataset || [];
             console.log('Mode data loaded:', rawData.length, 'rows');
             
             if (rawData.length > 0) {
@@ -153,16 +236,37 @@
         }
     }
 
-    function createDynamicMetrics(filteredMetrics) {
+    function createDynamicMetricsFromExtraction(extractedMetrics) {
         console.log('=== Creating dynamic metrics from extraction ===');
+        console.log('Extracted metrics:', extractedMetrics);
+        
+        // Filter metrics based on displayMetrics configuration
+        const displayMetrics = CHART_CONFIG.dataStructure.displayMetrics;
+        const filteredMetrics = displayMetrics && displayMetrics.length > 0 
+            ? extractedMetrics.filter(metric => displayMetrics.includes(metric))
+            : extractedMetrics;
+            
+        console.log('Display metrics filter:', displayMetrics);
         console.log('Filtered metrics to display:', filteredMetrics);
         
+        // Create color palette
+        const colors = [
+            { color: '#007bff', backgroundColor: 'rgba(0, 123, 255, 0.3)' },
+            { color: '#28a745', backgroundColor: 'rgba(40, 167, 69, 0.3)' },
+            { color: '#dc3545', backgroundColor: 'rgba(220, 53, 69, 0.3)' },
+            { color: '#ffc107', backgroundColor: 'rgba(255, 193, 7, 0.3)' },
+            { color: '#6f42c1', backgroundColor: 'rgba(111, 66, 193, 0.3)' },
+            { color: '#fd7e14', backgroundColor: 'rgba(253, 126, 20, 0.3)' },
+            { color: '#343a40', backgroundColor: 'rgba(52, 58, 64, 0.3)' }
+        ];
+        
         dynamicMetrics = filteredMetrics.map((metric, index) => {
+            const colorSet = colors[index % colors.length];
             return {
                 id: metric,
                 name: formatMetricName(metric),
-                color: CONFIG.colors[index % CONFIG.colors.length],
-                backgroundColor: 'transparent', // Lines don't need background
+                color: colorSet.color,
+                backgroundColor: 'transparent', // LINE CHART CHANGE: No background for lines
                 visible: true,
                 type: 'line',
                 yAxisID: 'y',
@@ -172,7 +276,53 @@
         });
         
         console.log('Created dynamic metrics:', dynamicMetrics);
+        
+        // Validation: Check if all requested metrics were found
+        if (displayMetrics && displayMetrics.length > 0) {
+            const foundRequestedMetrics = displayMetrics.filter(metric => extractedMetrics.includes(metric));
+            const missingMetrics = displayMetrics.filter(metric => !extractedMetrics.includes(metric));
+            
+            console.log('Requested metrics found:', foundRequestedMetrics);
+            if (missingMetrics.length > 0) {
+                console.warn('Requested metrics NOT found in dataset:', missingMetrics);
+            }
+        }
     }
+
+    function formatMetricName(columnName) {
+        // Convert column names to readable format
+        return columnName
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    // Poll for Mode data if not immediately available
+    function pollForModeData() {
+        let pollAttempts = 0;
+        const maxPollAttempts = 20;
+        
+        console.log('Polling for Mode datasets...');
+        
+        function checkForModeData() {
+            pollAttempts++;
+            
+            if (typeof datasets !== 'undefined') {
+                console.log('Datasets object found!');
+                loadModeData();
+                return;
+            }
+            
+            if (pollAttempts < maxPollAttempts) {
+                setTimeout(checkForModeData, 1000);
+            }
+        }
+        
+        checkForModeData();
+    }
+
+    // =============================================================================
+    // DATA PROCESSING
+    // =============================================================================
 
     function processData() {
         console.log('=== Processing PMP vs Open Market Line data ===');
@@ -186,20 +336,21 @@
             console.warn('No metrics detected');
             return;
         }
-
-        const dateCol = findDateColumn();
-        if (!dateCol) {
+        
+        const dateColumn = findDateColumn();
+        
+        if (!dateColumn) {
             console.error('No date column found in data');
             return;
         }
         
-        console.log(`Using date column: ${dateCol}`);
-
-        // Group by day and sum values (from working area chart)
+        console.log(`Using date column: ${dateColumn}`);
+        
+        // Group data by day
         const dailyData = {};
         
         rawData.forEach((row, index) => {
-            const date = row[dateCol];
+            const date = row[dateColumn];
             if (!date) return;
             
             const dayKey = date.includes && date.includes(' ') ? date.split(' ')[0] : date;
@@ -221,10 +372,10 @@
                 }
             });
         });
-
+        
         // Convert to arrays sorted by date and calculate averages
         const sortedDays = Object.keys(dailyData).sort();
-        const filteredDays = filterByTimeRange(sortedDays);
+        const filteredDays = filterDaysByTimeRange(sortedDays);
         
         // Build processed data object
         processedData = {
@@ -244,44 +395,96 @@
     }
 
     function findDateColumn() {
+        if (!rawData || rawData.length === 0) return null;
+        
         const sampleRow = rawData[0];
         const columns = Object.keys(sampleRow);
         
-        return columns.find(col => ['day', 'date'].includes(col)) || 
-               columns.find(col => /date|day|time/i.test(col));
+        // Try the primary date column first
+        if (columns.includes(CHART_CONFIG.dataStructure.dateColumn)) {
+            return CHART_CONFIG.dataStructure.dateColumn;
+        }
+        
+        // Try alternative date columns
+        for (const altCol of CHART_CONFIG.dataStructure.alternateDateColumns) {
+            if (columns.includes(altCol)) {
+                return altCol;
+            }
+        }
+        
+        // Look for any column that might be a date
+        const datePattern = /date|day|time/i;
+        const dateColumn = columns.find(col => datePattern.test(col));
+        
+        return dateColumn || null;
     }
 
-    function filterByTimeRange(sortedDays) {
-        if (currentTimeRange === 'ALL' || !sortedDays.length) return sortedDays;
+    function filterDaysByTimeRange(sortedDays) {
+        if (currentTimeRange === 'ALL') {
+            return sortedDays;
+        }
         
-        const daysMap = { '7D': 7, '30D': 30, '90D': 90 };
-        const daysToShow = daysMap[currentTimeRange];
-        if (!daysToShow) return sortedDays;
+        let daysToShow;
+        switch (currentTimeRange) {
+            case '7D':
+                daysToShow = 7;
+                break;
+            case '30D':
+                daysToShow = 30;
+                break;
+            case '90D':
+                daysToShow = 90;
+                break;
+            default:
+                return sortedDays;
+        }
         
-        const endDate = new Date(sortedDays[sortedDays.length - 1]);
-        const startDate = new Date(endDate);
+        if (sortedDays.length === 0) return [];
+        
+        const mostRecentDate = new Date(sortedDays[sortedDays.length - 1]);
+        const startDate = new Date(mostRecentDate);
         startDate.setDate(startDate.getDate() - (daysToShow - 1));
         
         return sortedDays.filter(day => {
             const dayDate = new Date(day);
-            return dayDate >= startDate && dayDate <= endDate;
+            return dayDate >= startDate && dayDate <= mostRecentDate;
         });
     }
 
     // =============================================================================
-    // Chart Management
+    // CHART INITIALIZATION AND UPDATES
     // =============================================================================
 
-    function createChart() {
+    function initializeChart() {
+        console.log('=== Initializing PMP vs Open Market Line chart ===');
+        
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js not available!');
+            return;
+        }
+        
         const canvas = document.getElementById('pmpVOpenMarketLineChart');
+        if (!canvas) {
+            console.error('Canvas not found! Looking for ID: pmpVOpenMarketLineChart');
+            return;
+        }
+        
         const ctx = canvas.getContext('2d');
         
-        // Register plugins
-        if (typeof ChartZoom !== 'undefined') Chart.register(ChartZoom);
+        // Register Chart.js plugins
+        if (typeof ChartZoom !== 'undefined') {
+            Chart.register(ChartZoom);
+        }
+        if (typeof ChartAnnotation !== 'undefined') {
+            Chart.register(ChartAnnotation);
+        }
         
         chart = new Chart(ctx, {
             type: 'line',
-            data: { labels: [], datasets: [] },
+            data: {
+                labels: [],
+                datasets: []
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -292,45 +495,71 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: CONFIG.chartTitle
+                        text: CHART_CONFIG.chartTitle
                     },
-                    legend: { display: false },
+                    legend: {
+                        display: false
+                    },
                     zoom: {
                         zoom: {
-                            wheel: { enabled: false },
-                            pinch: { enabled: false },
+                            wheel: {
+                                enabled: false,
+                            },
+                            pinch: {
+                                enabled: false
+                            },
                             mode: 'x',
                         },
-                        pan: { enabled: true, mode: 'x' }
+                        pan: {
+                            enabled: true,
+                            mode: 'x',
+                        }
                     }
                 },
                 scales: {
                     x: {
                         type: 'time',
-                        time: { unit: 'day' },
-                        title: { display: true, text: 'Date' }
+                        time: {
+                            unit: 'day'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
                     },
                     y: {
-                        position: 'left',
-                        title: { display: true, text: 'Impressions' },
+                        ...CHART_CONFIG.yAxes.primary,
                         ticks: {
-                            callback: value => value.toLocaleString()
+                            callback: function(value) {
+                                return value.toLocaleString();
+                            }
                         }
                     }
                 }
             }
         });
+        
+        console.log('Chart created successfully');
     }
 
     function updateChart() {
-        if (!chart || !processedData.labels) return;
-
+        if (!chart) {
+            console.warn('Chart not initialized yet');
+            return;
+        }
+        
+        if (!processedData || !processedData.labels) {
+            console.warn('No processed data available for chart update');
+            return;
+        }
+        
         const datasets = createDatasets();
-        updateYAxisRange(datasets);
         
         chart.data.labels = processedData.labels;
         chart.data.datasets = datasets;
+        
         chart.update('active');
+        console.log('Chart updated with', datasets.length, 'visible metrics');
     }
 
     function createDatasets() {
@@ -347,7 +576,7 @@
                 borderColor: metric.color,
                 backgroundColor: metric.backgroundColor,
                 borderWidth: 2,
-                fill: false, // Line chart - no fill
+                fill: false, // LINE CHART CHANGE: No fill for lines
                 tension: 0.1,
                 yAxisID: metric.yAxisID,
                 order: metric.order || 0
@@ -359,34 +588,8 @@
         return datasets.sort((a, b) => (a.order || 0) - (b.order || 0));
     }
 
-    function updateYAxisRange(datasets) {
-        if (!datasets.length) return;
-
-        // Calculate range from visible data
-        const allValues = datasets.flatMap(d => d.data).filter(v => v != null);
-        if (!allValues.length) return;
-
-        const maxValue = Math.max(...allValues);
-        const minValue = Math.min(...allValues);
-        
-        // Set reasonable range with padding
-        const padding = (maxValue - minValue) * 0.1;
-        const yMin = Math.max(0, minValue - padding);
-        const yMax = maxValue + padding;
-        
-        chart.options.scales.y.min = yMin;
-        chart.options.scales.y.max = yMax;
-    }
-
-    function formatMetricName(columnName) {
-        // Convert column names to readable format
-        return columnName
-            .replace(/_/g, ' ')
-            .replace(/\b\w/g, l => l.toUpperCase());
-    }
-
     // =============================================================================
-    // UI Controls
+    // METRIC TOGGLES AND CONTROLS
     // =============================================================================
 
     function createMetricToggles() {
@@ -450,36 +653,52 @@
         console.log(`Metric ${metricId} toggled:`, metric.visible);
     }
 
+    // =============================================================================
+    // CONTROL FUNCTIONS
+    // =============================================================================
+
     function switchTimeRange(timeRange) {
+        console.log('Switching time range to:', timeRange);
         currentTimeRange = timeRange;
         
-        // Update active button
-        document.querySelectorAll('.pmp-v-open-market-line-controls .control-btn')
-            .forEach(btn => {
-                btn.classList.remove('active');
-                const btnText = btn.textContent.trim();
-                if (btnText === timeRange || (timeRange === 'ALL' && btnText === 'All')) {
-                    btn.classList.add('active');
-                }
-            });
+        // Update active button - scope to this chart's container only
+        const controlButtons = document.querySelectorAll('.pmp-v-open-market-line-controls .control-btn');
+        controlButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.textContent.trim() === timeRange || 
+                (timeRange === 'ALL' && btn.textContent.trim() === 'All')) {
+                btn.classList.add('active');
+            }
+        });
         
         processData();
         updateChart();
     }
 
     function toggleZoom() {
-        const btn = event.target;
-        const isEnabled = btn.classList.contains('active');
+        isZoomEnabled = !isZoomEnabled;
         
-        btn.classList.toggle('active');
-        btn.textContent = isEnabled ? 'Zoom' : 'Zoom ON';
-        
-        if (chart.options.plugins.zoom) {
-            chart.options.plugins.zoom.zoom.wheel.enabled = !isEnabled;
-            chart.options.plugins.zoom.zoom.pinch.enabled = !isEnabled;
+        const zoomBtn = event.target;
+        if (isZoomEnabled) {
+            zoomBtn.classList.add('active');
+            zoomBtn.textContent = 'Zoom ON';
+            
+            if (chart.options.plugins.zoom) {
+                chart.options.plugins.zoom.zoom.wheel.enabled = true;
+                chart.options.plugins.zoom.zoom.pinch.enabled = true;
+            }
+        } else {
+            zoomBtn.classList.remove('active');
+            zoomBtn.textContent = 'Zoom';
+            
+            if (chart.options.plugins.zoom) {
+                chart.options.plugins.zoom.zoom.wheel.enabled = false;
+                chart.options.plugins.zoom.zoom.pinch.enabled = false;
+            }
         }
         
         chart.update('none');
+        console.log('Zoom toggled:', isZoomEnabled);
     }
 
     function resetZoom() {
@@ -487,42 +706,69 @@
             chart.resetZoom();
         }
         
-        // Reset zoom button
-        document.querySelectorAll('.pmp-v-open-market-line-controls .control-btn')
-            .forEach(btn => {
-                if (btn.textContent.includes('Zoom')) {
-                    btn.classList.remove('active');
-                    btn.textContent = 'Zoom';
+        // Reset zoom button state
+        const controlButtons = document.querySelectorAll('.pmp-v-open-market-line-controls .control-btn');
+        controlButtons.forEach(btn => {
+            if (btn.textContent.includes('Zoom')) {
+                btn.classList.remove('active');
+                btn.textContent = 'Zoom';
+                isZoomEnabled = false;
+                
+                if (chart && chart.options.plugins.zoom) {
+                    chart.options.plugins.zoom.zoom.wheel.enabled = false;
+                    chart.options.plugins.zoom.zoom.pinch.enabled = false;
                 }
-            });
+            }
+        });
         
-        if (chart && chart.options.plugins.zoom) {
-            chart.options.plugins.zoom.zoom.wheel.enabled = false;
-            chart.options.plugins.zoom.zoom.pinch.enabled = false;
+        if (chart) {
+            chart.update('none');
         }
         
-        chart.update('none');
+        console.log('Zoom reset');
     }
 
     // =============================================================================
-    // Export & Initialize
+    // EXPORT FOR MODE ANALYTICS
     // =============================================================================
 
     window.PmpVOpenMarketLineChart = {
-        loadData: loadData,
-        switchTimeRange,
-        toggleZoom,
-        resetZoom,
-        toggleMetric,
+        loadData: loadModeData,
+        switchTimeRange: switchTimeRange,
+        toggleZoom: toggleZoom,
+        resetZoom: resetZoom,
+        toggleMetric: toggleMetric,
         getChart: () => chart,
         getMetrics: () => dynamicMetrics,
-        getCurrentData: () => processedData
+        getCurrentData: () => processedData,
+        getConfig: () => CHART_CONFIG,
+        debug: {
+            showDatasets: () => {
+                if (typeof datasets !== 'undefined') {
+                    console.log('=== ALL DATASETS DEBUG ===');
+                    console.log('Available datasets:', Object.keys(datasets));
+                    Object.keys(datasets).forEach((name, index) => {
+                        console.log(`Dataset ${index} "${name}":`, datasets[name]);
+                    });
+                }
+            },
+            forceLoad: () => {
+                console.log('=== FORCING DATA RELOAD ===');
+                loadModeData();
+            },
+            showMetrics: () => {
+                console.log('=== EXTRACTED METRICS ===');
+                console.log('Direct extraction result:', CHART_CONFIG.dataStructure.getMetrics());
+                console.log('Dynamic metrics created:', dynamicMetrics);
+            }
+        }
     };
 
-    // Start initialization
-    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100));
-
     console.log('=== PMP vs Open Market Line Chart initialized successfully! ===');
-    console.log('Available functions:', Object.keys(window.PmpVOpenMarketLineChart || {}));
+    console.log('Available functions:', Object.keys(window.PmpVOpenMarketLineChart));
+    console.log('Debug commands:');
+    console.log('- PmpVOpenMarketLineChart.debug.showDatasets()');
+    console.log('- PmpVOpenMarketLineChart.debug.showMetrics()');
+    console.log('- PmpVOpenMarketLineChart.debug.forceLoad()');
 
-})();
+})(); // End IIFE
