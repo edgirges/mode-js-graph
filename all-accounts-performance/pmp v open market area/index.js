@@ -1,5 +1,5 @@
 // =============================================================================
-// REUSABLE CHART SYSTEM FOR MODE ANALYTICS - PMP vs Open Market
+// REUSABLE CHART SYSTEM FOR MODE ANALYTICS - PMP vs Open Market - Area
 // =============================================================================
 // Wrapped in IIFE to prevent global variable conflicts
 // =============================================================================
