@@ -71,7 +71,7 @@
     // =============================================================================
 
     function init() {
-        const canvas = document.querySelector('.performanceTrendsChart');
+        const canvas = document.getElementById('performanceTrendsChart');
         const toggles = document.querySelector('.performance-trends-toggles');
 
         if (!canvas || !toggles || typeof Chart === 'undefined') {
@@ -113,10 +113,14 @@
 
     function loadData() {
         try {
+            console.log('Performance Trends: Loading data from Mode Analytics');
+            
             const extractedMetrics = CONFIG.getMetrics();
+            console.log('Performance Trends: Extracted metrics:', extractedMetrics);
 
             if (extractedMetrics.length > 0) {
                 const filteredMetrics = CONFIG.displayMetrics.filter(metric => extractedMetrics.includes(metric));
+                console.log('Performance Trends: Filtered metrics:', filteredMetrics);
 
                 createDynamicMetrics(filteredMetrics);
                 loadDatasetContent();
@@ -124,10 +128,10 @@
                 processData();
                 updateChart();
             } else {
-                console.warn('No metrics extracted from dataset');
+                console.warn('Performance Trends: No metrics extracted from dataset');
             }
         } catch (error) {
-            console.error('Error loading data:', error);
+            console.error('Performance Trends: Error loading data:', error);
         }
     }
 
@@ -171,10 +175,18 @@
     // =============================================================================
 
     function processData() {
-        if (!rawData.length || !dynamicMetrics.length) return;
+        if (!rawData.length || !dynamicMetrics.length) {
+            console.log('Performance Trends: No data to process. rawData length:', rawData.length, 'dynamicMetrics length:', dynamicMetrics.length);
+            return;
+        }
 
         const progressingDayColumn = findProgressingDayColumn();
-        if (!progressingDayColumn) return;
+        console.log('Performance Trends: Found progressing day column:', progressingDayColumn);
+        
+        if (!progressingDayColumn) {
+            console.log('Performance Trends: Available columns:', rawData.length > 0 ? Object.keys(rawData[0]) : 'no data');
+            return;
+        }
 
         const dailyData = {};
 
