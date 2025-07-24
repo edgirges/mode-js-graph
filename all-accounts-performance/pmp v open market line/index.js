@@ -5,13 +5,57 @@
 (function() {
     'use strict';
 
+    // =============================================================================
+    // DIRECT METRIC EXTRACTION FUNCTION (from working area chart)
+    // =============================================================================
+    function getMetricsFromDataset(datasetName, fallbackIndex = null) {
+        if (typeof datasets === 'undefined') {
+            console.warn('datasets object not available yet');
+            return [];
+        }
+
+        // Try to get the dataset
+        let targetDataset = null;
+        if (datasets[datasetName]) {
+            targetDataset = datasets[datasetName];
+            console.log(`Found dataset by name: "${datasetName}"`);
+        } else if (fallbackIndex !== null && datasets[fallbackIndex]) {
+            targetDataset = datasets[fallbackIndex];
+            console.log(`Using fallback dataset at index: ${fallbackIndex}`);
+        }
+
+        if (!targetDataset) {
+            console.error('No dataset found');
+            return [];
+        }
+
+        // Extract data array
+        const dataArray = targetDataset.content || targetDataset;
+        if (!Array.isArray(dataArray) || dataArray.length === 0) {
+            console.error('Dataset has no data');
+            return [];
+        }
+
+        // Get column names
+        const columns = Object.keys(dataArray[0]);
+        console.log('Available columns:', columns);
+
+        // Filter out date/time columns to get metrics
+        const dateTimePattern = /^(date|day|time|created|updated|timestamp)$/i;
+        const metrics = columns.filter(col => !dateTimePattern.test(col));
+        
+        console.log('Extracted metrics:', metrics);
+        return metrics;
+    }
+
     // Configuration
     const CONFIG = {
         chartTitle: 'PMP v Open Market Impressions',
         datasetName: 'PMP vs OpenMarket Imps and Spend (Obj filter does not apply)',
         fallbackIndex: 5,
         defaultTimeRange: '90D',
-        metrics: ['imps_banner_open_market', 'imps_banner_pmp', 'imps_open_market', 'imps_pmp', 'imps_total', 'imps_video_open_market', 'imps_video_pmp'],
+        // Target metrics we want to display
+        displayMetrics: ['imps_banner_open_market', 'imps_banner_pmp', 'imps_open_market', 'imps_pmp', 'imps_total', 'imps_video_open_market', 'imps_video_pmp'],
         colors: [
             '#007bff', '#28a745', '#dc3545', '#ffc107', 
             '#6f42c1', '#fd7e14', '#343a40'
@@ -23,7 +67,7 @@
     let rawData = [];
     let processedData = {};
     let currentTimeRange = CONFIG.defaultTimeRange;
-    let availableMetrics = [];
+    let dynamicMetrics = []; // This is what the working area chart uses
 
     // =============================================================================
     // Initialization
@@ -60,69 +104,143 @@
     // =============================================================================
 
     function loadData() {
-        // Get dataset
-        const dataset = datasets[CONFIG.datasetName] || datasets[CONFIG.fallbackIndex];
-        if (!dataset) {
-            console.error('Dataset not found');
-            return;
-        }
-
-        rawData = dataset.content || dataset;
-        if (!rawData.length) return;
-
-        // Extract available metrics
-        const columns = Object.keys(rawData[0]);
-        availableMetrics = CONFIG.metrics.filter(metric => columns.includes(metric));
+        console.log('=== PMP vs Open Market Line: Loading data from Mode Analytics ===');
         
-        createMetricToggles();
-        processData();
-        updateChart();
+        try {
+            if (typeof datasets !== 'undefined') {
+                console.log('Found datasets object');
+                console.log('Available datasets:', Object.keys(datasets));
+                
+                // Get metrics using direct extraction method (from working area chart)
+                const extractedMetrics = getMetricsFromDataset(CONFIG.datasetName, CONFIG.fallbackIndex);
+                
+                if (extractedMetrics.length > 0) {
+                    // Filter to only the metrics we want to display
+                    const filteredMetrics = CONFIG.displayMetrics.filter(metric => extractedMetrics.includes(metric));
+                    
+                    // Create dynamic metrics with colors (from working area chart)
+                    createDynamicMetrics(filteredMetrics);
+                    
+                    // Load the actual data
+                    loadDatasetContent();
+                    
+                    // Create metric toggles
+                    createMetricToggles();
+                    
+                    // Process and display the chart
+                    processData();
+                    updateChart();
+                } else {
+                    console.warn('No metrics extracted from dataset');
+                }
+            } else {
+                console.warn('datasets object not available yet');
+            }
+        } catch (error) {
+            console.error('Error loading Mode data:', error);
+        }
+    }
+
+    function loadDatasetContent() {
+        const dataset = datasets[CONFIG.datasetName] || datasets[CONFIG.fallbackIndex];
+        if (dataset) {
+            rawData = dataset.content || dataset || [];
+            console.log('Mode data loaded:', rawData.length, 'rows');
+            
+            if (rawData.length > 0) {
+                console.log('Sample data row:', rawData[0]);
+            }
+        }
+    }
+
+    function createDynamicMetrics(filteredMetrics) {
+        console.log('=== Creating dynamic metrics from extraction ===');
+        console.log('Filtered metrics to display:', filteredMetrics);
+        
+        dynamicMetrics = filteredMetrics.map((metric, index) => {
+            return {
+                id: metric,
+                name: formatMetricName(metric),
+                color: CONFIG.colors[index % CONFIG.colors.length],
+                backgroundColor: 'transparent', // Lines don't need background
+                visible: true,
+                type: 'line',
+                yAxisID: 'y',
+                order: index + 1,
+                dataKey: metric
+            };
+        });
+        
+        console.log('Created dynamic metrics:', dynamicMetrics);
     }
 
     function processData() {
-        if (!rawData.length) return;
+        console.log('=== Processing PMP vs Open Market Line data ===');
+        
+        if (!rawData || rawData.length === 0) {
+            console.warn('No data to process');
+            return;
+        }
+        
+        if (dynamicMetrics.length === 0) {
+            console.warn('No metrics detected');
+            return;
+        }
 
         const dateCol = findDateColumn();
-        if (!dateCol) return;
+        if (!dateCol) {
+            console.error('No date column found in data');
+            return;
+        }
+        
+        console.log(`Using date column: ${dateCol}`);
 
-        // Group by day and sum values
+        // Group by day and sum values (from working area chart)
         const dailyData = {};
         
-        rawData.forEach(row => {
+        rawData.forEach((row, index) => {
             const date = row[dateCol];
             if (!date) return;
             
-            const day = date.includes(' ') ? date.split(' ')[0] : date;
+            const dayKey = date.includes && date.includes(' ') ? date.split(' ')[0] : date;
             
-            if (!dailyData[day]) {
-                dailyData[day] = {};
-                availableMetrics.forEach(metric => {
-                    dailyData[day][metric] = 0;
-                    dailyData[day][`${metric}_count`] = 0;
+            if (!dailyData[dayKey]) {
+                dailyData[dayKey] = {};
+                dynamicMetrics.forEach(metric => {
+                    dailyData[dayKey][metric.id] = 0;
+                    dailyData[dayKey][`${metric.id}_count`] = 0;
                 });
             }
             
-            availableMetrics.forEach(metric => {
-                const value = parseFloat(row[metric] || 0);
+            // Sum up values for each metric
+            dynamicMetrics.forEach(metric => {
+                const value = parseFloat(row[metric.id] || 0);
                 if (!isNaN(value)) {
-                    dailyData[day][metric] += value;
-                    dailyData[day][`${metric}_count`] += 1;
+                    dailyData[dayKey][metric.id] += value;
+                    dailyData[dayKey][`${metric.id}_count`] += 1;
                 }
             });
         });
 
-        // Convert to time series
+        // Convert to arrays sorted by date and calculate averages
         const sortedDays = Object.keys(dailyData).sort();
         const filteredDays = filterByTimeRange(sortedDays);
         
-        processedData = { labels: filteredDays };
+        // Build processed data object
+        processedData = {
+            labels: filteredDays
+        };
         
-        availableMetrics.forEach(metric => {
-            processedData[metric] = filteredDays.map(day => {
-                const count = dailyData[day][`${metric}_count`];
-                return count > 0 ? dailyData[day][metric] / count : 0;
+        // Add each metric's data
+        dynamicMetrics.forEach(metric => {
+            processedData[metric.id] = filteredDays.map(day => {
+                const count = dailyData[day][`${metric.id}_count`];
+                return count > 0 ? dailyData[day][metric.id] / count : 0;
             });
         });
+        
+        console.log('Data processed successfully. Metrics:', Object.keys(processedData).filter(k => k !== 'labels'));
+        console.log('Date range:', filteredDays.length, 'days');
     }
 
     function findDateColumn() {
@@ -216,22 +334,29 @@
     }
 
     function createDatasets() {
-        return availableMetrics
-            .map((metric, index) => {
-                const toggle = document.getElementById(`metric-${metric}`);
-                if (!toggle || !toggle.checked) return null;
-                
-                return {
-                    label: formatMetricName(metric),
-                    data: processedData[metric] || [],
-                    borderColor: CONFIG.colors[index % CONFIG.colors.length],
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.1
-                };
-            })
-            .filter(Boolean);
+        const datasets = [];
+        
+        dynamicMetrics.forEach(metric => {
+            if (!metric.visible) return;
+            
+            const metricData = processedData[metric.id] || [];
+            
+            const dataset = {
+                label: metric.name,
+                data: metricData,
+                borderColor: metric.color,
+                backgroundColor: metric.backgroundColor,
+                borderWidth: 2,
+                fill: false, // Line chart - no fill
+                tension: 0.1,
+                yAxisID: metric.yAxisID,
+                order: metric.order || 0
+            };
+            
+            datasets.push(dataset);
+        });
+        
+        return datasets.sort((a, b) => (a.order || 0) - (b.order || 0));
     }
 
     function updateYAxisRange(datasets) {
@@ -253,8 +378,11 @@
         chart.options.scales.y.max = yMax;
     }
 
-    function formatMetricName(metric) {
-        return metric.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    function formatMetricName(columnName) {
+        // Convert column names to readable format
+        return columnName
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
     }
 
     // =============================================================================
@@ -262,37 +390,64 @@
     // =============================================================================
 
     function createMetricToggles() {
-        const container = document.querySelector('.pmp-v-open-market-line-toggles');
-        if (!container) return;
+        const togglesContainer = document.querySelector('.pmp-v-open-market-line-toggles');
+        if (!togglesContainer) {
+            console.error('Toggles container not found! Looking for: .pmp-v-open-market-line-toggles');
+            return;
+        }
         
-        container.innerHTML = '';
+        togglesContainer.innerHTML = '';
         
-        availableMetrics.forEach((metric, index) => {
-            const div = document.createElement('div');
-            div.className = 'metric-toggle active';
-            div.innerHTML = `
-                <input type="checkbox" id="metric-${metric}" checked>
-                <label for="metric-${metric}" class="metric-label">
-                    <span class="metric-color" style="background-color: ${CONFIG.colors[index % CONFIG.colors.length]}"></span>
-                    ${formatMetricName(metric)}
+        if (dynamicMetrics.length === 0) {
+            togglesContainer.innerHTML = '<p>No metrics detected. Check data loading.</p>';
+            return;
+        }
+        
+        console.log('Creating metric toggles for', dynamicMetrics.length, 'metrics');
+        
+        dynamicMetrics.forEach(metric => {
+            const toggleDiv = document.createElement('div');
+            toggleDiv.className = `metric-toggle ${metric.visible ? 'active' : ''}`;
+            toggleDiv.innerHTML = `
+                <input type="checkbox" class="metric-checkbox" id="metric-${metric.id}" ${metric.visible ? 'checked' : ''}>
+                <label for="metric-${metric.id}" class="metric-label">
+                    <span class="metric-color" style="background-color: ${metric.color}"></span>
+                    ${metric.name}
                 </label>
             `;
             
-            const checkbox = div.querySelector('input');
-            checkbox.addEventListener('change', () => {
-                div.classList.toggle('active', checkbox.checked);
-                updateChart();
+            toggleDiv.addEventListener('click', function(e) {
+                const checkbox = toggleDiv.querySelector('.metric-checkbox');
+                if (e.target === checkbox) return;
+                e.preventDefault();
+                e.stopPropagation();
+                checkbox.click();
             });
             
-            div.addEventListener('click', (e) => {
-                if (e.target !== checkbox) {
-                    e.preventDefault();
-                    checkbox.click();
-                }
+            const checkbox = toggleDiv.querySelector('.metric-checkbox');
+            checkbox.addEventListener('change', function() {
+                toggleMetric(metric.id);
             });
             
-            container.appendChild(div);
+            togglesContainer.appendChild(toggleDiv);
         });
+    }
+
+    function toggleMetric(metricId) {
+        const metric = dynamicMetrics.find(m => m.id === metricId);
+        const toggleDiv = document.getElementById(`metric-${metricId}`).parentElement;
+        const checkbox = document.getElementById(`metric-${metricId}`);
+        
+        metric.visible = checkbox.checked;
+        
+        if (metric.visible) {
+            toggleDiv.classList.add('active');
+        } else {
+            toggleDiv.classList.remove('active');
+        }
+        
+        updateChart();
+        console.log(`Metric ${metricId} toggled:`, metric.visible);
     }
 
     function switchTimeRange(timeRange) {
@@ -354,14 +509,20 @@
     // =============================================================================
 
     window.PmpVOpenMarketLineChart = {
+        loadData: loadData,
         switchTimeRange,
         toggleZoom,
         resetZoom,
+        toggleMetric,
         getChart: () => chart,
+        getMetrics: () => dynamicMetrics,
         getCurrentData: () => processedData
     };
 
     // Start initialization
     document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100));
+
+    console.log('=== PMP vs Open Market Line Chart initialized successfully! ===');
+    console.log('Available functions:', Object.keys(window.PmpVOpenMarketLineChart || {}));
 
 })();
