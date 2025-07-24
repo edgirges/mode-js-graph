@@ -1,31 +1,25 @@
 // =============================================================================
-// REUSABLE CHART SYSTEM FOR MODE ANALYTICS - PMP vs Open Market Line
-// =============================================================================
-// Wrapped in IIFE to prevent global variable conflicts
+// PMP vs Open Market Line Chart
 // =============================================================================
 
 (function() {
     'use strict';
 
     // =============================================================================
-    // DIRECT METRIC EXTRACTION FUNCTION
+    // METRIC EXTRACTION - Keep working logic from area chart
     // =============================================================================
     function getMetricsFromDataset(datasetName, fallbackIndex = null) {
-        console.log('=== DIRECT METRIC EXTRACTION ===');
-        
         if (typeof datasets === 'undefined') {
             console.warn('datasets object not available yet');
             return [];
         }
 
-        // Try to get the dataset
+        // Dataset discovery logic - preserve exactly as working area chart
         let targetDataset = null;
         if (datasets[datasetName]) {
             targetDataset = datasets[datasetName];
-            console.log(`Found dataset by name: "${datasetName}"`);
         } else if (fallbackIndex !== null && datasets[fallbackIndex]) {
             targetDataset = datasets[fallbackIndex];
-            console.log(`Using fallback dataset at index: ${fallbackIndex}`);
         }
 
         if (!targetDataset) {
@@ -33,323 +27,149 @@
             return [];
         }
 
-        // Extract data array
+        // Data validation - preserve exactly as working area chart
         const dataArray = targetDataset.content || targetDataset;
         if (!Array.isArray(dataArray) || dataArray.length === 0) {
             console.error('Dataset has no data');
             return [];
         }
 
-        // Get column names
+        // Metric extraction - preserve exactly as working area chart
         const columns = Object.keys(dataArray[0]);
-        console.log('Available columns:', columns);
-
-        // Filter out date/time columns to get metrics
         const dateTimePattern = /^(date|day|time|created|updated|timestamp)$/i;
         const metrics = columns.filter(col => !dateTimePattern.test(col));
-        
-        console.log('Extracted metrics:', metrics);
-        
-        // Validation for expected metrics
-        const expectedMetrics = ['imps_banner_open_market', 'imps_banner_pmp', 'imps_open_market', 'imps_pmp', 'imps_total', 'imps_video_open_market', 'imps_video_pmp'];
-        const foundExpected = expectedMetrics.filter(metric => metrics.includes(metric));
-        console.log('Expected metrics:', expectedMetrics);
-        console.log('Found expected metrics:', foundExpected);
         
         return metrics;
     }
 
-    // =============================================================================
-    // CONFIGURATION SECTION - MODIFY THIS FOR DIFFERENT CHARTS/QUERIES
-    // =============================================================================
-
-    const CHART_CONFIG = {
-        // Chart basic settings
+    // Configuration
+    const CONFIG = {
         chartTitle: 'PMP v Open Market Impressions',
-        chartType: 'line',
+        datasetName: 'PMP vs OpenMarket Imps and Spend (Obj filter does not apply)',
+        fallbackIndex: 5,
         defaultTimeRange: '90D',
+        displayMetrics: ['imps_banner_open_market', 'imps_banner_pmp', 'imps_open_market', 'imps_pmp', 'imps_total', 'imps_video_open_market', 'imps_video_pmp'],
         
-        // Mode Analytics integration
-        modeDatasetName: 'PMP vs OpenMarket Imps and Spend (Obj filter does not apply)', // Name of your SQL query in Mode
-        fallbackDatasetIndex: 5, // Fallback to datasets[5] if specific dataset not found
-
-        // Data Structure Definition - Describes your SQL output
-        dataStructure: {
-            dateColumn: 'day',                    // Primary date column name
-            alternateDateColumns: ['day', 'date'], // Alternative date column names to try
-            
-            // DIRECT METRIC EXTRACTION - No pattern matching needed!
-            getMetrics: function() {
-                return getMetricsFromDataset(
-                    CHART_CONFIG.modeDatasetName, 
-                    CHART_CONFIG.fallbackDatasetIndex
-                );
-            },
-
-            // METRIC FILTERING - Specify which metrics to display
-            displayMetrics: ['imps_banner_open_market', 'imps_banner_pmp', 'imps_open_market', 'imps_pmp', 'imps_total', 'imps_video_open_market', 'imps_video_pmp'], // Only show these specific metrics
-            
-            // Cached metrics - will be populated dynamically
-            metrics: [] // This will be populated dynamically
-        },
-        
-        // Chart Styling
-        styling: {
-            height: 400,
-            showLegend: false,
-            gridColor: 'rgba(0, 0, 0, 0.1)',
-            backgroundColor: '#ffffff'
-        },
-        
-        // Y-Axis Configuration
-        yAxes: {
-            primary: {
-                id: 'y',
-                position: 'left',
-                title: 'Impressions',
-                min: 0,
-                // max will be calculated dynamically based on data
-                formatter: (value) => value.toLocaleString()
-            }
+        // Preserve working metric extraction pattern
+        getMetrics: function() {
+            return getMetricsFromDataset(CONFIG.datasetName, CONFIG.fallbackIndex);
         }
     };
 
-    // =============================================================================
-    // NAMESPACED GLOBAL VARIABLES
-    // =============================================================================
-
+    // State
     let chart;
     let rawData = [];
     let processedData = {};
-    let currentTimeRange = CHART_CONFIG.defaultTimeRange;
+    let currentTimeRange = CONFIG.defaultTimeRange;
     let isZoomEnabled = false;
-    let dynamicMetrics = []; // Will be populated from data
+    let dynamicMetrics = [];
 
     // =============================================================================
-    // INITIALIZATION
+    // Initialization - Single mechanism, preserve working polling
     // =============================================================================
 
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(() => {
-            initializeChart();
-            
-            // Try to load data from Mode Analytics if available
-            if (typeof datasets !== 'undefined') {
-                loadModeData();
-            } else {
-                pollForModeData();
-            }
-        }, 100);
-    });
-
-    // For Mode Analytics - polling mechanism to ensure initialization
-    let initAttempts = 0;
-    const maxAttempts = 10;
-
-    function attemptInitialization() {
-        initAttempts++;
-        
+    function init() {
         const canvas = document.getElementById('pmpVOpenMarketLineChart');
-        const togglesContainer = document.querySelector('.pmp-v-open-market-line-toggles');
+        const toggles = document.querySelector('.pmp-v-open-market-line-toggles');
         
-        if (canvas && togglesContainer && typeof Chart !== 'undefined') {
-            if (!chart) {
-                initializeChart();
-            }
-            
-            // Try to load data from Mode Analytics
-            if (typeof datasets !== 'undefined') {
-                loadModeData();
-            } else {
-                pollForModeData();
-            }
+        if (!canvas || !toggles || typeof Chart === 'undefined') {
+            setTimeout(init, 500);
             return;
         }
+
+        createChart();
         
-        if (initAttempts < maxAttempts) {
-            setTimeout(attemptInitialization, 500);
+        if (typeof datasets !== 'undefined') {
+            loadData();
+        } else {
+            pollForData();
         }
     }
 
-    // Start polling after a short delay
-    setTimeout(attemptInitialization, 200);
+    function pollForData() {
+        if (typeof datasets !== 'undefined') {
+            loadData();
+        } else {
+            setTimeout(pollForData, 1000);
+        }
+    }
 
     // =============================================================================
-    // MODE ANALYTICS DATA LOADING
+    // Data Loading - Preserve working pipeline
     // =============================================================================
 
-    function loadModeData() {
-        console.log('=== PMP vs Open Market Line: Loading data from Mode Analytics ===');
-        
+    function loadData() {
         try {
-            if (typeof datasets !== 'undefined') {
-                console.log('Found datasets object');
-                console.log('Available datasets:', Object.keys(datasets));
+            // Use exact working pipeline from area chart
+            const extractedMetrics = CONFIG.getMetrics();
+            
+            if (extractedMetrics.length > 0) {
+                // Filter metrics exactly like working area chart
+                const filteredMetrics = CONFIG.displayMetrics.filter(metric => extractedMetrics.includes(metric));
                 
-                // Get metrics using our direct extraction method
-                const extractedMetrics = CHART_CONFIG.dataStructure.getMetrics();
-                
-                if (extractedMetrics.length > 0) {
-                    // Store the metrics in our config
-                    CHART_CONFIG.dataStructure.metrics = extractedMetrics;
-                    
-                    // Create dynamic metrics with colors
-                    createDynamicMetricsFromExtraction(extractedMetrics);
-                    
-                    // Load the actual data
-                    loadDatasetContent();
-                    
-                    // Create metric toggles
-                    createMetricToggles();
-                    
-                    // Process and display the chart
-                    processData();
-                    updateChart();
-                } else {
-                    console.warn('No metrics extracted from dataset');
-                }
+                createDynamicMetrics(filteredMetrics);
+                loadDatasetContent();
+                createMetricToggles();
+                processData();
+                updateChart();
             } else {
-                console.warn('No datasets object found in Mode Analytics');
+                console.warn('No metrics extracted from dataset');
             }
         } catch (error) {
-            console.error('Error loading Mode data:', error);
+            console.error('Error loading data:', error);
         }
     }
 
     function loadDatasetContent() {
-        const targetQueryName = CHART_CONFIG.modeDatasetName;
+        // Preserve exact dataset loading logic from working area chart
         let targetDataset = null;
         
-        if (datasets[targetQueryName]) {
-            targetDataset = datasets[targetQueryName];
-        } else if (datasets[CHART_CONFIG.fallbackDatasetIndex]) {
-            targetDataset = datasets[CHART_CONFIG.fallbackDatasetIndex];
+        if (datasets[CONFIG.datasetName]) {
+            targetDataset = datasets[CONFIG.datasetName];
+        } else if (datasets[CONFIG.fallbackIndex]) {
+            targetDataset = datasets[CONFIG.fallbackIndex];
         }
         
         if (targetDataset) {
             rawData = targetDataset.content || targetDataset || [];
-            console.log('Mode data loaded:', rawData.length, 'rows');
-            
-            if (rawData.length > 0) {
-                console.log('Sample data row:', rawData[0]);
-            }
         }
     }
 
-    function createDynamicMetricsFromExtraction(extractedMetrics) {
-        console.log('=== Creating dynamic metrics from extraction ===');
-        console.log('Extracted metrics:', extractedMetrics);
-        
-        // Filter metrics based on displayMetrics configuration
-        const displayMetrics = CHART_CONFIG.dataStructure.displayMetrics;
-        const filteredMetrics = displayMetrics && displayMetrics.length > 0 
-            ? extractedMetrics.filter(metric => displayMetrics.includes(metric))
-            : extractedMetrics;
-            
-        console.log('Display metrics filter:', displayMetrics);
-        console.log('Filtered metrics to display:', filteredMetrics);
-        
-        // Create color palette
+    function createDynamicMetrics(filteredMetrics) {
+        // Simplified from area chart but preserve core structure
         const colors = [
-            { color: '#007bff', backgroundColor: 'rgba(0, 123, 255, 0.3)' },
-            { color: '#28a745', backgroundColor: 'rgba(40, 167, 69, 0.3)' },
-            { color: '#dc3545', backgroundColor: 'rgba(220, 53, 69, 0.3)' },
-            { color: '#ffc107', backgroundColor: 'rgba(255, 193, 7, 0.3)' },
-            { color: '#6f42c1', backgroundColor: 'rgba(111, 66, 193, 0.3)' },
-            { color: '#fd7e14', backgroundColor: 'rgba(253, 126, 20, 0.3)' },
-            { color: '#343a40', backgroundColor: 'rgba(52, 58, 64, 0.3)' }
+            '#007bff', '#28a745', '#dc3545', '#ffc107', 
+            '#6f42c1', '#fd7e14', '#343a40'
         ];
         
-        dynamicMetrics = filteredMetrics.map((metric, index) => {
-            const colorSet = colors[index % colors.length];
-            return {
-                id: metric,
-                name: formatMetricName(metric),
-                color: colorSet.color,
-                backgroundColor: 'transparent', // LINE CHART CHANGE: No background for lines
-                visible: true,
-                type: 'line',
-                yAxisID: 'y',
-                order: index + 1,
-                dataKey: metric
-            };
-        });
-        
-        console.log('Created dynamic metrics:', dynamicMetrics);
-        
-        // Validation: Check if all requested metrics were found
-        if (displayMetrics && displayMetrics.length > 0) {
-            const foundRequestedMetrics = displayMetrics.filter(metric => extractedMetrics.includes(metric));
-            const missingMetrics = displayMetrics.filter(metric => !extractedMetrics.includes(metric));
-            
-            console.log('Requested metrics found:', foundRequestedMetrics);
-            if (missingMetrics.length > 0) {
-                console.warn('Requested metrics NOT found in dataset:', missingMetrics);
-            }
-        }
+        dynamicMetrics = filteredMetrics.map((metric, index) => ({
+            id: metric,
+            name: formatMetricName(metric),
+            color: colors[index % colors.length],
+            visible: true,
+            yAxisID: 'y',
+            order: index + 1
+        }));
     }
 
     function formatMetricName(columnName) {
-        // Convert column names to readable format
-        return columnName
-            .replace(/_/g, ' ')
-            .replace(/\b\w/g, l => l.toUpperCase());
-    }
-
-    // Poll for Mode data if not immediately available
-    function pollForModeData() {
-        let pollAttempts = 0;
-        const maxPollAttempts = 20;
-        
-        console.log('Polling for Mode datasets...');
-        
-        function checkForModeData() {
-            pollAttempts++;
-            
-            if (typeof datasets !== 'undefined') {
-                console.log('Datasets object found!');
-                loadModeData();
-                return;
-            }
-            
-            if (pollAttempts < maxPollAttempts) {
-                setTimeout(checkForModeData, 1000);
-            }
-        }
-        
-        checkForModeData();
+        return columnName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
 
     // =============================================================================
-    // DATA PROCESSING
+    // Data Processing - Preserve working aggregation logic
     // =============================================================================
 
     function processData() {
-        console.log('=== Processing PMP vs Open Market Line data ===');
-        
-        if (!rawData || rawData.length === 0) {
-            console.warn('No data to process');
-            return;
-        }
-        
-        if (dynamicMetrics.length === 0) {
-            console.warn('No metrics detected');
-            return;
-        }
-        
+        if (!rawData.length || !dynamicMetrics.length) return;
+
         const dateColumn = findDateColumn();
-        
-        if (!dateColumn) {
-            console.error('No date column found in data');
-            return;
-        }
-        
-        console.log(`Using date column: ${dateColumn}`);
-        
-        // Group data by day
+        if (!dateColumn) return;
+
+        // Preserve exact aggregation logic from working area chart
         const dailyData = {};
         
-        rawData.forEach((row, index) => {
+        rawData.forEach(row => {
             const date = row[dateColumn];
             if (!date) return;
             
@@ -363,7 +183,6 @@
                 });
             }
             
-            // Sum up values for each metric
             dynamicMetrics.forEach(metric => {
                 const value = parseFloat(row[metric.id] || 0);
                 if (!isNaN(value)) {
@@ -372,119 +191,62 @@
                 }
             });
         });
-        
-        // Convert to arrays sorted by date and calculate averages
+
         const sortedDays = Object.keys(dailyData).sort();
-        const filteredDays = filterDaysByTimeRange(sortedDays);
+        const filteredDays = filterByTimeRange(sortedDays);
         
-        // Build processed data object
-        processedData = {
-            labels: filteredDays
-        };
+        processedData = { labels: filteredDays };
         
-        // Add each metric's data
         dynamicMetrics.forEach(metric => {
             processedData[metric.id] = filteredDays.map(day => {
                 const count = dailyData[day][`${metric.id}_count`];
                 return count > 0 ? dailyData[day][metric.id] / count : 0;
             });
         });
-        
-        console.log('Data processed successfully. Metrics:', Object.keys(processedData).filter(k => k !== 'labels'));
-        console.log('Date range:', filteredDays.length, 'days');
     }
 
     function findDateColumn() {
-        if (!rawData || rawData.length === 0) return null;
+        if (!rawData.length) return null;
+        const columns = Object.keys(rawData[0]);
         
-        const sampleRow = rawData[0];
-        const columns = Object.keys(sampleRow);
+        // Try standard columns first
+        if (columns.includes('day')) return 'day';
+        if (columns.includes('date')) return 'date';
         
-        // Try the primary date column first
-        if (columns.includes(CHART_CONFIG.dataStructure.dateColumn)) {
-            return CHART_CONFIG.dataStructure.dateColumn;
-        }
-        
-        // Try alternative date columns
-        for (const altCol of CHART_CONFIG.dataStructure.alternateDateColumns) {
-            if (columns.includes(altCol)) {
-                return altCol;
-            }
-        }
-        
-        // Look for any column that might be a date
-        const datePattern = /date|day|time/i;
-        const dateColumn = columns.find(col => datePattern.test(col));
-        
-        return dateColumn || null;
+        // Fallback pattern
+        return columns.find(col => /date|day|time/i.test(col));
     }
 
-    function filterDaysByTimeRange(sortedDays) {
-        if (currentTimeRange === 'ALL') {
-            return sortedDays;
-        }
+    function filterByTimeRange(sortedDays) {
+        if (currentTimeRange === 'ALL' || !sortedDays.length) return sortedDays;
         
-        let daysToShow;
-        switch (currentTimeRange) {
-            case '7D':
-                daysToShow = 7;
-                break;
-            case '30D':
-                daysToShow = 30;
-                break;
-            case '90D':
-                daysToShow = 90;
-                break;
-            default:
-                return sortedDays;
-        }
+        const daysMap = { '7D': 7, '30D': 30, '90D': 90 };
+        const daysToShow = daysMap[currentTimeRange];
+        if (!daysToShow) return sortedDays;
         
-        if (sortedDays.length === 0) return [];
-        
-        const mostRecentDate = new Date(sortedDays[sortedDays.length - 1]);
-        const startDate = new Date(mostRecentDate);
+        const endDate = new Date(sortedDays[sortedDays.length - 1]);
+        const startDate = new Date(endDate);
         startDate.setDate(startDate.getDate() - (daysToShow - 1));
         
         return sortedDays.filter(day => {
             const dayDate = new Date(day);
-            return dayDate >= startDate && dayDate <= mostRecentDate;
+            return dayDate >= startDate && dayDate <= endDate;
         });
     }
 
     // =============================================================================
-    // CHART INITIALIZATION AND UPDATES
+    // Chart Management
     // =============================================================================
 
-    function initializeChart() {
-        console.log('=== Initializing PMP vs Open Market Line chart ===');
-        
-        if (typeof Chart === 'undefined') {
-            console.error('Chart.js not available!');
-            return;
-        }
-        
+    function createChart() {
         const canvas = document.getElementById('pmpVOpenMarketLineChart');
-        if (!canvas) {
-            console.error('Canvas not found! Looking for ID: pmpVOpenMarketLineChart');
-            return;
-        }
-        
         const ctx = canvas.getContext('2d');
         
-        // Register Chart.js plugins
-        if (typeof ChartZoom !== 'undefined') {
-            Chart.register(ChartZoom);
-        }
-        if (typeof ChartAnnotation !== 'undefined') {
-            Chart.register(ChartAnnotation);
-        }
+        if (typeof ChartZoom !== 'undefined') Chart.register(ChartZoom);
         
         chart = new Chart(ctx, {
             type: 'line',
-            data: {
-                labels: [],
-                datasets: []
-            },
+            data: { labels: [], datasets: [] },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -495,144 +257,94 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: CHART_CONFIG.chartTitle
+                        text: CONFIG.chartTitle
                     },
-                    legend: {
-                        display: false
-                    },
+                    legend: { display: false },
                     zoom: {
                         zoom: {
-                            wheel: {
-                                enabled: false,
-                            },
-                            pinch: {
-                                enabled: false
-                            },
+                            wheel: { enabled: false },
+                            pinch: { enabled: false },
                             mode: 'x',
                         },
-                        pan: {
-                            enabled: true,
-                            mode: 'x',
-                        }
+                        pan: { enabled: true, mode: 'x' }
                     }
                 },
                 scales: {
                     x: {
                         type: 'time',
-                        time: {
-                            unit: 'day'
-                        },
-                        title: {
-                            display: true,
-                            text: 'Date'
-                        }
+                        time: { unit: 'day' },
+                        title: { display: true, text: 'Date' }
                     },
                     y: {
-                        ...CHART_CONFIG.yAxes.primary,
+                        position: 'left',
+                        title: { display: true, text: 'Impressions' },
                         ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString();
-                            }
+                            callback: value => value.toLocaleString()
                         }
                     }
                 }
             }
         });
-        
-        console.log('Chart created successfully');
     }
 
     function updateChart() {
-        if (!chart) {
-            console.warn('Chart not initialized yet');
-            return;
-        }
-        
-        if (!processedData || !processedData.labels) {
-            console.warn('No processed data available for chart update');
-            return;
-        }
-        
+        if (!chart || !processedData.labels) return;
+
         const datasets = createDatasets();
-        
         chart.data.labels = processedData.labels;
         chart.data.datasets = datasets;
-        
         chart.update('active');
-        console.log('Chart updated with', datasets.length, 'visible metrics');
     }
 
     function createDatasets() {
-        const datasets = [];
-        
-        dynamicMetrics.forEach(metric => {
-            if (!metric.visible) return;
-            
-            const metricData = processedData[metric.id] || [];
-            
-            const dataset = {
+        return dynamicMetrics
+            .filter(metric => metric.visible)
+            .map(metric => ({
                 label: metric.name,
-                data: metricData,
+                data: processedData[metric.id] || [],
                 borderColor: metric.color,
-                backgroundColor: metric.backgroundColor,
+                backgroundColor: 'transparent',
                 borderWidth: 2,
-                fill: false, // LINE CHART CHANGE: No fill for lines
+                fill: false,
                 tension: 0.1,
                 yAxisID: metric.yAxisID,
-                order: metric.order || 0
-            };
-            
-            datasets.push(dataset);
-        });
-        
-        return datasets.sort((a, b) => (a.order || 0) - (b.order || 0));
+                order: metric.order
+            }))
+            .sort((a, b) => a.order - b.order);
     }
 
     // =============================================================================
-    // METRIC TOGGLES AND CONTROLS
+    // UI Controls
     // =============================================================================
 
     function createMetricToggles() {
-        const togglesContainer = document.querySelector('.pmp-v-open-market-line-toggles');
-        if (!togglesContainer) {
-            console.error('Toggles container not found! Looking for: .pmp-v-open-market-line-toggles');
-            return;
-        }
+        const container = document.querySelector('.pmp-v-open-market-line-toggles');
+        if (!container || !dynamicMetrics.length) return;
         
-        togglesContainer.innerHTML = '';
-        
-        if (dynamicMetrics.length === 0) {
-            togglesContainer.innerHTML = '<p>No metrics detected. Check data loading.</p>';
-            return;
-        }
-        
-        console.log('Creating metric toggles for', dynamicMetrics.length, 'metrics');
+        container.innerHTML = '';
         
         dynamicMetrics.forEach(metric => {
-            const toggleDiv = document.createElement('div');
-            toggleDiv.className = `metric-toggle ${metric.visible ? 'active' : ''}`;
-            toggleDiv.innerHTML = `
-                <input type="checkbox" class="metric-checkbox" id="metric-${metric.id}" ${metric.visible ? 'checked' : ''}>
+            const div = document.createElement('div');
+            div.className = 'metric-toggle active';
+            div.innerHTML = `
+                <input type="checkbox" id="metric-${metric.id}" checked>
                 <label for="metric-${metric.id}" class="metric-label">
                     <span class="metric-color" style="background-color: ${metric.color}"></span>
                     ${metric.name}
                 </label>
             `;
             
-            toggleDiv.addEventListener('click', function(e) {
-                const checkbox = toggleDiv.querySelector('.metric-checkbox');
-                if (e.target === checkbox) return;
-                e.preventDefault();
-                e.stopPropagation();
-                checkbox.click();
+            const checkbox = div.querySelector('input');
+            checkbox.addEventListener('change', () => toggleMetric(metric.id));
+            
+            div.addEventListener('click', (e) => {
+                if (e.target !== checkbox) {
+                    e.preventDefault();
+                    checkbox.click();
+                }
             });
             
-            const checkbox = toggleDiv.querySelector('.metric-checkbox');
-            checkbox.addEventListener('change', function() {
-                toggleMetric(metric.id);
-            });
-            
-            togglesContainer.appendChild(toggleDiv);
+            container.appendChild(div);
         });
     }
 
@@ -642,34 +354,21 @@
         const checkbox = document.getElementById(`metric-${metricId}`);
         
         metric.visible = checkbox.checked;
-        
-        if (metric.visible) {
-            toggleDiv.classList.add('active');
-        } else {
-            toggleDiv.classList.remove('active');
-        }
-        
+        toggleDiv.classList.toggle('active', metric.visible);
         updateChart();
-        console.log(`Metric ${metricId} toggled:`, metric.visible);
     }
 
-    // =============================================================================
-    // CONTROL FUNCTIONS
-    // =============================================================================
-
     function switchTimeRange(timeRange) {
-        console.log('Switching time range to:', timeRange);
         currentTimeRange = timeRange;
         
-        // Update active button - scope to this chart's container only
-        const controlButtons = document.querySelectorAll('.pmp-v-open-market-line-controls .control-btn');
-        controlButtons.forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.textContent.trim() === timeRange || 
-                (timeRange === 'ALL' && btn.textContent.trim() === 'All')) {
-                btn.classList.add('active');
-            }
-        });
+        document.querySelectorAll('.pmp-v-open-market-line-controls .control-btn')
+            .forEach(btn => {
+                btn.classList.remove('active');
+                const btnText = btn.textContent.trim();
+                if (btnText === timeRange || (timeRange === 'ALL' && btnText === 'All')) {
+                    btn.classList.add('active');
+                }
+            });
         
         processData();
         updateChart();
@@ -678,27 +377,16 @@
     function toggleZoom() {
         isZoomEnabled = !isZoomEnabled;
         
-        const zoomBtn = event.target;
-        if (isZoomEnabled) {
-            zoomBtn.classList.add('active');
-            zoomBtn.textContent = 'Zoom ON';
-            
-            if (chart.options.plugins.zoom) {
-                chart.options.plugins.zoom.zoom.wheel.enabled = true;
-                chart.options.plugins.zoom.zoom.pinch.enabled = true;
-            }
-        } else {
-            zoomBtn.classList.remove('active');
-            zoomBtn.textContent = 'Zoom';
-            
-            if (chart.options.plugins.zoom) {
-                chart.options.plugins.zoom.zoom.wheel.enabled = false;
-                chart.options.plugins.zoom.zoom.pinch.enabled = false;
-            }
+        const btn = event.target;
+        btn.classList.toggle('active', isZoomEnabled);
+        btn.textContent = isZoomEnabled ? 'Zoom ON' : 'Zoom';
+        
+        if (chart.options.plugins.zoom) {
+            chart.options.plugins.zoom.zoom.wheel.enabled = isZoomEnabled;
+            chart.options.plugins.zoom.zoom.pinch.enabled = isZoomEnabled;
         }
         
         chart.update('none');
-        console.log('Zoom toggled:', isZoomEnabled);
     }
 
     function resetZoom() {
@@ -706,69 +394,39 @@
             chart.resetZoom();
         }
         
-        // Reset zoom button state
-        const controlButtons = document.querySelectorAll('.pmp-v-open-market-line-controls .control-btn');
-        controlButtons.forEach(btn => {
-            if (btn.textContent.includes('Zoom')) {
-                btn.classList.remove('active');
-                btn.textContent = 'Zoom';
-                isZoomEnabled = false;
-                
-                if (chart && chart.options.plugins.zoom) {
-                    chart.options.plugins.zoom.zoom.wheel.enabled = false;
-                    chart.options.plugins.zoom.zoom.pinch.enabled = false;
+        document.querySelectorAll('.pmp-v-open-market-line-controls .control-btn')
+            .forEach(btn => {
+                if (btn.textContent.includes('Zoom')) {
+                    btn.classList.remove('active');
+                    btn.textContent = 'Zoom';
+                    isZoomEnabled = false;
                 }
-            }
-        });
+            });
         
-        if (chart) {
-            chart.update('none');
+        if (chart && chart.options.plugins.zoom) {
+            chart.options.plugins.zoom.zoom.wheel.enabled = false;
+            chart.options.plugins.zoom.zoom.pinch.enabled = false;
         }
         
-        console.log('Zoom reset');
+        chart.update('none');
     }
 
     // =============================================================================
-    // EXPORT FOR MODE ANALYTICS
+    // Export
     // =============================================================================
 
     window.PmpVOpenMarketLineChart = {
-        loadData: loadModeData,
-        switchTimeRange: switchTimeRange,
-        toggleZoom: toggleZoom,
-        resetZoom: resetZoom,
-        toggleMetric: toggleMetric,
+        loadData,
+        switchTimeRange,
+        toggleZoom,
+        resetZoom,
+        toggleMetric,
         getChart: () => chart,
         getMetrics: () => dynamicMetrics,
-        getCurrentData: () => processedData,
-        getConfig: () => CHART_CONFIG,
-        debug: {
-            showDatasets: () => {
-                if (typeof datasets !== 'undefined') {
-                    console.log('=== ALL DATASETS DEBUG ===');
-                    console.log('Available datasets:', Object.keys(datasets));
-                    Object.keys(datasets).forEach((name, index) => {
-                        console.log(`Dataset ${index} "${name}":`, datasets[name]);
-                    });
-                }
-            },
-            forceLoad: () => {
-                console.log('=== FORCING DATA RELOAD ===');
-                loadModeData();
-            },
-            showMetrics: () => {
-                console.log('=== EXTRACTED METRICS ===');
-                console.log('Direct extraction result:', CHART_CONFIG.dataStructure.getMetrics());
-                console.log('Dynamic metrics created:', dynamicMetrics);
-            }
-        }
+        getCurrentData: () => processedData
     };
 
-    console.log('=== PMP vs Open Market Line Chart initialized successfully! ===');
-    console.log('Available functions:', Object.keys(window.PmpVOpenMarketLineChart));
-    console.log('Debug commands:');
-    console.log('- PmpVOpenMarketLineChart.debug.showDatasets()');
-    console.log('- PmpVOpenMarketLineChart.debug.showMetrics()');
-    console.log('- PmpVOpenMarketLineChart.debug.forceLoad()');
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100));
 
-})(); // End IIFE
+})();
