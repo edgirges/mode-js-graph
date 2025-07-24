@@ -65,7 +65,7 @@
     let dynamicMetrics = [];
 
     // =============================================================================
-    // Initialization - Single mechanism, preserve working polling
+    // Initialization - Robust for Mode Analytics environment
     // =============================================================================
 
     function init() {
@@ -73,16 +73,19 @@
         const toggles = document.querySelector('.pmp-v-open-market-line-toggles');
         
         if (!canvas || !toggles || typeof Chart === 'undefined') {
-            setTimeout(init, 500);
-            return;
+            return false; // Signal that we need to retry
         }
 
-        createChart();
+        if (!chart) {
+            createChart();
+        }
         
         if (typeof datasets !== 'undefined') {
             loadData();
+            return true; // Successfully initialized
         } else {
             pollForData();
+            return true; // Chart created, polling for data
         }
     }
 
@@ -92,6 +95,14 @@
         } else {
             setTimeout(pollForData, 1000);
         }
+    }
+
+    // Robust initialization for Mode Analytics
+    function attemptInit() {
+        if (init()) {
+            return; // Successfully initialized
+        }
+        setTimeout(attemptInit, 500); // Retry if not ready
     }
 
     // =============================================================================
@@ -426,7 +437,8 @@
         getCurrentData: () => processedData
     };
 
-    // Initialize
-    document.addEventListener('DOMContentLoaded', () => setTimeout(init, 100));
+    // Initialize - Multiple entry points for Mode Analytics reliability
+    document.addEventListener('DOMContentLoaded', () => setTimeout(attemptInit, 100));
+    setTimeout(attemptInit, 200); // Also try independently of DOM ready
 
 })();
