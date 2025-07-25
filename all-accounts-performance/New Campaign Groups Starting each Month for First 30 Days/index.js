@@ -325,17 +325,19 @@
             const checkbox = div.querySelector('.metric-checkbox');
             console.log(`Created checkbox for metric: ${metric.id}, element ID: metric-${metric.id}`);
             
-            checkbox.addEventListener('change', () => {
-                console.log(`Checkbox changed for metric: ${metric.id}`);
+            checkbox.addEventListener('change', (e) => {
+                console.log(`Checkbox changed for metric: ${metric.id}, new checked state: ${e.target.checked}`);
+                e.stopPropagation();
                 toggleMetric(metric.id);
             });
 
             div.addEventListener('click', (e) => {
-                if (e.target === checkbox) return;
-                console.log(`Div clicked for metric: ${metric.id}`);
+                if (e.target === checkbox || e.target.tagName === 'INPUT') return;
+                console.log(`Div clicked for metric: ${metric.id}, current checked: ${checkbox.checked}`);
                 e.preventDefault();
                 e.stopPropagation();
-                checkbox.click();
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
             });
 
             container.appendChild(div);
