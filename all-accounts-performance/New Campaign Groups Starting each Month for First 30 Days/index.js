@@ -5,6 +5,8 @@
 (function() {
     'use strict';
 
+    console.log('=== Campaign Groups 30 Days Chart script loaded! ===');
+
     // =============================================================================
     // METRIC EXTRACTION
     // =============================================================================
@@ -98,9 +100,12 @@
     }
 
     function attemptInit() {
+        console.log('Campaign Groups 30 Days: Attempting initialization...');
         if (init()) {
+            console.log('Campaign Groups 30 Days: Successfully initialized!');
             return;
         }
+        console.log('Campaign Groups 30 Days: Init failed, retrying...');
         setTimeout(attemptInit, 500);
     }
 
@@ -407,4 +412,5 @@
     // Initialize - Multiple entry points for Mode Analytics reliability
     document.addEventListener('DOMContentLoaded', () => setTimeout(attemptInit, 100));
     setTimeout(attemptInit, 200); // Also try independently of DOM ready
-});
+
+})(); // End IIFE
