@@ -155,12 +155,6 @@
         
         if (targetDataset) {
             rawData = targetDataset.content || targetDataset || [];
-            console.log('Campaign Groups 30 Days: Loaded', rawData.length, 'rows');
-            if (rawData.length > 0) {
-                console.log('Campaign Groups 30 Days: Sample row:', rawData[0]);
-            }
-        } else {
-            console.log('Campaign Groups 30 Days: No dataset found');
         }
     }
 
@@ -214,6 +208,7 @@
                 const value = row ? parseFloat(row[metric.id] || 0) : 0;
                 return value;
             });
+           
         });
 
         console.log('Campaign Groups 30 Days: Processed data for', uniqueMonths.length, 'months and', dynamicMetrics.length, 'metrics');
@@ -333,9 +328,17 @@
 
     function toggleMetric(metricId) {
         const metric = dynamicMetrics.find(m => m.id === metricId);
-        if (!metric) return;
+        if (!metric) {
+            console.log(`Metric not found: ${metricId}`);
+            return;
+        }
         
         const checkbox = document.getElementById(`metric-${metricId}`);
+        if (!checkbox) {
+            console.log(`Checkbox not found for ID: metric-${metricId}`);
+            return;
+        }
+        
         const toggleDiv = checkbox.parentElement;
         
         metric.visible = checkbox.checked;
