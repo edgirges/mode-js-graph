@@ -272,22 +272,31 @@
     function updateChart() {
         if (!chart || !processedData.labels) return;
 
+        console.log('updateChart: dynamicMetrics visibility:', dynamicMetrics.map(m => `${m.id}:${m.visible}`));
         const datasets = createDatasets();      
+        console.log('updateChart: created datasets:', datasets.map(d => d.label));
         chart.data.labels = processedData.labels;
         chart.data.datasets = datasets;
         chart.update('active');
     }
 
     function createDatasets() {
-        return dynamicMetrics.filter(metric => metric.visible).map(metric => ({
-            label: metric.name,
-            data: processedData[metric.id] || [],
-            backgroundColor: metric.color,
-            borderColor: metric.color,
-            borderWidth: 1,
-            yAxisID: metric.yAxisID,
-            order: metric.order
-        }))
+        const visibleMetrics = dynamicMetrics.filter(metric => metric.visible);
+        console.log('createDatasets: visible metrics:', visibleMetrics.map(m => m.id));
+        
+        return visibleMetrics.map(metric => {
+            const data = processedData[metric.id] || [];
+            console.log(`createDatasets: ${metric.id} has data length:`, data.length, 'sample:', data.slice(0,3));
+            return {
+                label: metric.name,
+                data: data,
+                backgroundColor: metric.color,
+                borderColor: metric.color,
+                borderWidth: 1,
+                yAxisID: metric.yAxisID,
+                order: metric.order
+            };
+        })
         .sort((a, b) => a.order - b.order);
     }
 
@@ -348,7 +357,9 @@
         
         const toggleDiv = checkbox.parentElement;
         
+        console.log(`toggleMetric: ${metricId} - checkbox.checked: ${checkbox.checked}, old visibility: ${metric.visible}`);
         metric.visible = checkbox.checked;
+        console.log(`toggleMetric: ${metricId} - new visibility: ${metric.visible}`);
         toggleDiv.classList.toggle('active', metric.visible);
         updateChart();
     }
