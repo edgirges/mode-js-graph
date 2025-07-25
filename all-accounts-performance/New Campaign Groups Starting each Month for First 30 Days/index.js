@@ -328,7 +328,7 @@
             checkbox.addEventListener('change', (e) => {
                 console.log(`Checkbox changed for metric: ${metric.id}, new checked state: ${e.target.checked}`);
                 e.stopPropagation();
-                toggleMetric(metric.id);
+                toggleMetric(metric.id, e.target.checked);
             });
 
             div.addEventListener('click', (e) => {
@@ -336,15 +336,16 @@
                 console.log(`Div clicked for metric: ${metric.id}, current checked: ${checkbox.checked}`);
                 e.preventDefault();
                 e.stopPropagation();
-                checkbox.checked = !checkbox.checked;
-                checkbox.dispatchEvent(new Event('change'));
+                const newState = !checkbox.checked;
+                checkbox.checked = newState;
+                toggleMetric(metric.id, newState);
             });
 
             container.appendChild(div);
         });
     }
 
-    function toggleMetric(metricId) {
+    function toggleMetric(metricId, checkedState) {
         const metric = dynamicMetrics.find(m => m.id === metricId);
         if (!metric) {
             console.log(`Metric not found: ${metricId}`);
@@ -359,8 +360,8 @@
         
         const toggleDiv = checkbox.parentElement;
         
-        console.log(`toggleMetric: ${metricId} - checkbox.checked: ${checkbox.checked}, old visibility: ${metric.visible}`);
-        metric.visible = checkbox.checked;
+        console.log(`toggleMetric: ${metricId} - passed state: ${checkedState}, old visibility: ${metric.visible}`);
+        metric.visible = checkedState;
         console.log(`toggleMetric: ${metricId} - new visibility: ${metric.visible}`);
         toggleDiv.classList.toggle('active', metric.visible);
         updateChart();
