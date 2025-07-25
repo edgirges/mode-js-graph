@@ -300,6 +300,7 @@
         if (!container || !dynamicMetrics.length) return;
 
         container.innerHTML = '';
+        console.log('Creating toggles for metrics:', dynamicMetrics.map(m => m.id));
 
         dynamicMetrics.forEach(metric => {
             const div = document.createElement('div');
@@ -313,10 +314,16 @@
             `;
 
             const checkbox = div.querySelector('.metric-checkbox');
-            checkbox.addEventListener('change', () => toggleMetric(metric.id));
+            console.log(`Created checkbox for metric: ${metric.id}, element ID: metric-${metric.id}`);
+            
+            checkbox.addEventListener('change', () => {
+                console.log(`Checkbox changed for metric: ${metric.id}`);
+                toggleMetric(metric.id);
+            });
 
             div.addEventListener('click', (e) => {
                 if (e.target === checkbox) return;
+                console.log(`Div clicked for metric: ${metric.id}`);
                 e.preventDefault();
                 e.stopPropagation();
                 checkbox.click();
