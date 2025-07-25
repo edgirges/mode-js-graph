@@ -137,12 +137,20 @@
 
         if (datasets[CONFIG.datasetName]) {
             targetDataset = datasets[CONFIG.datasetName];
+            console.log('Campaign Groups 30 Days: Found dataset by name');
         } else if (datasets[CONFIG.fallbackIndex]) {
             targetDataset = datasets[CONFIG.fallbackIndex];
+            console.log('Campaign Groups 30 Days: Using fallback dataset at index', CONFIG.fallbackIndex);
         }
         
         if (targetDataset) {
             rawData = targetDataset.content || targetDataset || [];
+            console.log('Campaign Groups 30 Days: Loaded', rawData.length, 'rows');
+            if (rawData.length > 0) {
+                console.log('Campaign Groups 30 Days: Sample row:', rawData[0]);
+            }
+        } else {
+            console.log('Campaign Groups 30 Days: No dataset found');
         }
     }
 
@@ -180,19 +188,25 @@
             return;
         }
 
-        const monthList = rawData.map(row => row.month);
-        const uniqueMonths = [...new Set(monthList)];
+        // Extract and sort months
+        const monthList = rawData.map(row => row.month).filter(Boolean);
+        const uniqueMonths = [...new Set(monthList)].sort();
+        
+        console.log('Campaign Groups 30 Days: Found months:', uniqueMonths);
 
-        uniqueMonths.forEach(month => {
-            processedData[month] = {};
-        });
+        // Set up processed data structure for Chart.js
+        processedData = { labels: uniqueMonths };
 
+        // Process each metric for each month
         dynamicMetrics.forEach(metric => {
             processedData[metric.id] = uniqueMonths.map(month => {
-                const metricValue = rawData.find(row => row.month === month)?.[metric.id] || 0;
-                return parseFloat(metricValue) || 0;
+                const row = rawData.find(r => r.month === month);
+                const value = row ? parseFloat(row[metric.id] || 0) : 0;
+                return value;
             });
         });
+
+        console.log('Campaign Groups 30 Days: Processed data for', uniqueMonths.length, 'months and', dynamicMetrics.length, 'metrics');
     }
 
     // =============================================================================
