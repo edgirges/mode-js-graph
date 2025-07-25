@@ -110,14 +110,15 @@
 
     function loadData() {
         try {
-            //console.log('New Campaign Groups Starting each Month for First 30 Days: Loading data from Mode Analytics');
+            console.log('Campaign Groups 30 Days: Loading data from Mode Analytics');
+            console.log('Campaign Groups 30 Days: Available datasets:', typeof datasets !== 'undefined' ? Object.keys(datasets) : 'datasets not defined');
 
             const extractedMetrics = CONFIG.getMetrics();
-            //console.log('New Campaign Groups Starting each Month for First 30 Days: Extracted metrics:', extractedMetrics);
+            console.log('Campaign Groups 30 Days: Extracted metrics:', extractedMetrics);
 
             if (extractedMetrics.length > 0) {
                 const filteredMetrics = CONFIG.displayMetrics.filter(metric => extractedMetrics.includes(metric));
-                //console.log('New Campaign Groups Starting each Month for First 30 Days: Filtered metrics:', filteredMetrics);
+                console.log('Campaign Groups 30 Days: Filtered metrics:', filteredMetrics);
 
                 createDynamicMetrics(filteredMetrics);
                 loadDatasetContent();
@@ -137,10 +138,14 @@
 
         if (datasets[CONFIG.datasetName]) {
             targetDataset = datasets[CONFIG.datasetName];
-            console.log('Campaign Groups 30 Days: Found dataset by name');
+            console.log('Campaign Groups 30 Days: Found dataset by name:', CONFIG.datasetName);
         } else if (datasets[CONFIG.fallbackIndex]) {
             targetDataset = datasets[CONFIG.fallbackIndex];
             console.log('Campaign Groups 30 Days: Using fallback dataset at index', CONFIG.fallbackIndex);
+        } else {
+            console.log('Campaign Groups 30 Days: Neither dataset name nor fallback index found');
+            console.log('Campaign Groups 30 Days: Looking for name:', CONFIG.datasetName);
+            console.log('Campaign Groups 30 Days: Looking for index:', CONFIG.fallbackIndex);
         }
         
         if (targetDataset) {
@@ -184,7 +189,7 @@
 
     function processData() {
         if (!rawData.length || !dynamicMetrics.length) {
-            //console.log('New Campaign Groups Starting each Month for First 30 Days: No data to process. rawData length:', rawData.length, 'dynamicMetrics length:', dynamicMetrics.length);
+            console.log('Campaign Groups 30 Days: No data to process. rawData length:', rawData.length, 'dynamicMetrics length:', dynamicMetrics.length);
             return;
         }
 
