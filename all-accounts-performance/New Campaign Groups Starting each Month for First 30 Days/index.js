@@ -310,21 +310,21 @@
             const div = document.createElement('div');
             div.className = 'metric-toggle active';
             div.innerHTML = `
-                <input type="checkbox" id="metric-${metric.id}" checked>
+                <input type="checkbox" class="metric-checkbox" id="metric-${metric.id}" checked>
                 <label for="metric-${metric.id}" class="metric-label">
                     <span class="metric-color" style="background-color: ${metric.color}"></span>
                     ${metric.name}
                 </label>
             `;
 
-            const checkbox = div.querySelector('input');
+            const checkbox = div.querySelector('.metric-checkbox');
             checkbox.addEventListener('change', () => toggleMetric(metric.id));
 
             div.addEventListener('click', (e) => {
-                if (e.target !== checkbox) {
-                    e.preventDefault();
-                    checkbox.click();
-                }
+                if (e.target === checkbox) return;
+                e.preventDefault();
+                e.stopPropagation();
+                checkbox.click();
             });
 
             container.appendChild(div);
@@ -333,9 +333,11 @@
 
     function toggleMetric(metricId) {
         const metric = dynamicMetrics.find(m => m.id === metricId);
-        const toggleDiv = document.getElementById(`metric-${metricId}`).parentElement;
+        if (!metric) return;
+        
         const checkbox = document.getElementById(`metric-${metricId}`);
-
+        const toggleDiv = checkbox.parentElement;
+        
         metric.visible = checkbox.checked;
         toggleDiv.classList.toggle('active', metric.visible);
         updateChart();
