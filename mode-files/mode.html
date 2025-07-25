@@ -182,7 +182,33 @@
               </div>
           </div>
       </div>
-  
+
+      <!-- CHART 10: New Campaign Groups Starting each Month for First 30 Days -->
+      <div class="chart-container campaign-groups-30-days-container">
+          <div class="chart-header campaign-groups-30-days-header">
+              <h2 class="chart-title campaign-groups-30-days-title">New Campaign Groups Starting each Month for First 30 Days</h2>
+              <div class="chart-controls campaign-groups-30-days-controls">
+                  <button class="control-btn" onclick="CampaignGroups30DaysChart.switchTimeRange('7D')">7D</button>
+                  <button class="control-btn" onclick="CampaignGroups30DaysChart.switchTimeRange('30D')">30D</button>
+                  <button class="control-btn active" onclick="CampaignGroups30DaysChart.switchTimeRange('90D')">90D</button>
+                  <button class="control-btn" onclick="CampaignGroups30DaysChart.switchTimeRange('ALL')">All</button>
+                  <button class="control-btn" onclick="CampaignGroups30DaysChart.toggleZoom()">Zoom</button>
+                  <button class="control-btn" onclick="CampaignGroups30DaysChart.resetZoom()">Reset</button>
+              </div>    
+          </div>
+          <div class="chart-canvas campaign-groups-30-days-canvas">
+              <canvas id="campaignGroups30DaysChart"></canvas>
+          </div>
+          <div class="metric-controls campaign-groups-30-days-metrics">
+              <h3 class="metric-controls-title campaign-groups-30-days-metrics-title">Metrics</h3>
+              <div class="metric-toggles campaign-groups-30-days-toggles">
+                  <!-- Metric toggles will be dynamically generated -->
+              </div>
+          </div>
+      </div>
+
+      
+      
       <!-- External JavaScript Libraries -->
       <!-- Chart.js - Main charting library -->
       <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
@@ -254,6 +280,16 @@
               console.log('Performance Trends by Progressing Days Chart loaded');
           };
           document.head.appendChild(performanceTrendsScript);
+      </script>
+      
+      <!-- New Campaign Groups Starting each Month for First 30 Days Chart -->
+      <script>
+          const campaignGroups30DaysScript = document.createElement('script');
+          campaignGroups30DaysScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/New%20Campaign%20Groups%20Starting%20each%20Month%20for%20First%2030%20Days/index.js?v=' + new Date().getTime();
+          campaignGroups30DaysScript.onload = function() {
+              console.log('New Campaign Groups Starting each Month for First 30 Days Chart loaded');
+          };
+          document.head.appendChild(campaignGroups30DaysScript);
       </script>
       
       <!-- For Mode Analytics: Replace the above line with your GitHub raw URL -->
