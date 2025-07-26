@@ -254,6 +254,30 @@
               </div>
           </div>
       </div>
+
+      <!-- CHART 13: RAW Visits and Conv (by Month) -->
+      <div class="chart-container raw-visits-conv-container">
+          <div class="chart-header raw-visits-conv-header">
+              <h2 class="chart-title raw-visits-conv-title">RAW Visits and Conv (by Month)</h2>
+              <div class="chart-controls raw-visits-conv-controls">
+                  <button class="control-btn" onclick="RawVisitsConvChart.switchTimeRange('7D')">7D</button>
+                  <button class="control-btn" onclick="RawVisitsConvChart.switchTimeRange('30D')">30D</button>
+                  <button class="control-btn active" onclick="RawVisitsConvChart.switchTimeRange('90D')">90D</button>
+                  <button class="control-btn" onclick="RawVisitsConvChart.switchTimeRange('ALL')">All</button>
+                  <button class="control-btn" onclick="RawVisitsConvChart.toggleZoom()">Zoom</button>
+                  <button class="control-btn" onclick="RawVisitsConvChart.resetZoom()">Reset</button>
+              </div>
+          </div>
+          <div class="chart-canvas raw-visits-conv-canvas">
+              <canvas id="rawVisitsConvChart"></canvas>
+          </div>
+          <div class="metric-controls raw-visits-conv-metrics">
+              <h3 class="metric-controls-title raw-visits-conv-metrics-title">Metrics</h3>
+              <div class="metric-toggles raw-visits-conv-toggles">
+                  <!-- Metric toggles will be dynamically generated -->
+              </div>
+          </div>
+      </div>
       
       
       <!-- External JavaScript Libraries -->
@@ -357,6 +381,16 @@
               console.log('Overall Performance Trends (by Month) Chart loaded');
           };
           document.head.appendChild(overallPerformanceTrendsScript);
+      </script>
+
+      <!-- RAW Visits and Conv (by Month) Chart -->
+      <script>
+          const rawVisitsConvScript = document.createElement('script');
+          rawVisitsConvScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/RAW%20Visits%20and%20Conv%20(by%20Month)/index.js?v=' + new Date().getTime();
+          rawVisitsConvScript.onload = function() {
+              console.log('RAW Visits and Conv (by Month) Chart loaded');
+          };
+          document.head.appendChild(rawVisitsConvScript);
       </script>
       
       
