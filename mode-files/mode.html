@@ -230,6 +230,30 @@
               </div>
           </div>
       </div>
+
+      <!-- CHART 12: Overall Performance Trends (by Month) -->
+      <div class="chart-container overall-performance-trends-container">
+          <div class="chart-header overall-performance-trends-header">
+              <h2 class="chart-title overall-performance-trends-title">Overall Performance Trends (by Month)</h2>
+              <div class="chart-controls overall-performance-trends-controls">
+                  <button class="control-btn" onclick="OverallPerformanceTrendsChart.switchTimeRange('7D')">7D</button>
+                  <button class="control-btn" onclick="OverallPerformanceTrendsChart.switchTimeRange('30D')">30D</button>
+                  <button class="control-btn active" onclick="OverallPerformanceTrendsChart.switchTimeRange('90D')">90D</button>
+                  <button class="control-btn" onclick="OverallPerformanceTrendsChart.switchTimeRange('ALL')">All</button>
+                  <button class="control-btn" onclick="OverallPerformanceTrendsChart.toggleZoom()">Zoom</button>
+                  <button class="control-btn" onclick="OverallPerformanceTrendsChart.resetZoom()">Reset</button>
+              </div>
+          </div>
+          <div class="chart-canvas overall-performance-trends-canvas">
+              <canvas id="overallPerformanceTrendsChart"></canvas>
+          </div>
+          <div class="metric-controls overall-performance-trends-metrics">
+              <h3 class="metric-controls-title overall-performance-trends-metrics-title">Metrics</h3>
+              <div class="metric-toggles overall-performance-trends-toggles">
+                  <!-- Metric toggles will be dynamically generated -->
+              </div>
+          </div>
+      </div>
       
       
       <!-- External JavaScript Libraries -->
@@ -323,6 +347,16 @@
               console.log('New Campaign Groups Starting each Month for that Month Chart loaded');
           };
           document.head.appendChild(campaignGroupsMonthScript);
+      </script>
+
+      <!-- Overall Performance Trends (by Month) Chart -->
+      <script>
+          const overallPerformanceTrendsScript = document.createElement('script');
+          overallPerformanceTrendsScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/Overall%20Performance%20Trends%20(by%20Month)/index.js?v=' + new Date().getTime();
+          overallPerformanceTrendsScript.onload = function() {
+              console.log('Overall Performance Trends (by Month) Chart loaded');
+          };
+          document.head.appendChild(overallPerformanceTrendsScript);
       </script>
       
       
