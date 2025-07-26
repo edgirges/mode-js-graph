@@ -207,6 +207,29 @@
           </div>
       </div>
 
+      <!-- CHART 11: New Campaign Groups Starting each Month for that Month -->
+      <div class="chart-container campaign-groups-month-container">
+          <div class="chart-header campaign-groups-month-header">
+              <h2 class="chart-title campaign-groups-month-title">New Campaign Groups Starting each Month for that Month</h2>
+              <div class="chart-controls campaign-groups-month-controls">
+                  <button class="control-btn" onclick="CampaignGroupsMonthChart.switchTimeRange('7D')">7D</button>
+                  <button class="control-btn" onclick="CampaignGroupsMonthChart.switchTimeRange('30D')">30D</button>
+                  <button class="control-btn active" onclick="CampaignGroupsMonthChart.switchTimeRange('90D')">90D</button>
+                  <button class="control-btn" onclick="CampaignGroupsMonthChart.switchTimeRange('ALL')">All</button>
+                  <button class="control-btn" onclick="CampaignGroupsMonthChart.toggleZoom()">Zoom</button>
+                  <button class="control-btn" onclick="CampaignGroupsMonthChart.resetZoom()">Reset</button>
+              </div>
+          </div>
+          <div class="chart-canvas campaign-groups-month-canvas">
+              <canvas id="campaignGroupsMonthChart"></canvas>
+          </div>
+          <div class="metric-controls campaign-groups-month-metrics">
+              <h3 class="metric-controls-title campaign-groups-month-metrics-title">Metrics</h3>
+              <div class="metric-toggles campaign-groups-month-toggles">
+                  <!-- Metric toggles will be dynamically generated -->
+              </div>
+          </div>
+      </div>
       
       
       <!-- External JavaScript Libraries -->
@@ -291,6 +314,17 @@
           };
           document.head.appendChild(campaignGroups30DaysScript);
       </script>
+
+      <!-- New Campaign Groups Starting each Month for that Month Chart -->
+      <script>
+          const campaignGroupsMonthScript = document.createElement('script');
+          campaignGroupsMonthScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/New%20Campaign%20Groups%20Starting%20each%20Month%20for%20that%20Month/index.js?v=' + new Date().getTime();
+          campaignGroupsMonthScript.onload = function() {
+              console.log('New Campaign Groups Starting each Month for that Month Chart loaded');
+          };
+          document.head.appendChild(campaignGroupsMonthScript);
+      </script>
+      
       
       <!-- For Mode Analytics: Replace the above line with your GitHub raw URL -->
       <!-- <script src="https://raw.githubusercontent.com/yourusername/your-repo/main/index.js"></script> -->
