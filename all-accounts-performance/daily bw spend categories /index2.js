@@ -1,5 +1,5 @@
 // =============================================================================
-// Budget vs Spend Performance Chart (Refactored)
+// Daily BW Spend Categories Chart (Refactored)
 // =============================================================================
 
 (function() {
@@ -31,7 +31,7 @@
         }
 
         const columns = Object.keys(dataArray[0]);
-        const dateTimePattern = /^(date|day|time|created|updated|timestamp)$/i;
+        const dateTimePattern = /^(date|day|time|created|updated|timestamp|objective_id)$/i;
         const metrics = columns.filter(col => !dateTimePattern.test(col));
         
         return metrics;
@@ -42,11 +42,11 @@
     // =============================================================================
 
     const CONFIG = {
-        chartTitle: 'Daily BW Budget V. Spend / Spend Pct',
-        datasetName: 'Daily BW Budget vs Spend (channel filter does not apply)',
-        fallbackIndex: 0,
+        chartTitle: 'Daily BW Spend Categories',
+        datasetName: 'Daily BW Budget vs Spend Ratio Count (channel filter does not apply)',
+        fallbackIndex: 1,
         defaultTimeRange: '90D',
-        displayMetrics: ['spend', 'budget', 'spend_pct'],
+        displayMetrics: ['total', 'no_budget', 'overspend', 'spend_90_pct', 'spend_90_pct_less'],
         getMetrics: function() {
             return getMetricsFromDataset(CONFIG.datasetName, CONFIG.fallbackIndex);
         }
@@ -62,49 +62,71 @@
 
     function createDynamicMetrics(availableMetrics) {
         const filteredMetrics = CONFIG.displayMetrics.filter(metric => 
-            availableMetrics.includes(metric) || 
-            availableMetrics.includes(metric.replace('_', ' ')) ||
-            (metric === 'spend_pct' && availableMetrics.includes('spend pct'))
+            availableMetrics.includes(metric)
         );
 
         dynamicMetrics = filteredMetrics.map(metric => {
             let config;
             
             switch(metric) {
-                case 'spend':
+                case 'total':
                     config = {
-                        id: 'spend',
-                        name: 'Spend',
-                        color: '#007bff',
-                        backgroundColor: 'rgba(0, 123, 255, 0.8)',
+                        id: 'total',
+                        name: 'Total',
+                        color: '#9f7aea',
+                        backgroundColor: 'rgba(159, 122, 234, 0.1)',
                         visible: true,
-                        type: 'bar',
+                        type: 'line',
+                        yAxisID: 'y',
+                        order: 5
+                    };
+                    break;
+                case 'no_budget':
+                    config = {
+                        id: 'no_budget',
+                        name: 'No Budget',
+                        color: '#48bb78',
+                        backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                        visible: true,
+                        type: 'line',
                         yAxisID: 'y',
                         order: 1
                     };
                     break;
-                case 'budget':
+                case 'overspend':
                     config = {
-                        id: 'budget',
-                        name: 'Budget',
-                        color: '#28a745',
-                        backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                        id: 'overspend',
+                        name: 'Overspend',
+                        color: '#4299e1',
+                        backgroundColor: 'rgba(66, 153, 225, 0.1)',
                         visible: true,
-                        type: 'bar',
+                        type: 'line',
                         yAxisID: 'y',
                         order: 2
                     };
                     break;
-                case 'spend_pct':
+                case 'spend_90_pct':
                     config = {
-                        id: 'spend_pct',
-                        name: 'Avg. Spend %',
-                        color: '#ffc107',
-                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                        id: 'spend_90_pct',
+                        name: 'Spend 90-100%',
+                        color: '#ed8936',
+                        backgroundColor: 'rgba(237, 137, 54, 0.1)',
                         visible: true,
                         type: 'line',
-                        yAxisID: 'y1',
-                        order: 0
+                        yAxisID: 'y',
+                        order: 3
+                    };
+                    break;
+                case 'spend_90_pct_less':
+                    config = {
+                        id: 'spend_90_pct_less',
+                        name: 'Spend <90%',
+                        color: '#38b2ac',
+                        backgroundColor: 'rgba(56, 178, 172, 0.1)',
+                        visible: true,
+                        type: 'line',
+                        yAxisID: 'y',
+                        order: 4
                     };
                     break;
                 default:
@@ -112,11 +134,11 @@
                         id: metric,
                         name: metric.replace(/_/g, ' '),
                         color: '#6B7280',
-                        backgroundColor: 'rgba(107, 114, 128, 0.8)',
+                        backgroundColor: 'rgba(107, 114, 128, 0.1)',
                         visible: true,
-                        type: 'bar',
+                        type: 'line',
                         yAxisID: 'y',
-                        order: 3
+                        order: 6
                     };
             }
             
@@ -129,8 +151,8 @@
     // =============================================================================
     
     function init() {
-        const canvas = document.getElementById('budgetSpendChart');
-        const toggles = document.querySelector('.budget-spend-toggles');
+        const canvas = document.getElementById('spendCategoriesChart');
+        const toggles = document.querySelector('.spend-categories-toggles');
 
         if (!canvas || !toggles || typeof Chart === 'undefined') {
             return false;
@@ -175,10 +197,10 @@
                 processData();
                 updateChart();
             } else {
-                console.warn('Budget vs Spend: No metrics extracted from dataset');
+                console.warn('Spend Categories: No metrics extracted from dataset');
             }
         } catch (error) {
-            console.error('Budget vs Spend: Error loading data:', error);
+            console.error('Spend Categories: Error loading data:', error);
         }
     }
 
@@ -194,7 +216,7 @@
         if (targetDataset) {
             rawData = targetDataset.content || targetDataset;
         } else {
-            console.error('Budget vs Spend: Dataset not found');
+            console.error('Spend Categories: Dataset not found');
             rawData = [];
         }
     }
@@ -214,56 +236,50 @@
 
     function processData() {
         if (!rawData || !rawData.length) {
-            processedData = { labels: [], budget: [], spend: [], spend_pct: [] };
+            processedData = { labels: [] };
+            dynamicMetrics.forEach(metric => {
+                processedData[metric.id] = [];
+            });
             return;
         }
 
         const dayColumn = findDateColumn();
         if (!dayColumn) {
-            console.error('Budget vs Spend: No day column found');
+            console.error('Spend Categories: No day column found');
             return;
         }
 
-        // Group data by day and aggregate
+        // Group data by day and aggregate across objective_id
         const dailyData = {};
         
         rawData.forEach(row => {
-            const budget = parseFloat(row.budget || 0);
-            const spend = parseFloat(row.spend || 0);
-            const spend_pct = parseFloat(row["spend pct"] || 0);
-            
-            // Skip rows with zero budget or invalid spend_pct
-            if (budget <= 0 || isNaN(spend_pct) || row["spend pct"] === "" || row["spend pct"] == null) {
-                return;
-            }
-            
             const day = row[dayColumn];
+            if (!day) return;
+
             if (!dailyData[day]) {
-                dailyData[day] = {
-                    budget: 0,
-                    spend: 0,
-                    spend_pct_sum: 0,
-                    count: 0
-                };
+                dailyData[day] = {};
+                dynamicMetrics.forEach(metric => {
+                    dailyData[day][metric.id] = 0;
+                });
             }
-            
-            dailyData[day].budget += budget;
-            dailyData[day].spend += spend;
-            dailyData[day].spend_pct_sum += spend_pct;
-            dailyData[day].count += 1;
+
+            // Aggregate each metric
+            dynamicMetrics.forEach(metric => {
+                const value = parseInt(row[metric.id] || 0);
+                dailyData[day][metric.id] += value;
+            });
         });
 
         // Convert to arrays sorted by date
         const sortedDays = Object.keys(dailyData).sort();
         
         processedData = {
-            labels: sortedDays,
-            budget: sortedDays.map(day => Math.max(0, dailyData[day].budget - dailyData[day].spend)), // Remaining budget
-            spend: sortedDays.map(day => dailyData[day].spend),
-            spend_pct: sortedDays.map(day => {
-                return dailyData[day].count > 0 ? dailyData[day].spend_pct_sum / dailyData[day].count : 0;
-            })
+            labels: sortedDays
         };
+
+        dynamicMetrics.forEach(metric => {
+            processedData[metric.id] = sortedDays.map(day => dailyData[day][metric.id] || 0);
+        });
     }
 
     function filterByTimeRange(range) {
@@ -288,12 +304,15 @@
         
         const startIndex = Math.max(0, processedData.labels.length - daysToShow);
         
-        return {
-            labels: processedData.labels.slice(startIndex),
-            budget: processedData.budget.slice(startIndex),
-            spend: processedData.spend.slice(startIndex),
-            spend_pct: processedData.spend_pct.slice(startIndex)
+        const filtered = {
+            labels: processedData.labels.slice(startIndex)
         };
+
+        dynamicMetrics.forEach(metric => {
+            filtered[metric.id] = processedData[metric.id].slice(startIndex);
+        });
+        
+        return filtered;
     }
 
     // =============================================================================
@@ -301,7 +320,7 @@
     // =============================================================================
 
     function createChart() {
-        const canvas = document.getElementById('budgetSpendChart');
+        const canvas = document.getElementById('spendCategoriesChart');
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
@@ -315,7 +334,7 @@
         }
 
         chart = new Chart(ctx, {
-            type: 'bar',
+            type: 'line',
             data: {
                 labels: [],
                 datasets: []
@@ -324,8 +343,8 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: {
+                    mode: 'index',
                     intersect: false,
-                    mode: 'index'
                 },
                 plugins: {
                     title: {
@@ -335,47 +354,19 @@
                     legend: {
                         display: false
                     },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: '#ffffff',
-                        bodyColor: '#ffffff',
-                        borderColor: '#007bff',
-                        borderWidth: 1,
-                        cornerRadius: 6,
-                        displayColors: true,
-                        callbacks: {
-                            title: function(tooltipItems) {
-                                return new Date(tooltipItems[0].label).toLocaleDateString();
-                            },
-                            label: function(context) {
-                                const value = context.parsed.y;
-                                if (context.dataset.label === 'Avg. Spend %') {
-                                    return `${context.dataset.label}: ${value.toFixed(3)}`;
-                                } else if (context.dataset.label === 'Budget') {
-                                    const dataIndex = context.dataIndex;
-                                    const spendValue = context.chart.data.datasets.find(d => d.label === 'Spend').data[dataIndex];
-                                    const totalBudget = value + spendValue;
-                                    return `Total Budget: $${totalBudget.toLocaleString()} (Remaining: $${value.toLocaleString()})`;
-                                } else {
-                                    return `${context.dataset.label}: $${value.toLocaleString()}`;
-                                }
-                            }
-                        }
-                    },
                     zoom: {
-                        pan: {
-                            enabled: true,
-                            mode: 'x',
-                            modifierKey: 'ctrl'
-                        },
                         zoom: {
                             wheel: {
-                                enabled: false
+                                enabled: false,
                             },
                             pinch: {
                                 enabled: false
                             },
-                            mode: 'x'
+                            mode: 'x',
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: 'x',
                         }
                     }
                 },
@@ -408,55 +399,17 @@
                         min: 0,
                         title: {
                             display: true,
-                            text: 'Budget / Spend ($)'
+                            text: 'Count'
                         },
                         grid: {
                             color: 'rgba(0, 0, 0, 0.1)'
                         },
                         ticks: {
                             callback: function(value) {
-                                return '$' + value.toLocaleString();
-                            }
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Spend Rate (Decimal)'
-                        },
-                        grid: {
-                            drawOnChartArea: false,
-                        },
-                        ticks: {
-                            callback: function(value) {
-                                return value.toFixed(2);
-                            }
-                        },
-                        afterDataLimits: function(scale) {
-                            const datasets = scale.chart.data.datasets;
-                            const spendPctDataset = datasets.find(d => d.label === 'Avg. Spend %');
-                            
-                            if (spendPctDataset && spendPctDataset.data && spendPctDataset.data.length > 0) {
-                                const values = spendPctDataset.data.filter(v => v != null && !isNaN(v));
-                                if (values.length > 0) {
-                                    const min = Math.min(...values);
-                                    const max = Math.max(...values);
-                                    const range = max - min;
-                                    const padding = range * 0.05;
-                                    
-                                    scale.min = Math.max(0, min - padding);
-                                    scale.max = Math.min(1, max + padding);
-                                }
+                                return value.toLocaleString();
                             }
                         }
                     }
-                },
-                animation: {
-                    duration: 750,
-                    easing: 'easeInOutQuart'
                 }
             }
         });
@@ -465,40 +418,25 @@
     function createDatasets() {
         const filteredData = filterByTimeRange(currentTimeRange);
         
-        return dynamicMetrics.map(metric => {
-            const data = filteredData[metric.id] || [];
-            
-            const dataset = {
+        return dynamicMetrics
+            .filter(metric => metric.visible)
+            .map(metric => ({
                 label: metric.name,
-                data: data,
+                data: filteredData[metric.id] || [],
                 borderColor: metric.color,
                 backgroundColor: metric.backgroundColor,
                 borderWidth: 2,
-                type: metric.type,
+                fill: false,
+                tension: 0.1,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: metric.color,
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 2,
                 yAxisID: metric.yAxisID,
-                order: metric.order,
-                hidden: !metric.visible
-            };
-            
-            // Specific settings for bar charts
-            if (metric.type === 'bar') {
-                dataset.stack = 'Stack 0';
-                dataset.borderWidth = 1;
-            }
-            
-            // Specific settings for line charts
-            if (metric.type === 'line') {
-                dataset.fill = false;
-                dataset.tension = 0.1;
-                dataset.pointRadius = 3;
-                dataset.pointHoverRadius = 6;
-                dataset.pointHoverBackgroundColor = metric.color;
-                dataset.pointHoverBorderColor = '#ffffff';
-                dataset.pointHoverBorderWidth = 2;
-            }
-            
-            return dataset;
-        });
+                order: metric.order
+            }))
+            .sort((a, b) => a.order - b.order);
     }
 
     function updateChart() {
@@ -510,13 +448,6 @@
         chart.data.labels = filteredData.labels;
         chart.data.datasets = datasets;
         
-        // Update y-axis visibility based on active metrics
-        const hasBarMetrics = dynamicMetrics.filter(m => m.type === 'bar' && m.visible).length > 0;
-        const hasLineMetrics = dynamicMetrics.filter(m => m.type === 'line' && m.visible).length > 0;
-        
-        chart.options.scales.y.display = hasBarMetrics;
-        chart.options.scales.y1.display = hasLineMetrics;
-        
         chart.update('active');
     }
 
@@ -525,22 +456,22 @@
     // =============================================================================
 
     function createMetricToggles() {
-        const container = document.querySelector('.budget-spend-toggles');
+        const container = document.querySelector('.spend-categories-toggles');
         if (!container || !dynamicMetrics.length) return;
 
         container.innerHTML = '';
 
         // Add select/deselect all buttons
-        const metricsHeader = document.querySelector('.budget-spend-metrics-title');
-        if (metricsHeader && !document.getElementById('select-all-btn')) {
+        const metricsHeader = document.querySelector('.spend-categories-metrics-title');
+        if (metricsHeader && !document.getElementById('spend-select-all-btn')) {
             const selectAllBtn = document.createElement('button');
-            selectAllBtn.id = 'select-all-btn';
+            selectAllBtn.id = 'spend-select-all-btn';
             selectAllBtn.className = 'select-all-btn';
             selectAllBtn.textContent = 'Select All';
             selectAllBtn.onclick = selectAllMetrics;
             
             const deselectAllBtn = document.createElement('button');
-            deselectAllBtn.id = 'deselect-all-btn';
+            deselectAllBtn.id = 'spend-deselect-all-btn';
             deselectAllBtn.className = 'deselect-all-btn';
             deselectAllBtn.textContent = 'Deselect All';
             deselectAllBtn.onclick = deselectAllMetrics;
@@ -629,7 +560,7 @@
         currentTimeRange = range;
         
         // Update button states
-        document.querySelectorAll('.budget-spend-controls .control-btn')
+        document.querySelectorAll('.spend-categories-controls .control-btn')
             .forEach(btn => btn.classList.remove('active'));
         
         event.target.classList.add('active');
@@ -667,7 +598,7 @@
         }
         
         // Reset zoom button state
-        document.querySelectorAll('.budget-spend-controls .control-btn')
+        document.querySelectorAll('.spend-categories-controls .control-btn')
             .forEach(btn => {
                 if (btn.textContent.includes('Zoom')) {
                     btn.classList.remove('active');
@@ -690,7 +621,7 @@
     // EXPORT
     // =============================================================================
 
-    window.BudgetSpendChart = {
+    window.SpendCategoriesChart = {
         loadData,
         switchTimeRange,
         toggleZoom,
