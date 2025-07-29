@@ -252,6 +252,11 @@
         // Group data by day and aggregate
         const dailyData = {};
         
+        let totalRawSpend = 0;
+        let processedSpendRows = 0;
+        let skippedSpendRows = 0;
+        let skippedSpendAmount = 0;
+        
         rawData.forEach(row => {
             const budget = parseFloat(row[columnMapping.budget] || 0);
             const spend = parseFloat(row[columnMapping.spend] || 0);
@@ -262,11 +267,20 @@
                 spend_pct = 0; // No spend data = 0% spend rate
             }
             
+            // Track all spend values from raw data
+            totalRawSpend += spend;
+            
             // Only filter out rows with invalid budget (the actual problem)
             if (budget <= 0) {
+                if (spend > 0) {
+                    skippedSpendRows++;
+                    skippedSpendAmount += spend;
+                    console.log('⚠️  Skipped row with spend:', spend, 'due to budget <= 0');
+                }
                 return;
             }
             
+            processedSpendRows++;
             const day = row[dayColumn];
             if (!dailyData[day]) {
                 dailyData[day] = {
@@ -281,8 +295,36 @@
             dailyData[day].spend += spend;
             dailyData[day].spend_pct_sum += spend_pct;
             dailyData[day].count += 1;
+            
+            // Debug individual spend additions for a sample day
+            if (day === '2025-06-17') {
+                console.log('Adding to 2025-06-17: spend =', spend, ', running total =', dailyData[day].spend);
+            }
         });
 
+        // Calculate total processed spend for comparison
+        let totalProcessedSpend = 0;
+        Object.values(dailyData).forEach(dayData => {
+            totalProcessedSpend += dayData.spend;
+        });
+        
+        // Log spend processing summary
+        console.log('=== SPEND DEBUGGING ===');
+        console.log('Total raw spend from dataset:', totalRawSpend.toLocaleString());
+        console.log('Total processed spend (after filtering):', totalProcessedSpend.toLocaleString());
+        console.log('Processed rows:', processedSpendRows);
+        console.log('Skipped rows with spend:', skippedSpendRows);
+        console.log('Skipped spend amount:', skippedSpendAmount.toLocaleString());
+        console.log('Difference (raw - processed):', (totalRawSpend - totalProcessedSpend).toLocaleString());
+        
+        if (skippedSpendAmount > 0) {
+            console.log('⚠️  Spend is being lost due to budget filtering!');
+        }
+        
+        if (Math.abs(totalRawSpend - totalProcessedSpend) > 1) {
+            console.log('⚠️  Significant spend discrepancy detected');
+        }
+        
         // Convert to arrays sorted by date
         const sortedDays = Object.keys(dailyData).sort();
         
