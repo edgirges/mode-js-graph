@@ -252,21 +252,18 @@
         // Group data by day and aggregate
         const dailyData = {};
         
-        let totalFilteredBudget = 0;
-        let filteredRowCount = 0;
-        
         rawData.forEach(row => {
             const budget = parseFloat(row[columnMapping.budget] || 0);
             const spend = parseFloat(row[columnMapping.spend] || 0);
-            const spend_pct = parseFloat(row[columnMapping.spend_pct] || 0);
             
-            // Track what's being filtered out
-            if (budget <= 0 || isNaN(spend_pct) || row[columnMapping.spend_pct] === "" || row[columnMapping.spend_pct] == null) {
-                if (budget > 0) {
-                    totalFilteredBudget += budget;
-                    filteredRowCount++;
-                    console.log('Filtered out row with budget:', budget, 'due to invalid spend_pct:', row[columnMapping.spend_pct]);
-                }
+            // Handle spend_pct: if null/invalid, treat as 0 (no spend = 0%)
+            let spend_pct = parseFloat(row[columnMapping.spend_pct] || 0);
+            if (isNaN(spend_pct) || row[columnMapping.spend_pct] === "" || row[columnMapping.spend_pct] == null) {
+                spend_pct = 0; // No spend data = 0% spend rate
+            }
+            
+            // Only filter out rows with invalid budget (the actual problem)
+            if (budget <= 0) {
                 return;
             }
             
@@ -286,12 +283,6 @@
             dailyData[day].count += 1;
         });
 
-        // Log filtering summary
-        if (totalFilteredBudget > 0) {
-            console.log(`⚠️  Budget filtering summary: $${totalFilteredBudget.toLocaleString()} filtered out from ${filteredRowCount} rows`);
-            console.log('This could explain budget discrepancies');
-        }
-        
         // Convert to arrays sorted by date
         const sortedDays = Object.keys(dailyData).sort();
         
