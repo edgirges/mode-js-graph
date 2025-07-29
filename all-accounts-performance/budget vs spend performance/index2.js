@@ -283,7 +283,7 @@
         
         processedData = {
             labels: sortedDays,
-            budget: sortedDays.map(day => Math.max(0, dailyData[day].budget - dailyData[day].spend)), // Remaining budget
+            budget: sortedDays.map(day => dailyData[day].budget), // Total budget
             spend: sortedDays.map(day => dailyData[day].spend),
             spend_pct: sortedDays.map(day => {
                 return dailyData[day].count > 0 ? dailyData[day].spend_pct_sum / dailyData[day].count : 0;
@@ -379,8 +379,9 @@
                                 } else if (context.dataset.label === 'Budget') {
                                     const dataIndex = context.dataIndex;
                                     const spendValue = context.chart.data.datasets.find(d => d.label === 'Spend').data[dataIndex];
-                                    const totalBudget = value + spendValue;
-                                    return `Total Budget: $${totalBudget.toLocaleString()} (Remaining: $${value.toLocaleString()})`;
+                                    const totalBudget = value; // Green bar now represents total budget
+                                    const remainingBudget = Math.max(0, totalBudget - spendValue); // Calculate remaining
+                                    return `Total Budget: $${totalBudget.toLocaleString()} (Remaining: $${remainingBudget.toLocaleString()})`;
                                 } else {
                                     return `${context.dataset.label}: $${value.toLocaleString()}`;
                                 }
