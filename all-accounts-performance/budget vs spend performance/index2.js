@@ -493,32 +493,35 @@
                                         maxCombined = Math.max(maxCombined, combined);
                                     }
                                     
-                                    // We want the secondary axis "1.0" to align with 80% of the primary axis max
-                                    // This creates better visual balance where the line aligns with the stacked bars
-                                    const alignmentPoint = maxCombined * 0.8;
+                                    // We want 1.0 on secondary axis to align with 800k on primary axis
+                                    const targetAlignmentValue = 800000; // 800k
+                                    const secondaryAlignmentValue = 1.0;
+                                    
+                                    // Calculate what the secondary max should be based on the primary max
+                                    // If 1.0 aligns with 800k, then maxCombined aligns with: maxCombined * (1.0 / 800k)
+                                    const calculatedSecondaryMax = maxCombined * (secondaryAlignmentValue / targetAlignmentValue);
                                     
                                     console.log('Max combined budget+spend:', maxCombined.toLocaleString());
-                                    console.log('80% alignment point:', alignmentPoint.toLocaleString());
+                                    console.log('Target: 1.0 on secondary = 800k on primary');
+                                    console.log('Calculated secondary max:', calculatedSecondaryMax.toFixed(3));
                                     
-                                    // Calculate secondary axis range
-                                    // We want 1.0 on secondary to align with alignmentPoint on primary
-                                    // And we want to start at 0.65 as requested
+                                    // We want to start at 0.65 and have a reasonable range
                                     const secondaryMin = 0.65;
-                                    const secondaryMax = 1.0;
+                                    const secondaryMax = Math.max(calculatedSecondaryMax, 1.05); // Ensure it goes at least to 1.05
                                     
-                                    console.log('Setting secondary axis: min =', secondaryMin, ', max =', secondaryMax);
-                                    console.log('This means 1.0 on secondary should align with ~800k on primary');
+                                    console.log('Setting secondary axis: min =', secondaryMin, ', max =', secondaryMax.toFixed(3));
+                                    console.log('This ensures 1.0 aligns with 800k on primary axis');
                                     
-                                    // Set the scale to ensure proper alignment
+                                    // Set the scale properties correctly
                                     scale.min = secondaryMin;
                                     scale.max = secondaryMax;
                                     
-                                    // Also set the ticks configuration for proper display
-                                    scale.options.ticks.min = secondaryMin;
-                                    scale.options.ticks.max = secondaryMax;
+                                    // Set the options for the scale itself (this is what Chart.js actually uses)
+                                    scale.options.min = secondaryMin;
+                                    scale.options.max = secondaryMax;
                                     scale.options.ticks.stepSize = 0.05; // 5% increments
                                     
-                                    console.log('Tick configuration: min =', secondaryMin, ', max =', secondaryMax, ', stepSize = 0.05');
+                                    console.log('Scale configuration: min =', secondaryMin, ', max =', secondaryMax.toFixed(3), ', stepSize = 0.05');
                                     console.log('✅ Dynamic alignment applied successfully');
                                     return;
                                 } else {
@@ -547,9 +550,9 @@
                                     scale.min = calculatedMin;
                                     scale.max = calculatedMax;
                                     
-                                    // Set tick configuration for proper display
-                                    scale.options.ticks.min = calculatedMin;
-                                    scale.options.ticks.max = calculatedMax;
+                                    // Set scale options for proper display
+                                    scale.options.min = calculatedMin;
+                                    scale.options.max = calculatedMax;
                                     scale.options.ticks.stepSize = 0.05; // 5% increments
                                     
                                     console.log('Tick configuration: min =', calculatedMin, ', max =', calculatedMax, ', stepSize = 0.05');
@@ -562,15 +565,15 @@
                                 
                                 // Final fallback
                                 scale.min = 0.65;
-                                scale.max = 1.0;
+                                scale.max = 1.05;
                                 
-                                // Set tick configuration for proper display
-                                scale.options.ticks.min = 0.65;
-                                scale.options.ticks.max = 1.0;
+                                // Set scale options for proper display
+                                scale.options.min = 0.65;
+                                scale.options.max = 1.05;
                                 scale.options.ticks.stepSize = 0.05; // 5% increments
                                 
-                                console.log('Setting secondary axis: min = 0.65, max = 1.0');
-                                console.log('Tick configuration: min = 0.65, max = 1.0, stepSize = 0.05');
+                                console.log('Setting secondary axis: min = 0.65, max = 1.05');
+                                console.log('Scale configuration: min = 0.65, max = 1.05, stepSize = 0.05');
                                 console.log('✅ Final fallback applied');
                             }
                             
