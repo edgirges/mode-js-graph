@@ -513,6 +513,12 @@
                                     scale.min = secondaryMin;
                                     scale.max = secondaryMax;
                                     
+                                    // Also set the ticks configuration for proper display
+                                    scale.options.ticks.min = secondaryMin;
+                                    scale.options.ticks.max = secondaryMax;
+                                    scale.options.ticks.stepSize = 0.05; // 5% increments
+                                    
+                                    console.log('Tick configuration: min =', secondaryMin, ', max =', secondaryMax, ', stepSize = 0.05');
                                     console.log('✅ Dynamic alignment applied successfully');
                                     return;
                                 } else {
@@ -541,6 +547,12 @@
                                     scale.min = calculatedMin;
                                     scale.max = calculatedMax;
                                     
+                                    // Set tick configuration for proper display
+                                    scale.options.ticks.min = calculatedMin;
+                                    scale.options.ticks.max = calculatedMax;
+                                    scale.options.ticks.stepSize = 0.05; // 5% increments
+                                    
+                                    console.log('Tick configuration: min =', calculatedMin, ', max =', calculatedMax, ', stepSize = 0.05');
                                     console.log('✅ Data-driven fallback applied');
                                 } else {
                                     console.log('❌ No valid spend pct data found');
@@ -552,7 +564,13 @@
                                 scale.min = 0.65;
                                 scale.max = 1.0;
                                 
+                                // Set tick configuration for proper display
+                                scale.options.ticks.min = 0.65;
+                                scale.options.ticks.max = 1.0;
+                                scale.options.ticks.stepSize = 0.05; // 5% increments
+                                
                                 console.log('Setting secondary axis: min = 0.65, max = 1.0');
+                                console.log('Tick configuration: min = 0.65, max = 1.0, stepSize = 0.05');
                                 console.log('✅ Final fallback applied');
                             }
                             
