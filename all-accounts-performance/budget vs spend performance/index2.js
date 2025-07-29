@@ -460,22 +460,103 @@
                                 return value.toFixed(2);
                             }
                         },
-                        afterDataLimits: function(scale) {
-                            const datasets = scale.chart.data.datasets;
+                        beforeUpdate: function(scale) {
+                            console.log('=== Budget vs Spend: Y1 Axis Scaling Debug ===');
+                            
+                            // Access the primary y-axis scale to calculate proportional alignment
+                            const chart = scale.chart;
+                            const primaryScale = chart.scales.y;
+                            
+                            // Get the actual data to understand the range we're working with
+                            const datasets = chart.data.datasets;
                             const spendPctDataset = datasets.find(d => d.label === 'Avg. Spend %');
                             
+                            console.log('Available datasets:', datasets ? datasets.map(d => d.label) : 'None');
+                            console.log('Found spend pct dataset:', !!spendPctDataset);
+                            console.log('Primary scale available:', !!primaryScale);
+                            
+                            if (primaryScale && spendPctDataset && spendPctDataset.data) {
+                                // Calculate what the primary axis max will be based on the budget+spend data
+                                const budgetDataset = datasets.find(d => d.label === 'Budget');
+                                const spendDataset = datasets.find(d => d.label === 'Spend');
+                                
+                                console.log('Found budget dataset:', !!budgetDataset);
+                                console.log('Found spend dataset:', !!spendDataset);
+                                
+                                if (budgetDataset && spendDataset) {
+                                    console.log('📊 Using DYNAMIC alignment calculation');
+                                    
+                                    // Find the maximum combined value (budget + spend) to determine primary scale
+                                    let maxCombined = 0;
+                                    for (let i = 0; i < Math.min(budgetDataset.data.length, spendDataset.data.length); i++) {
+                                        const combined = (budgetDataset.data[i] || 0) + (spendDataset.data[i] || 0);
+                                        maxCombined = Math.max(maxCombined, combined);
+                                    }
+                                    
+                                    // We want the secondary axis "1.0" to align with 80% of the primary axis max
+                                    // This creates better visual balance where the line aligns with the stacked bars
+                                    const alignmentPoint = maxCombined * 0.8;
+                                    
+                                    console.log('Max combined budget+spend:', maxCombined.toLocaleString());
+                                    console.log('80% alignment point:', alignmentPoint.toLocaleString());
+                                    
+                                    // Calculate secondary axis range
+                                    // We want 1.0 on secondary to align with alignmentPoint on primary
+                                    // And we want to start at 0.65 as requested
+                                    const secondaryMin = 0.65;
+                                    const secondaryMax = 1.0;
+                                    
+                                    console.log('Setting secondary axis: min =', secondaryMin, ', max =', secondaryMax);
+                                    console.log('This means 1.0 on secondary should align with ~800k on primary');
+                                    
+                                    // Set the scale to ensure proper alignment
+                                    scale.min = secondaryMin;
+                                    scale.max = secondaryMax;
+                                    
+                                    console.log('✅ Dynamic alignment applied successfully');
+                                    return;
+                                } else {
+                                    console.log('❌ Could not find both budget and spend datasets');
+                                }
+                            } else {
+                                console.log('❌ Missing required components for dynamic alignment');
+                            }
+                            
+                            // Fallback: use the data-driven approach with our desired range
                             if (spendPctDataset && spendPctDataset.data && spendPctDataset.data.length > 0) {
+                                console.log('📊 Using DATA-DRIVEN fallback');
+                                
                                 const values = spendPctDataset.data.filter(v => v != null && !isNaN(v));
                                 if (values.length > 0) {
-                                    const min = Math.min(...values);
-                                    const max = Math.max(...values);
-                                    const range = max - min;
-                                    const padding = range * 0.05;
+                                    // Ensure we start at 0.65 and accommodate the data range
+                                    const dataMax = Math.max(...values);
+                                    const dataMin = Math.min(...values);
                                     
-                                    scale.min = Math.max(0, min - padding);
-                                    scale.max = Math.min(1, max + padding);
+                                    const calculatedMin = Math.min(0.65, dataMin - 0.05);
+                                    const calculatedMax = Math.max(1.0, dataMax + 0.05);
+                                    
+                                    console.log('Spend pct data range: min =', dataMin.toFixed(3), ', max =', dataMax.toFixed(3));
+                                    console.log('Setting secondary axis: min =', calculatedMin, ', max =', calculatedMax);
+                                    
+                                    scale.min = calculatedMin;
+                                    scale.max = calculatedMax;
+                                    
+                                    console.log('✅ Data-driven fallback applied');
+                                } else {
+                                    console.log('❌ No valid spend pct data found');
                                 }
+                            } else {
+                                console.log('📊 Using FINAL fallback (fixed values)');
+                                
+                                // Final fallback
+                                scale.min = 0.65;
+                                scale.max = 1.0;
+                                
+                                console.log('Setting secondary axis: min = 0.65, max = 1.0');
+                                console.log('✅ Final fallback applied');
                             }
+                            
+                            console.log('=== End Y1 Axis Scaling Debug ===');
                         }
                     }
                 },

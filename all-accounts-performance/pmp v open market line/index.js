@@ -5,7 +5,7 @@
 (function() {
     'use strict';
 
-    // =============================================================================
+        // =============================================================================
     // METRIC EXTRACTION - Keep working logic from area chart
     // =============================================================================
     function getMetricsFromDataset(datasetName, fallbackIndex = null) {
@@ -38,7 +38,7 @@
         const columns = Object.keys(dataArray[0]);
         const dateTimePattern = /^(date|day|time|created|updated|timestamp)$/i;
         const metrics = columns.filter(col => !dateTimePattern.test(col));
-        
+
         return metrics;
     }
 
@@ -48,8 +48,8 @@
         datasetName: 'PMP vs OpenMarket Imps and Spend (Obj filter does not apply)',
         fallbackIndex: 5,
         defaultTimeRange: '90D',
-        displayMetrics: ['imps_banner_open_market', 'imps_banner_pmp', 'imps_open_market', 'imps_pmp', 'imps_total', 'imps_video_open_market', 'imps_video_pmp'],
-        
+            displayMetrics: ['imps_banner_open_market', 'imps_banner_pmp', 'imps_open_market', 'imps_pmp', 'imps_total', 'imps_video_open_market', 'imps_video_pmp'],
+
         // Preserve working metric extraction pattern
         getMetrics: function() {
             return getMetricsFromDataset(CONFIG.datasetName, CONFIG.fallbackIndex);
@@ -71,19 +71,19 @@
     function init() {
         const canvas = document.getElementById('pmpVOpenMarketLineChart');
         const toggles = document.querySelector('.pmp-v-open-market-line-toggles');
-        
+
         if (!canvas || !toggles || typeof Chart === 'undefined') {
             return false; // Signal that we need to retry
         }
 
-        if (!chart) {
+            if (!chart) {
             createChart();
-        }
-        
-        if (typeof datasets !== 'undefined') {
+            }
+
+            if (typeof datasets !== 'undefined') {
             loadData();
             return true; // Successfully initialized
-        } else {
+            } else {
             pollForData();
             return true; // Chart created, polling for data
         }
@@ -113,18 +113,18 @@
         try {
             // Use exact working pipeline from area chart
             const extractedMetrics = CONFIG.getMetrics();
-            
-            if (extractedMetrics.length > 0) {
+
+                if (extractedMetrics.length > 0) {
                 // Filter metrics exactly like working area chart
                 const filteredMetrics = CONFIG.displayMetrics.filter(metric => extractedMetrics.includes(metric));
-                
+
                 createDynamicMetrics(filteredMetrics);
-                loadDatasetContent();
-                createMetricToggles();
-                processData();
-                updateChart();
-            } else {
-                console.warn('No metrics extracted from dataset');
+                    loadDatasetContent();
+                    createMetricToggles();
+                    processData();
+                    updateChart();
+                } else {
+                    console.warn('No metrics extracted from dataset');
             }
         } catch (error) {
             console.error('Error loading data:', error);
@@ -134,13 +134,13 @@
     function loadDatasetContent() {
         // Preserve exact dataset loading logic from working area chart
         let targetDataset = null;
-        
+
         if (datasets[CONFIG.datasetName]) {
             targetDataset = datasets[CONFIG.datasetName];
         } else if (datasets[CONFIG.fallbackIndex]) {
             targetDataset = datasets[CONFIG.fallbackIndex];
         }
-        
+
         if (targetDataset) {
             rawData = targetDataset.content || targetDataset || [];
         }
@@ -154,11 +154,11 @@
         ];
         
         dynamicMetrics = filteredMetrics.map((metric, index) => ({
-            id: metric,
-            name: formatMetricName(metric),
+                id: metric,
+                name: formatMetricName(metric),
             color: colors[index % colors.length],
-            visible: true,
-            yAxisID: 'y',
+                visible: true,
+                yAxisID: 'y',
             order: index + 1
         }));
     }
