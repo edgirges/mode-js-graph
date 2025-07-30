@@ -273,8 +273,16 @@
         // Convert to arrays sorted by date
         const sortedDays = Object.keys(dailyData).sort();
         
+        // Convert date strings to proper Date objects for Chart.js time axis
+        const dateLabels = sortedDays.map(day => {
+            // Ensure the date string is properly formatted for Chart.js
+            // If the date comes as 'YYYY-MM-DD', create a proper Date object
+            const date = new Date(day + 'T00:00:00.000Z'); // Add time and timezone to avoid offset issues
+            return date;
+        });
+        
         processedData = {
-            labels: sortedDays
+            labels: dateLabels
         };
 
         dynamicMetrics.forEach(metric => {
