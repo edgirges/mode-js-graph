@@ -216,6 +216,21 @@
         console.log('Budget vs Spend: Available dataset keys:', Object.keys(datasets));
         console.log('Budget vs Spend: Actual dataset keys are:', Object.keys(datasets).map((key, index) => `${index}: "${key}"`));
 
+        // Check if query name is stored within dataset metadata
+        console.log('Budget vs Spend: Exploring dataset structure at index 0:');
+        if (datasets["0"]) {
+            console.log('Budget vs Spend: Dataset 0 object keys:', Object.keys(datasets["0"]));
+            console.log('Budget vs Spend: Dataset 0 full object:', datasets["0"]);
+            
+            // Common places where query names might be stored
+            const possibleNameFields = ['name', 'title', 'query_name', 'dataset_name', 'sql_name'];
+            possibleNameFields.forEach(field => {
+                if (datasets["0"][field]) {
+                    console.log(`Budget vs Spend: Found ${field}:`, datasets["0"][field]);
+                }
+            });
+        }
+
         if (datasets[CONFIG.datasetName]) {
             console.log('Budget vs Spend: ✓ Found dataset by NAME');
             targetDataset = datasets[CONFIG.datasetName];
