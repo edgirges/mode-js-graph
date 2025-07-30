@@ -253,11 +253,16 @@
             if (!date) return;
 
             const dayKey = date.includes && date.includes(' ') ? date.split(' ')[0] : date;
+            
+            // Normalize date format to YYYY-MM-DD
+            const normalizedDay = dayKey instanceof Date ? 
+                dayKey.toISOString().split('T')[0] : 
+                String(dayKey).split('T')[0];
 
-            if (!dailyData[dayKey]) {
-                dailyData[dayKey] = {};
+            if (!dailyData[normalizedDay]) {
+                dailyData[normalizedDay] = {};
                 dynamicMetrics.forEach(metric => {
-                    dailyData[dayKey][metric.id] = [];
+                    dailyData[normalizedDay][metric.id] = [];
                 });
             }
 
@@ -265,7 +270,7 @@
             dynamicMetrics.forEach(metric => {
                 const value = parseFloat(row[metric.id] || 0);
                 if (!isNaN(value)) {
-                    dailyData[dayKey][metric.id].push(value);
+                    dailyData[normalizedDay][metric.id].push(value);
                 }
             });
         });
@@ -357,6 +362,24 @@
                     legend: {
                         display: false
                     },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#007bff',
+                        borderWidth: 1,
+                        cornerRadius: 6,
+                        displayColors: true,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                return new Date(tooltipItems[0].label).toLocaleDateString();
+                            },
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                return `${context.dataset.label}: ${value.toLocaleString()}`;
+                            }
+                        }
+                    },
                     zoom: {
                         zoom: {
                             wheel: {
@@ -382,6 +405,9 @@
                             displayFormats: {
                                 day: 'MMM dd'
                             }
+                        },
+                        adapters: {
+                            date: {}
                         },
                         title: {
                             display: true,
