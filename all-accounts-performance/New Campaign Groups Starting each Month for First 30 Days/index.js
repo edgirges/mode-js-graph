@@ -138,23 +138,42 @@
         }
     }
 
+    function findDatasetByQueryName(queryName) {
+        console.log(`Campaign Groups 30 Days: Searching ALL datasets by queryName (index-independent search)`);
+        
+        for (let key in datasets) {
+            const dataset = datasets[key];
+            if (dataset.queryName === queryName) {
+                console.log(`Campaign Groups 30 Days: ✓ FOUND "${queryName}" at index ${key} (would work at ANY index)`);
+                return dataset;
+            }
+        }
+        
+        console.log(`Campaign Groups 30 Days: ✗ No dataset found with queryName: "${queryName}"`);
+        return null;
+    }
+
     function loadDatasetContent() {
         let targetDataset = null;
 
-        if (datasets[CONFIG.datasetName]) {
-            targetDataset = datasets[CONFIG.datasetName];
-            console.log('Campaign Groups 30 Days: Found dataset by name:', CONFIG.datasetName);
-        } else if (datasets[CONFIG.fallbackIndex]) {
-            targetDataset = datasets[CONFIG.fallbackIndex];
-            console.log('Campaign Groups 30 Days: Using fallback dataset at index', CONFIG.fallbackIndex);
-        } else {
-            console.log('Campaign Groups 30 Days: Neither dataset name nor fallback index found');
-            console.log('Campaign Groups 30 Days: Looking for name:', CONFIG.datasetName);
-            console.log('Campaign Groups 30 Days: Looking for index:', CONFIG.fallbackIndex);
-        }
+        console.log('Campaign Groups 30 Days: Looking for dataset with queryName:', CONFIG.datasetName);
+
+        // First try to find by queryName (most reliable)
+        targetDataset = findDatasetByQueryName(CONFIG.datasetName);
         
+        // TEMPORARILY COMMENTED OUT: Fall back to index if queryName search fails
+        // if (!targetDataset && datasets[CONFIG.fallbackIndex]) {
+        //     console.log('Campaign Groups 30 Days: ✓ Using fallback INDEX:', CONFIG.fallbackIndex);
+        //     targetDataset = datasets[CONFIG.fallbackIndex];
+        // }
+
         if (targetDataset) {
             rawData = targetDataset.content || targetDataset || [];
+            console.log('Campaign Groups 30 Days: Data loaded, rows:', rawData.length);
+            console.log('Campaign Groups 30 Days: ✓ SUCCESS - Working purely by queryName, no index fallback needed!');
+        } else {
+            console.error('Campaign Groups 30 Days: Dataset not found - queryName search failed and fallback is disabled');
+            rawData = [];
         }
     }
 

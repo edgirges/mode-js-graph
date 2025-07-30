@@ -120,19 +120,41 @@
         }
     }
 
+    function findDatasetByQueryName(queryName) {
+        console.log(`RAW Visits and Conv: Searching ALL datasets by queryName (index-independent search)`);
+        
+        for (let key in datasets) {
+            const dataset = datasets[key];
+            if (dataset.queryName === queryName) {
+                console.log(`RAW Visits and Conv: ✓ FOUND "${queryName}" at index ${key} (would work at ANY index)`);
+                return dataset;
+            }
+        }
+        
+        console.log(`RAW Visits and Conv: ✗ No dataset found with queryName: "${queryName}"`);
+        return null;
+    }
+
     function loadDatasetContent() {
         let targetDataset = null;
 
-        if (datasets[CONFIG.datasetName]) {
-            targetDataset = datasets[CONFIG.datasetName];
-        } else if (datasets[CONFIG.fallbackIndex]) {
-            targetDataset = datasets[CONFIG.fallbackIndex];
-        }
+        console.log('RAW Visits and Conv: Looking for dataset with queryName:', CONFIG.datasetName);
+
+        // First try to find by queryName (most reliable)
+        targetDataset = findDatasetByQueryName(CONFIG.datasetName);
+        
+        // TEMPORARILY COMMENTED OUT: Fall back to index if queryName search fails
+        // if (!targetDataset && datasets[CONFIG.fallbackIndex]) {
+        //     console.log('RAW Visits and Conv: ✓ Using fallback INDEX:', CONFIG.fallbackIndex);
+        //     targetDataset = datasets[CONFIG.fallbackIndex];
+        // }
 
         if (targetDataset) {
             rawData = targetDataset.content || targetDataset;
+            console.log('RAW Visits and Conv: Data loaded, rows:', rawData.length);
+            console.log('RAW Visits and Conv: ✓ SUCCESS - Working purely by queryName, no index fallback needed!');
         } else {
-            console.error('RAW Visits and Conv: Dataset not found');
+            console.error('RAW Visits and Conv: Dataset not found - queryName search failed and fallback is disabled');
             rawData = [];
         }
     }

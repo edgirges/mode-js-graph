@@ -187,19 +187,41 @@
         }
     }
 
+    function findDatasetByQueryName(queryName) {
+        console.log(`Non Paid Visit Stats: Searching ALL datasets by queryName (index-independent search)`);
+        
+        for (let key in datasets) {
+            const dataset = datasets[key];
+            if (dataset.queryName === queryName) {
+                console.log(`Non Paid Visit Stats: ✓ FOUND "${queryName}" at index ${key} (would work at ANY index)`);
+                return dataset;
+            }
+        }
+        
+        console.log(`Non Paid Visit Stats: ✗ No dataset found with queryName: "${queryName}"`);
+        return null;
+    }
+
     function loadDatasetContent() {
         let targetDataset = null;
 
-        if (datasets[CONFIG.datasetName]) {
-            targetDataset = datasets[CONFIG.datasetName];
-        } else if (datasets[CONFIG.fallbackIndex]) {
-            targetDataset = datasets[CONFIG.fallbackIndex];
-        }
+        console.log('Non Paid Visit Stats: Looking for dataset with queryName:', CONFIG.datasetName);
+
+        // First try to find by queryName (most reliable)
+        targetDataset = findDatasetByQueryName(CONFIG.datasetName);
+        
+        // TEMPORARILY COMMENTED OUT: Fall back to index if queryName search fails
+        // if (!targetDataset && datasets[CONFIG.fallbackIndex]) {
+        //     console.log('Non Paid Visit Stats: ✓ Using fallback INDEX:', CONFIG.fallbackIndex);
+        //     targetDataset = datasets[CONFIG.fallbackIndex];
+        // }
 
         if (targetDataset) {
             rawData = targetDataset.content || targetDataset;
+            console.log('Non Paid Visit Stats: Data loaded, rows:', rawData.length);
+            console.log('Non Paid Visit Stats: ✓ SUCCESS - Working purely by queryName, no index fallback needed!');
         } else {
-            console.error('Non Paid Visit Stats: Dataset not found');
+            console.error('Non Paid Visit Stats: Dataset not found - queryName search failed and fallback is disabled');
             rawData = [];
         }
     }

@@ -131,18 +131,42 @@
         }
     }
 
+    function findDatasetByQueryName(queryName) {
+        console.log(`PMP v Open Market Line: Searching ALL datasets by queryName (index-independent search)`);
+        
+        for (let key in datasets) {
+            const dataset = datasets[key];
+            if (dataset.queryName === queryName) {
+                console.log(`PMP v Open Market Line: ✓ FOUND "${queryName}" at index ${key} (would work at ANY index)`);
+                return dataset;
+            }
+        }
+        
+        console.log(`PMP v Open Market Line: ✗ No dataset found with queryName: "${queryName}"`);
+        return null;
+    }
+
     function loadDatasetContent() {
-        // Preserve exact dataset loading logic from working area chart
         let targetDataset = null;
 
-        if (datasets[CONFIG.datasetName]) {
-            targetDataset = datasets[CONFIG.datasetName];
-        } else if (datasets[CONFIG.fallbackIndex]) {
-            targetDataset = datasets[CONFIG.fallbackIndex];
-        }
+        console.log('PMP v Open Market Line: Looking for dataset with queryName:', CONFIG.datasetName);
+
+        // First try to find by queryName (most reliable)
+        targetDataset = findDatasetByQueryName(CONFIG.datasetName);
+        
+        // TEMPORARILY COMMENTED OUT: Fall back to index if queryName search fails
+        // if (!targetDataset && datasets[CONFIG.fallbackIndex]) {
+        //     console.log('PMP v Open Market Line: ✓ Using fallback INDEX:', CONFIG.fallbackIndex);
+        //     targetDataset = datasets[CONFIG.fallbackIndex];
+        // }
 
         if (targetDataset) {
             rawData = targetDataset.content || targetDataset || [];
+            console.log('PMP v Open Market Line: Data loaded, rows:', rawData.length);
+            console.log('PMP v Open Market Line: ✓ SUCCESS - Working purely by queryName, no index fallback needed!');
+        } else {
+            console.error('PMP v Open Market Line: Dataset not found - queryName search failed and fallback is disabled');
+            rawData = [];
         }
     }
 
