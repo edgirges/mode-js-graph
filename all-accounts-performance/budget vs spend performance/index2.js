@@ -230,17 +230,18 @@
         // First try to find by queryName (most reliable)
         targetDataset = findDatasetByQueryName(CONFIG.datasetName);
         
-        // Fall back to index if queryName search fails
-        if (!targetDataset && datasets[CONFIG.fallbackIndex]) {
-            console.log('Budget vs Spend: ✓ Using fallback INDEX:', CONFIG.fallbackIndex);
-            targetDataset = datasets[CONFIG.fallbackIndex];
-        }
+        // TEMPORARILY COMMENTED OUT: Fall back to index if queryName search fails
+        // if (!targetDataset && datasets[CONFIG.fallbackIndex]) {
+        //     console.log('Budget vs Spend: ✓ Using fallback INDEX:', CONFIG.fallbackIndex);
+        //     targetDataset = datasets[CONFIG.fallbackIndex];
+        // }
 
         if (targetDataset) {
             rawData = targetDataset.content || targetDataset;
             console.log('Budget vs Spend: Data loaded, rows:', rawData.length);
+            console.log('Budget vs Spend: ✓ SUCCESS - Working purely by queryName, no index fallback needed!');
         } else {
-            console.error('Budget vs Spend: Dataset not found');
+            console.error('Budget vs Spend: Dataset not found - queryName search failed and fallback is disabled');
             rawData = [];
         }
     }
