@@ -214,6 +214,7 @@
         console.log('Budget vs Spend: Looking for dataset name:', CONFIG.datasetName);
         console.log('Budget vs Spend: Fallback index:', CONFIG.fallbackIndex);
         console.log('Budget vs Spend: Available dataset keys:', Object.keys(datasets));
+        console.log('Budget vs Spend: Actual dataset keys are:', Object.keys(datasets).map((key, index) => `${index}: "${key}"`));
 
         if (datasets[CONFIG.datasetName]) {
             console.log('Budget vs Spend: ✓ Found dataset by NAME');
