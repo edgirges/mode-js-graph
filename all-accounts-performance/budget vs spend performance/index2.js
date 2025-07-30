@@ -210,14 +210,24 @@
     function loadDatasetContent() {
         let targetDataset = null;
 
+        console.log('Budget vs Spend: Checking dataset access...');
+        console.log('Budget vs Spend: Looking for dataset name:', CONFIG.datasetName);
+        console.log('Budget vs Spend: Fallback index:', CONFIG.fallbackIndex);
+        console.log('Budget vs Spend: Available dataset keys:', Object.keys(datasets));
+
         if (datasets[CONFIG.datasetName]) {
+            console.log('Budget vs Spend: ✓ Found dataset by NAME');
             targetDataset = datasets[CONFIG.datasetName];
         } else if (datasets[CONFIG.fallbackIndex]) {
+            console.log('Budget vs Spend: ✓ Using fallback INDEX');
             targetDataset = datasets[CONFIG.fallbackIndex];
+        } else {
+            console.log('Budget vs Spend: ✗ Neither name nor index found');
         }
 
         if (targetDataset) {
             rawData = targetDataset.content || targetDataset;
+            console.log('Budget vs Spend: Data loaded, rows:', rawData.length);
         } else {
             console.error('Budget vs Spend: Dataset not found');
             rawData = [];
