@@ -274,7 +274,7 @@
         const sortedDays = Object.keys(dailyData).sort();
         
         processedData = {
-            labels: sortedDays
+            labels: sortedDays.map(day => new Date(day + 'T00:00:00'))
         };
 
         dynamicMetrics.forEach(metric => {
