@@ -260,13 +260,9 @@
             let spend_pct = parseFloat(row[columnMapping.spend_pct] || 0);
             const hasValidSpendPct = !isNaN(spend_pct) && row[columnMapping.spend_pct] !== "" && row[columnMapping.spend_pct] != null;
             
-            // Determine what to include:
-            // 1. Rows with valid budget AND valid spend_pct (normal case)
-            // 2. Rows with spend > 0 but budget <= 0 (spend without budget)
-            const shouldInclude = (budget > 0 && hasValidSpendPct) || (spend > 0 && budget <= 0);
-            
-            if (!shouldInclude) {
-                return;
+            // Include any row that has meaningful budget OR spend data
+            if (budget <= 0 && spend <= 0) {
+                return; // Skip only truly empty rows
             }
             
             const day = row[dayColumn];
