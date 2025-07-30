@@ -378,8 +378,7 @@
                             tooltipFormat: 'MMM dd, yyyy',
                             displayFormats: {
                                 day: 'MMM dd'
-                            },
-                            parser: 'YYYY-MM-DD'
+                            }
                         },
                         title: {
                             display: true,

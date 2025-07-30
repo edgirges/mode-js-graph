@@ -195,7 +195,7 @@
         // Extract and sort months
         const monthList = rawData.map(row => row.month).filter(Boolean);
         const uniqueMonths = [...new Set(monthList)].sort();
-        
+
         console.log('Campaign Groups 30 Days: Found months:', uniqueMonths);
 
         // Set up processed data structure for Chart.js
@@ -288,13 +288,13 @@
             const data = processedData[metric.id] || [];
             console.log(`createDatasets: ${metric.id} has data length:`, data.length, 'sample:', data.slice(0,3));
             return {
-                label: metric.name,
+            label: metric.name,
                 data: data,
-                backgroundColor: metric.color,
-                borderColor: metric.color,
-                borderWidth: 1,
-                yAxisID: metric.yAxisID,
-                order: metric.order
+            backgroundColor: metric.color,
+            borderColor: metric.color,
+            borderWidth: 1,
+            yAxisID: metric.yAxisID,
+            order: metric.order
             };
         })
         .sort((a, b) => a.order - b.order);
@@ -334,7 +334,7 @@
             div.addEventListener('click', (e) => {
                 if (e.target === checkbox || e.target.tagName === 'INPUT') return;
                 console.log(`Div clicked for metric: ${metric.id}, current checked: ${checkbox.checked}`);
-                e.preventDefault();
+                    e.preventDefault();
                 e.stopPropagation();
                 const newState = !checkbox.checked;
                 checkbox.checked = newState;
