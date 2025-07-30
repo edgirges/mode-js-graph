@@ -256,17 +256,22 @@
             const day = row[dayColumn];
             if (!day) return;
 
-            if (!dailyData[day]) {
-                dailyData[day] = {};
+            // Normalize date format to YYYY-MM-DD
+            const normalizedDay = day instanceof Date ? 
+                day.toISOString().split('T')[0] : 
+                String(day).split('T')[0];
+
+            if (!dailyData[normalizedDay]) {
+                dailyData[normalizedDay] = {};
                 dynamicMetrics.forEach(metric => {
-                    dailyData[day][metric.id] = 0;
+                    dailyData[normalizedDay][metric.id] = 0;
                 });
             }
 
             // Aggregate each metric
             dynamicMetrics.forEach(metric => {
                 const value = parseInt(row[metric.id] || 0);
-                dailyData[day][metric.id] += value;
+                dailyData[normalizedDay][metric.id] += value;
             });
         });
 
@@ -274,7 +279,7 @@
         const sortedDays = Object.keys(dailyData).sort();
         
         processedData = {
-            labels: sortedDays.map(day => new Date(day + 'T00:00:00'))
+            labels: sortedDays
         };
 
         dynamicMetrics.forEach(metric => {
@@ -354,6 +359,24 @@
                     legend: {
                         display: false
                     },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#007bff',
+                        borderWidth: 1,
+                        cornerRadius: 6,
+                        displayColors: true,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                return new Date(tooltipItems[0].label).toLocaleDateString();
+                            },
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                return `${context.dataset.label}: ${value.toLocaleString()}`;
+                            }
+                        }
+                    },
                     zoom: {
                         zoom: {
                             wheel: {
@@ -379,6 +402,9 @@
                             displayFormats: {
                                 day: 'MMM dd'
                             }
+                        },
+                        adapters: {
+                            date: {}
                         },
                         title: {
                             display: true,
