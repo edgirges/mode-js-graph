@@ -297,18 +297,7 @@
             spend: sortedDays.map(day => dailyData[day].spend),
             spend_pct: sortedDays.map(day => {
                 // Use averaging method but only include valid percentages
-                const result = dailyData[day].count > 0 ? dailyData[day].spend_pct_sum / dailyData[day].count : 0;
-                
-                // Debug for June 17
-                if (day === '2025-06-17') {
-                    console.log('June 17 spend_pct calculation:');
-                    console.log('  spend_pct_sum:', dailyData[day].spend_pct_sum);
-                    console.log('  count:', dailyData[day].count);
-                    console.log('  result:', result);
-                    console.log('  expected: ~0.939');
-                }
-                
-                return result;
+                return dailyData[day].count > 0 ? dailyData[day].spend_pct_sum / dailyData[day].count : 0;
             })
         };
     }
@@ -482,124 +471,50 @@
                                 return value.toFixed(2);
                             }
                         },
-                        beforeUpdate: function(scale) {
-                            console.log('=== Budget vs Spend: Y1 Axis Scaling Debug ===');
-                            
-                            // Access the primary y-axis scale to calculate proportional alignment
+                        afterDataLimits: function(scale) {
+                            // Only proceed if we have actual data
                             const chart = scale.chart;
-                            const primaryScale = chart.scales.y;
-                            
-                            // Get the actual data to understand the range we're working with
                             const datasets = chart.data.datasets;
                             const spendPctDataset = datasets.find(d => d.label === 'Avg. Spend %');
                             
-                            console.log('Available datasets:', datasets ? datasets.map(d => d.label) : 'None');
-                            console.log('Found spend pct dataset:', !!spendPctDataset);
-                            console.log('Primary scale available:', !!primaryScale);
-                            
-                            if (primaryScale && spendPctDataset && spendPctDataset.data) {
-                                // Calculate what the primary axis max will be based on the budget+spend data
-                                const budgetDataset = datasets.find(d => d.label === 'Budget');
-                                const spendDataset = datasets.find(d => d.label === 'Spend');
-                                
-                                console.log('Found budget dataset:', !!budgetDataset);
-                                console.log('Found spend dataset:', !!spendDataset);
-                                
-                                if (budgetDataset && spendDataset) {
-                                    console.log('📊 Using DYNAMIC alignment calculation');
-                                    
-                                    // Find the maximum combined value (budget + spend) to determine primary scale
-                                    let maxCombined = 0;
-                                    for (let i = 0; i < Math.min(budgetDataset.data.length, spendDataset.data.length); i++) {
-                                        const combined = (budgetDataset.data[i] || 0) + (spendDataset.data[i] || 0);
-                                        maxCombined = Math.max(maxCombined, combined);
-                                    }
-                                    
-                                    // We want 1.0 on secondary axis to align with 800k on primary axis
-                                    const targetAlignmentValue = 800000; // 800k
-                                    const secondaryAlignmentValue = 1.0;
-                                    
-                                    // Calculate what the secondary max should be based on the primary max
-                                    // If 1.0 aligns with 800k, then maxCombined aligns with: maxCombined * (1.0 / 800k)
-                                    const calculatedSecondaryMax = maxCombined * (secondaryAlignmentValue / targetAlignmentValue);
-                                    
-                                    console.log('Max combined budget+spend:', maxCombined.toLocaleString());
-                                    console.log('Target: 1.0 on secondary = 800k on primary');
-                                    console.log('Calculated secondary max:', calculatedSecondaryMax.toFixed(3));
-                                    
-                                    // We want to start at 0.65 and have a reasonable range
-                                    const secondaryMin = 0.65;
-                                    const secondaryMax = Math.max(calculatedSecondaryMax, 1.05); // Ensure it goes at least to 1.05
-                                    
-                                    console.log('Setting secondary axis: min =', secondaryMin, ', max =', secondaryMax.toFixed(3));
-                                    console.log('This ensures 1.0 aligns with 800k on primary axis');
-                                    
-                                    // Set the scale properties correctly
-                                    scale.min = secondaryMin;
-                                    scale.max = secondaryMax;
-                                    
-                                    // Set the options for the scale itself (this is what Chart.js actually uses)
-                                    scale.options.min = secondaryMin;
-                                    scale.options.max = secondaryMax;
-                                    scale.options.ticks.stepSize = 0.05; // 5% increments
-                                    
-                                    console.log('Scale configuration: min =', secondaryMin, ', max =', secondaryMax.toFixed(3), ', stepSize = 0.05');
-                                    console.log('✅ Dynamic alignment applied successfully');
-                                    return;
-                                } else {
-                                    console.log('❌ Could not find both budget and spend datasets');
-                                }
-                            } else {
-                                console.log('❌ Missing required components for dynamic alignment');
+                            if (!spendPctDataset || !spendPctDataset.data || spendPctDataset.data.length === 0) {
+                                return; // Let Chart.js use default scaling
                             }
                             
-                            // Fallback: use the data-driven approach with our desired range
-                            if (spendPctDataset && spendPctDataset.data && spendPctDataset.data.length > 0) {
-                                console.log('📊 Using DATA-DRIVEN fallback');
-                                
-                                const values = spendPctDataset.data.filter(v => v != null && !isNaN(v));
-                                if (values.length > 0) {
-                                    // Ensure we start at 0.65 and accommodate the data range
-                                    const dataMax = Math.max(...values);
-                                    const dataMin = Math.min(...values);
-                                    
-                                    const calculatedMin = Math.min(0.65, dataMin - 0.05);
-                                    const calculatedMax = Math.max(1.0, dataMax + 0.05);
-                                    
-                                    console.log('Spend pct data range: min =', dataMin.toFixed(3), ', max =', dataMax.toFixed(3));
-                                    console.log('Setting secondary axis: min =', calculatedMin, ', max =', calculatedMax);
-                                    
-                                    scale.min = calculatedMin;
-                                    scale.max = calculatedMax;
-                                    
-                                    // Set scale options for proper display
-                                    scale.options.min = calculatedMin;
-                                    scale.options.max = calculatedMax;
-                                    scale.options.ticks.stepSize = 0.05; // 5% increments
-                                    
-                                    console.log('Tick configuration: min =', calculatedMin, ', max =', calculatedMax, ', stepSize = 0.05');
-                                    console.log('✅ Data-driven fallback applied');
-                                } else {
-                                    console.log('❌ No valid spend pct data found');
-                                }
-                            } else {
-                                console.log('📊 Using FINAL fallback (fixed values)');
-                                
-                                // Final fallback
-                                scale.min = 0.65;
-                                scale.max = 1.05;
-                                
-                                // Set scale options for proper display
-                                scale.options.min = 0.65;
-                                scale.options.max = 1.05;
-                                scale.options.ticks.stepSize = 0.05; // 5% increments
-                                
-                                console.log('Setting secondary axis: min = 0.65, max = 1.05');
-                                console.log('Scale configuration: min = 0.65, max = 1.05, stepSize = 0.05');
-                                console.log('✅ Final fallback applied');
+                            // Get the actual spend percentage data range
+                            const spendPctValues = spendPctDataset.data.filter(v => v != null && !isNaN(v) && v > 0);
+                            
+                            if (spendPctValues.length === 0) {
+                                return; // No valid data
                             }
                             
-                            console.log('=== End Y1 Axis Scaling Debug ===');
+                            const dataMin = Math.min(...spendPctValues);
+                            const dataMax = Math.max(...spendPctValues);
+                            
+                            // Calculate appropriate range with padding
+                            const range = dataMax - dataMin;
+                            const padding = Math.max(0.05, range * 0.1); // At least 5% padding
+                            
+                            // Calculate min/max with smart bounds
+                            let calculatedMin = Math.max(0, dataMin - padding);
+                            let calculatedMax = dataMax + padding;
+                            
+                            // Ensure we have reasonable bounds for budget/spend charts
+                            calculatedMin = Math.min(calculatedMin, 0.65); // Don't start higher than 0.65
+                            calculatedMax = Math.max(calculatedMax, 1.0);   // Always show at least to 1.0
+                            
+                            // Round to nice increments
+                            calculatedMin = Math.floor(calculatedMin * 20) / 20; // Round to 0.05 increments
+                            calculatedMax = Math.ceil(calculatedMax * 20) / 20;   // Round to 0.05 increments
+                            
+                            // Set the scale
+                            scale.min = calculatedMin;
+                            scale.max = calculatedMax;
+                            
+                            // Also ensure the options are set
+                            scale.options.min = calculatedMin;
+                            scale.options.max = calculatedMax;
+                            scale.options.ticks.stepSize = 0.05;
                         }
                     }
                 },
