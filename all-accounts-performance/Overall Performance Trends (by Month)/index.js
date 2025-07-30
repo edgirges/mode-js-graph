@@ -43,7 +43,7 @@
 
     const CONFIG = {
         chartTitle: 'Overall Performance Trends (by Month)',
-        datasetName: 'BAR - Overall Performance Trends (by Month)',
+        datasetName: 'Overall Performance Trends (by Month)',
         fallbackIndex: 22,
         defaultTimeRange: '90D',
         displayMetrics: ['TotalSpend', 'Visits', 'NewSiteVisitors', 'NewUsersReached'],
