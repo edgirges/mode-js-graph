@@ -334,37 +334,72 @@
 
         container.innerHTML = '';
 
+        // Add select/deselect all buttons
+        const metricsHeader = document.querySelector('.performance-trends-metrics-title');
+        if (metricsHeader && !document.getElementById('performance-trends-select-all-btn')) {
+            const selectAllBtn = document.createElement('button');
+            selectAllBtn.id = 'performance-trends-select-all-btn';
+            selectAllBtn.className = 'select-all-btn';
+            selectAllBtn.textContent = 'Select All';
+            selectAllBtn.onclick = selectAllMetrics;
+            
+            const deselectAllBtn = document.createElement('button');
+            deselectAllBtn.id = 'performance-trends-deselect-all-btn';
+            deselectAllBtn.className = 'deselect-all-btn';
+            deselectAllBtn.textContent = 'Deselect All';
+            deselectAllBtn.onclick = deselectAllMetrics;
+            
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'metrics-buttons-container';
+            buttonsContainer.style.marginBottom = '15px';
+            buttonsContainer.appendChild(selectAllBtn);
+            buttonsContainer.appendChild(deselectAllBtn);
+            
+            metricsHeader.parentNode.insertBefore(buttonsContainer, container);
+        }
+
         dynamicMetrics.forEach(metric => {
             const div = document.createElement('div');
-            div.className = 'metric-toggle active';
+            div.className = `metric-toggle ${metric.visible ? 'active' : ''}`;
             div.innerHTML = `
-                <input type="checkbox" id="metric-${metric.id}" checked>
+                <input type="checkbox" class="metric-checkbox" id="metric-${metric.id}" ${metric.visible ? 'checked' : ''}>
                 <label for="metric-${metric.id}" class="metric-label">
                     <span class="metric-color" style="background-color: ${metric.color}"></span>
                     ${metric.name}
                 </label>
             `;
 
-            const checkbox = div.querySelector('input');
-            checkbox.addEventListener('change', () => toggleMetric(metric.id));
+            const checkbox = div.querySelector('.metric-checkbox');
+            
+            checkbox.addEventListener('change', (e) => {
+                e.stopPropagation();
+                toggleMetric(metric.id, e.target.checked);
+            });
 
-            div.addEventListener('click', (e) => {  
-                if (e.target !== checkbox) {
-                    e.preventDefault();
-                    checkbox.click();
-                }
+            div.addEventListener('click', (e) => {
+                if (e.target === checkbox || e.target.tagName === 'INPUT') return;
+                e.preventDefault();
+                e.stopPropagation();
+                const newState = !checkbox.checked;
+                checkbox.checked = newState;
+                toggleMetric(metric.id, newState);
             });
 
             container.appendChild(div);
         });
     }
 
-    function toggleMetric(metricId) {
+    function toggleMetric(metricId, checkedState) {
         const metric = dynamicMetrics.find(m => m.id === metricId);
-        const toggleDiv = document.getElementById(`metric-${metricId}`).parentElement;
+        if (!metric) return;
+        
         const checkbox = document.getElementById(`metric-${metricId}`);
-
-        metric.visible = checkbox.checked;
+        if (!checkbox) return;
+        
+        const toggleDiv = checkbox.parentElement;
+        
+        // Use passed state if provided, otherwise use checkbox state
+        metric.visible = checkedState !== undefined ? checkedState : checkbox.checked;
         toggleDiv.classList.toggle('active', metric.visible);
         updateChart();
     }
@@ -422,6 +457,32 @@
         chart.update('none');
     }
 
+    function selectAllMetrics() {
+        dynamicMetrics.forEach(metric => {
+            metric.visible = true;
+            const checkbox = document.getElementById(`metric-${metric.id}`);
+            const toggleDiv = checkbox.parentElement;
+            
+            checkbox.checked = true;
+            toggleDiv.classList.add('active');
+        });
+        
+        updateChart();
+    }
+
+    function deselectAllMetrics() {
+        dynamicMetrics.forEach(metric => {
+            metric.visible = false;
+            const checkbox = document.getElementById(`metric-${metric.id}`);
+            const toggleDiv = checkbox.parentElement;
+            
+            checkbox.checked = false;
+            toggleDiv.classList.remove('active');
+        });
+        
+        updateChart();
+    }
+
     // =============================================================================
     // EXPORT
     // =============================================================================
@@ -432,6 +493,8 @@
         toggleZoom,
         resetZoom,
         toggleMetric,
+        selectAll: selectAllMetrics,
+        deselectAll: deselectAllMetrics,
         getChart: () => chart,
         getMetrics: () => dynamicMetrics,
         getCurrentData: () => processedData
