@@ -256,28 +256,40 @@
             const budget = parseFloat(row[columnMapping.budget] || 0);
             const spend = parseFloat(row[columnMapping.spend] || 0);
             
-            // Note: We no longer use individual spend_pct values for aggregation
-            // Instead, we calculate spend_pct as total_spend / total_budget per day
+            // Get the original spend_pct from the SQL for rows that have it
+            let spend_pct = parseFloat(row[columnMapping.spend_pct] || 0);
+            const hasValidSpendPct = !isNaN(spend_pct) && row[columnMapping.spend_pct] !== "" && row[columnMapping.spend_pct] != null;
             
-            // Only filter out rows with no meaningful data
-            if (budget <= 0 && spend <= 0) {
-                // Skip only if both budget and spend are invalid/zero
+            // Determine what to include:
+            // 1. Rows with valid budget AND valid spend_pct (normal case)
+            // 2. Rows with spend > 0 but budget <= 0 (spend without budget)
+            const shouldInclude = (budget > 0 && hasValidSpendPct) || (spend > 0 && budget <= 0);
+            
+            if (!shouldInclude) {
                 return;
             }
-            
-            // Handle cases where budget is 0 but spend exists (treat budget as 0)
-            const effectiveBudget = Math.max(0, budget);
             
             const day = row[dayColumn];
             if (!dailyData[day]) {
                 dailyData[day] = {
                     budget: 0,
-                    spend: 0
+                    spend: 0,
+                    spend_pct_sum: 0,
+                    count: 0
                 };
             }
             
-            dailyData[day].budget += effectiveBudget;
+            // For spend and budget, include all valid data
+            if (budget > 0) {
+                dailyData[day].budget += budget;
+            }
             dailyData[day].spend += spend;
+            
+            // For spend_pct averaging, only include rows with valid percentages
+            if (hasValidSpendPct) {
+                dailyData[day].spend_pct_sum += spend_pct;
+                dailyData[day].count += 1;
+            }
         });
 
         // Convert to arrays sorted by date
@@ -288,10 +300,19 @@
             budget: sortedDays.map(day => Math.max(0, dailyData[day].budget - dailyData[day].spend)), // Remaining budget
             spend: sortedDays.map(day => dailyData[day].spend),
             spend_pct: sortedDays.map(day => {
-                // Calculate spend percentage the same way as SQL: total_spend / total_budget
-                const totalBudget = dailyData[day].budget;
-                const totalSpend = dailyData[day].spend;
-                return totalBudget > 0 ? totalSpend / totalBudget : 0;
+                // Use averaging method but only include valid percentages
+                const result = dailyData[day].count > 0 ? dailyData[day].spend_pct_sum / dailyData[day].count : 0;
+                
+                // Debug for June 17
+                if (day === '2025-06-17') {
+                    console.log('June 17 spend_pct calculation:');
+                    console.log('  spend_pct_sum:', dailyData[day].spend_pct_sum);
+                    console.log('  count:', dailyData[day].count);
+                    console.log('  result:', result);
+                    console.log('  expected: ~0.939');
+                }
+                
+                return result;
             })
         };
     }
