@@ -252,21 +252,12 @@
         // Group data by day and aggregate
         const dailyData = {};
         
-        let totalRawSpend = 0;
-        let processedSpendRows = 0;
-        
         rawData.forEach(row => {
             const budget = parseFloat(row[columnMapping.budget] || 0);
             const spend = parseFloat(row[columnMapping.spend] || 0);
             
-            // Handle spend_pct: if null/invalid, treat as 0 (no spend = 0%)
-            let spend_pct = parseFloat(row[columnMapping.spend_pct] || 0);
-            if (isNaN(spend_pct) || row[columnMapping.spend_pct] === "" || row[columnMapping.spend_pct] == null) {
-                spend_pct = 0; // No spend data = 0% spend rate
-            }
-            
-            // Track all spend values from raw data
-            totalRawSpend += spend;
+            // Note: We no longer use individual spend_pct values for aggregation
+            // Instead, we calculate spend_pct as total_spend / total_budget per day
             
             // Only filter out rows with no meaningful data
             if (budget <= 0 && spend <= 0) {
@@ -277,42 +268,18 @@
             // Handle cases where budget is 0 but spend exists (treat budget as 0)
             const effectiveBudget = Math.max(0, budget);
             
-            processedSpendRows++;
             const day = row[dayColumn];
             if (!dailyData[day]) {
                 dailyData[day] = {
                     budget: 0,
-                    spend: 0,
-                    spend_pct_sum: 0,
-                    count: 0
+                    spend: 0
                 };
             }
             
             dailyData[day].budget += effectiveBudget;
             dailyData[day].spend += spend;
-            dailyData[day].spend_pct_sum += spend_pct;
-            dailyData[day].count += 1;
         });
 
-        // Calculate total processed spend for comparison
-        let totalProcessedSpend = 0;
-        Object.values(dailyData).forEach(dayData => {
-            totalProcessedSpend += dayData.spend;
-        });
-        
-        // Log spend processing summary
-        console.log('=== SPEND DEBUGGING ===');
-        console.log('Total raw spend from dataset:', totalRawSpend.toLocaleString());
-        console.log('Total processed spend (after filtering):', totalProcessedSpend.toLocaleString());
-        console.log('Processed rows:', processedSpendRows);
-        console.log('Difference (raw - processed):', (totalRawSpend - totalProcessedSpend).toLocaleString());
-        
-        if (Math.abs(totalRawSpend - totalProcessedSpend) > 1) {
-            console.log('⚠️  Spend discrepancy detected:', (totalRawSpend - totalProcessedSpend).toLocaleString());
-        } else {
-            console.log('✅ Spend totals match!');
-        }
-        
         // Convert to arrays sorted by date
         const sortedDays = Object.keys(dailyData).sort();
         
@@ -321,7 +288,10 @@
             budget: sortedDays.map(day => Math.max(0, dailyData[day].budget - dailyData[day].spend)), // Remaining budget
             spend: sortedDays.map(day => dailyData[day].spend),
             spend_pct: sortedDays.map(day => {
-                return dailyData[day].count > 0 ? dailyData[day].spend_pct_sum / dailyData[day].count : 0;
+                // Calculate spend percentage the same way as SQL: total_spend / total_budget
+                const totalBudget = dailyData[day].budget;
+                const totalSpend = dailyData[day].spend;
+                return totalBudget > 0 ? totalSpend / totalBudget : 0;
             })
         };
     }
