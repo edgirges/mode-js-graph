@@ -207,38 +207,33 @@
         }
     }
 
+    function findDatasetByQueryName(queryName) {
+        console.log(`Budget vs Spend: Searching ALL datasets by queryName (index-independent search)`);
+        
+        for (let key in datasets) {
+            const dataset = datasets[key];
+            if (dataset.queryName === queryName) {
+                console.log(`Budget vs Spend: ✓ FOUND "${queryName}" at index ${key} (would work at ANY index)`);
+                return dataset;
+            }
+        }
+        
+        console.log(`Budget vs Spend: ✗ No dataset found with queryName: "${queryName}"`);
+        return null;
+    }
+
     function loadDatasetContent() {
         let targetDataset = null;
 
-        console.log('Budget vs Spend: Checking dataset access...');
-        console.log('Budget vs Spend: Looking for dataset name:', CONFIG.datasetName);
-        console.log('Budget vs Spend: Fallback index:', CONFIG.fallbackIndex);
-        console.log('Budget vs Spend: Available dataset keys:', Object.keys(datasets));
-        console.log('Budget vs Spend: Actual dataset keys are:', Object.keys(datasets).map((key, index) => `${index}: "${key}"`));
+        console.log('Budget vs Spend: Looking for dataset with queryName:', CONFIG.datasetName);
 
-        // Check if query name is stored within dataset metadata
-        console.log('Budget vs Spend: Exploring dataset structure at index 0:');
-        if (datasets["0"]) {
-            console.log('Budget vs Spend: Dataset 0 object keys:', Object.keys(datasets["0"]));
-            console.log('Budget vs Spend: Dataset 0 full object:', datasets["0"]);
-            
-            // Common places where query names might be stored
-            const possibleNameFields = ['name', 'title', 'query_name', 'dataset_name', 'sql_name'];
-            possibleNameFields.forEach(field => {
-                if (datasets["0"][field]) {
-                    console.log(`Budget vs Spend: Found ${field}:`, datasets["0"][field]);
-                }
-            });
-        }
-
-        if (datasets[CONFIG.datasetName]) {
-            console.log('Budget vs Spend: ✓ Found dataset by NAME');
-            targetDataset = datasets[CONFIG.datasetName];
-        } else if (datasets[CONFIG.fallbackIndex]) {
-            console.log('Budget vs Spend: ✓ Using fallback INDEX');
+        // First try to find by queryName (most reliable)
+        targetDataset = findDatasetByQueryName(CONFIG.datasetName);
+        
+        // Fall back to index if queryName search fails
+        if (!targetDataset && datasets[CONFIG.fallbackIndex]) {
+            console.log('Budget vs Spend: ✓ Using fallback INDEX:', CONFIG.fallbackIndex);
             targetDataset = datasets[CONFIG.fallbackIndex];
-        } else {
-            console.log('Budget vs Spend: ✗ Neither name nor index found');
         }
 
         if (targetDataset) {
