@@ -186,19 +186,24 @@
             
             const dayKey = date.includes && date.includes(' ') ? date.split(' ')[0] : date;
             
-            if (!dailyData[dayKey]) {
-                dailyData[dayKey] = {};
+            // Normalize date format to YYYY-MM-DD
+            const normalizedDay = dayKey instanceof Date ? 
+                dayKey.toISOString().split('T')[0] : 
+                String(dayKey).split('T')[0];
+            
+            if (!dailyData[normalizedDay]) {
+                dailyData[normalizedDay] = {};
                 dynamicMetrics.forEach(metric => {
-                    dailyData[dayKey][metric.id] = 0;
-                    dailyData[dayKey][`${metric.id}_count`] = 0;
+                    dailyData[normalizedDay][metric.id] = 0;
+                    dailyData[normalizedDay][`${metric.id}_count`] = 0;
                 });
             }
             
             dynamicMetrics.forEach(metric => {
                 const value = parseFloat(row[metric.id] || 0);
                 if (!isNaN(value)) {
-                    dailyData[dayKey][metric.id] += value;
-                    dailyData[dayKey][`${metric.id}_count`] += 1;
+                    dailyData[normalizedDay][metric.id] += value;
+                    dailyData[normalizedDay][`${metric.id}_count`] += 1;
                 }
             });
         });
@@ -271,6 +276,24 @@
                         text: CONFIG.chartTitle
                     },
                     legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#007bff',
+                        borderWidth: 1,
+                        cornerRadius: 6,
+                        displayColors: true,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                return new Date(tooltipItems[0].label).toLocaleDateString();
+                            },
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                return `${context.dataset.label}: ${value.toLocaleString()}`;
+                            }
+                        }
+                    },
                     zoom: {
                         zoom: {
                             wheel: { enabled: false },
@@ -283,8 +306,27 @@
                 scales: {
                     x: {
                         type: 'time',
-                        time: { unit: 'day' },
-                        title: { display: true, text: 'Date' }
+                        time: {
+                            unit: 'day',
+                            tooltipFormat: 'MMM dd, yyyy',
+                            displayFormats: {
+                                day: 'MMM dd'
+                            }
+                        },
+                        adapters: {
+                            date: {}
+                        },
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
                     },
                     y: {
                         position: 'left',
