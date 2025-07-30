@@ -289,11 +289,35 @@ function createMetricToggles() {
     container.innerHTML = '';
     console.log('Creating toggles for metrics:', dynamicMetrics.map(m => m.id));
 
+    // Add select/deselect all buttons
+    const metricsHeader = document.querySelector('.campaign-groups-month-metrics-title');
+    if (metricsHeader && !document.getElementById('campaign-groups-month-select-all-btn')) {
+        const selectAllBtn = document.createElement('button');
+        selectAllBtn.id = 'campaign-groups-month-select-all-btn';
+        selectAllBtn.className = 'select-all-btn';
+        selectAllBtn.textContent = 'Select All';
+        selectAllBtn.onclick = selectAllMetrics;
+        
+        const deselectAllBtn = document.createElement('button');
+        deselectAllBtn.id = 'campaign-groups-month-deselect-all-btn';
+        deselectAllBtn.className = 'deselect-all-btn';
+        deselectAllBtn.textContent = 'Deselect All';
+        deselectAllBtn.onclick = deselectAllMetrics;
+        
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'metrics-buttons-container';
+        buttonsContainer.style.marginBottom = '15px';
+        buttonsContainer.appendChild(selectAllBtn);
+        buttonsContainer.appendChild(deselectAllBtn);
+        
+        metricsHeader.parentNode.insertBefore(buttonsContainer, container);
+    }
+
     dynamicMetrics.forEach(metric => {
         const div = document.createElement('div');
-        div.className = 'metric-toggle active';
+        div.className = `metric-toggle ${metric.visible ? 'active' : ''}`;
         div.innerHTML = `
-            <input type="checkbox" class="metric-checkbox" id="metric-${metric.id}" checked>
+            <input type="checkbox" class="metric-checkbox" id="metric-${metric.id}" ${metric.visible ? 'checked' : ''}>
             <label for="metric-${metric.id}" class="metric-label">
                 <span class="metric-color" style="background-color: ${metric.color}"></span>
                 ${metric.name}
@@ -395,7 +419,33 @@ function resetZoom() {
     }
 
     chart.update('none');
-}
+    }
+
+    function selectAllMetrics() {
+        dynamicMetrics.forEach(metric => {
+            metric.visible = true;
+            const checkbox = document.getElementById(`metric-${metric.id}`);
+            const toggleDiv = checkbox.parentElement;
+            
+            checkbox.checked = true;
+            toggleDiv.classList.add('active');
+        });
+        
+        updateChart();
+    }
+
+    function deselectAllMetrics() {
+        dynamicMetrics.forEach(metric => {
+            metric.visible = false;
+            const checkbox = document.getElementById(`metric-${metric.id}`);
+            const toggleDiv = checkbox.parentElement;
+            
+            checkbox.checked = false;
+            toggleDiv.classList.remove('active');
+        });
+        
+        updateChart();
+    }
 
     // =============================================================================
     // EXPORT
@@ -407,6 +457,8 @@ function resetZoom() {
         toggleZoom,
         resetZoom,
         toggleMetric,
+        selectAll: selectAllMetrics,
+        deselectAll: deselectAllMetrics,
         getChart: () => chart,
         getMetrics: () => dynamicMetrics,
         getCurrentData: () => processedData
