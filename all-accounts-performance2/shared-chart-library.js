@@ -668,6 +668,24 @@ window.ChartLibrary = (function() {
             });
         }
         
+        // Look for Mode parameter names specifically (start_date, end_date)
+        const startDateInputs = Array.from(allInputs).filter(input => 
+            input.id?.includes('start_date') || 
+            input.name?.includes('start_date') ||
+            input.id?.includes('start-date') || 
+            input.name?.includes('start-date')
+        );
+        
+        const endDateInputs = Array.from(allInputs).filter(input => 
+            input.id?.includes('end_date') || 
+            input.name?.includes('end_date') ||
+            input.id?.includes('end-date') || 
+            input.name?.includes('end-date')
+        );
+        
+        console.log(`${chartPrefix}: Start date inputs found:`, startDateInputs.length);
+        console.log(`${chartPrefix}: End date inputs found:`, endDateInputs.length);
+        
         // Look for any input that might be date-related
         const dateRelatedInputs = Array.from(allInputs).filter(input => 
             input.id?.includes('date') || 
@@ -683,6 +701,36 @@ window.ChartLibrary = (function() {
                 name: input.name,
                 className: input.className
             });
+        });
+        
+        // Check for iframes that might contain Mode's parameters
+        const iframes = document.querySelectorAll('iframe');
+        console.log(`${chartPrefix}: Iframes found:`, iframes.length);
+        
+        // Check for form elements
+        const forms = document.querySelectorAll('form');
+        console.log(`${chartPrefix}: Forms found:`, forms.length);
+        forms.forEach((form, i) => {
+            console.log(`${chartPrefix}: Form ${i}:`, {
+                id: form.id,
+                className: form.className,
+                action: form.action,
+                inputCount: form.querySelectorAll('input').length
+            });
+        });
+        
+        // Look for Mode's parameter elements using other approaches
+        const parameterElements = document.querySelectorAll('[name*="start"], [name*="end"], [id*="start"], [id*="end"]');
+        console.log(`${chartPrefix}: Elements with start/end in name/id:`, parameterElements.length);
+        parameterElements.forEach((elem, i) => {
+            if (i < 5) { // Show first 5
+                console.log(`${chartPrefix}: Parameter element ${i}:`, {
+                    tagName: elem.tagName,
+                    id: elem.id,
+                    name: elem.name,
+                    className: elem.className
+                });
+            }
         });
         
         // Check a few examples
