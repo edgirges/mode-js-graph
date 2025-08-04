@@ -581,6 +581,8 @@
 
     function setupDatePicker() {
         console.log('Budget vs Spend: Setting up Mode date picker...');
+        
+        // Try to set up the date picker (may return null if not found immediately)
         modeDatePicker = lib.setupModeDatePicker('Budget vs Spend', onDateRangeChange, 30);
         
         if (modeDatePicker) {
@@ -591,7 +593,8 @@
                 console.log('Budget vs Spend: Initial date range set to:', currentDateRange);
             }
         } else {
-            console.warn('Budget vs Spend: Could not set up Mode date picker, using default date range');
+            console.log('Budget vs Spend: Mode date picker not available (may connect later), using default date range');
+            // Chart will work with default 30-day range until/unless date picker is found
         }
     }
     

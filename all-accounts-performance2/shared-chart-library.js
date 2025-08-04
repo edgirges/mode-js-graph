@@ -641,14 +641,74 @@ window.ChartLibrary = (function() {
     function findModeDatePicker(chartPrefix) {
         console.log(`${chartPrefix}: Looking for Mode date picker elements...`);
         
-        // Look for the run-parameters-list container
-        const runParamsList = document.querySelector('.run-parameters-list');
-        console.log(`${chartPrefix}: run-parameters-list found:`, !!runParamsList);
+        // Debug: Show all potential containers
+        console.log(`${chartPrefix}: Document ready state:`, document.readyState);
+        console.log(`${chartPrefix}: Body elements:`, document.body ? document.body.children.length : 'No body');
+        
+        // Try multiple possible selectors for Mode's date picker
+        const possibleSelectors = [
+            '.run-parameters-list',
+            '.run-parameters',
+            '.parameters-list', 
+            '.mode-parameters',
+            '.report-parameters',
+            '[class*="parameter"]',
+            '[class*="date"]',
+            'input[type="date"]',
+            'input[type="text"][placeholder*="date"]'
+        ];
+        
+        console.log(`${chartPrefix}: Searching for Mode date picker with multiple selectors...`);
+        
+        let runParamsList = null;
+        let foundSelector = null;
+        
+        for (let selector of possibleSelectors) {
+            const element = document.querySelector(selector);
+            if (element) {
+                runParamsList = element.closest('div') || element;
+                foundSelector = selector;
+                console.log(`${chartPrefix}: Found element with selector "${selector}":`, element);
+                break;
+            }
+        }
         
         if (!runParamsList) {
-            console.warn(`${chartPrefix}: Mode date picker container (.run-parameters-list) not found`);
+            console.warn(`${chartPrefix}: Mode date picker container not found with any selector`);
+            
+            // Debug: Show what IS available
+            const allInputs = document.querySelectorAll('input');
+            const allDivs = document.querySelectorAll('div[class*="param"], div[class*="date"], div[class*="run"]');
+            
+            console.log(`${chartPrefix}: Available inputs:`, allInputs.length);
+            allInputs.forEach((input, i) => {
+                if (i < 5) { // Show first 5
+                    console.log(`${chartPrefix}: Input ${i}:`, {
+                        type: input.type,
+                        name: input.name,
+                        id: input.id,
+                        className: input.className,
+                        placeholder: input.placeholder
+                    });
+                }
+            });
+            
+            console.log(`${chartPrefix}: Available parameter-like divs:`, allDivs.length);
+            allDivs.forEach((div, i) => {
+                if (i < 3) { // Show first 3
+                    console.log(`${chartPrefix}: Div ${i}:`, {
+                        className: div.className,
+                        id: div.id,
+                        textContent: div.textContent?.substring(0, 50)
+                    });
+                }
+            });
+            
             return null;
         }
+        
+        console.log(`${chartPrefix}: Found date picker container using selector: "${foundSelector}"`);
+        console.log(`${chartPrefix}: Container element:`, runParamsList);
 
         // Look for date input elements within the container
         const dateInputs = runParamsList.querySelectorAll('input[type="text"]');
@@ -707,16 +767,48 @@ window.ChartLibrary = (function() {
     }
 
     /**
-     * Set up Mode date picker integration
+     * Set up Mode date picker integration with retry
      */
     function setupModeDatePicker(chartPrefix, onDateRangeChange, defaultDays = 30) {
         console.log(`${chartPrefix}: Setting up Mode date picker integration...`);
         
-        const datePicker = findModeDatePicker(chartPrefix);
-        if (!datePicker) {
-            console.warn(`${chartPrefix}: Mode date picker setup failed - falling back to button controls`);
-            return null;
+        function attemptSetup(attempts = 0) {
+            const maxAttempts = 5;
+            
+            const datePicker = findModeDatePicker(chartPrefix);
+            if (!datePicker) {
+                if (attempts < maxAttempts) {
+                    console.log(`${chartPrefix}: Mode date picker not found, retrying in 1s... (attempt ${attempts + 1}/${maxAttempts})`);
+                    setTimeout(() => {
+                        const result = attemptSetup(attempts + 1);
+                        if (result && onDateRangeChange) {
+                            // If we successfully found it later, notify the chart
+                            console.log(`${chartPrefix}: Date picker found on retry, updating chart...`);
+                            // Get the initial date range and trigger chart update
+                            const initialRange = result.getCurrentDateRange();
+                            if (initialRange.startDate && initialRange.endDate) {
+                                onDateRangeChange(initialRange);
+                            }
+                        }
+                    }, 1000);
+                    return null; // Return null immediately, will connect later if found
+                } else {
+                    console.warn(`${chartPrefix}: Mode date picker setup failed after ${maxAttempts} attempts - falling back to button controls`);
+                    return null;
+                }
+            }
+            
+            console.log(`${chartPrefix}: Mode date picker found, setting up integration...`);
+            return setupDatePickerLogic(datePicker, chartPrefix, onDateRangeChange, defaultDays);
         }
+        
+        return attemptSetup();
+    }
+    
+    /**
+     * Internal function to handle the actual date picker setup logic
+     */
+    function setupDatePickerLogic(datePicker, chartPrefix, onDateRangeChange, defaultDays) {
 
         console.log(`${chartPrefix}: Mode date picker setup successful!`);
 
