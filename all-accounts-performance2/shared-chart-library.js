@@ -640,6 +640,36 @@ window.ChartLibrary = (function() {
      */
     function findModeDatePicker(chartPrefix) {
         console.log(`${chartPrefix}: Looking for Mode date picker...`);
+        console.log(`${chartPrefix}: Document context:`, document.title || 'No title');
+        console.log(`${chartPrefix}: Body class:`, document.body?.className || 'No body');
+        
+        // Debug: Check what elements actually exist
+        const allDivs = document.querySelectorAll('div');
+        const allInputs = document.querySelectorAll('input');
+        const allClassesWithRun = document.querySelectorAll('[class*="run"]');
+        const allClassesWithParam = document.querySelectorAll('[class*="param"]');
+        
+        console.log(`${chartPrefix}: Total divs on page:`, allDivs.length);
+        console.log(`${chartPrefix}: Total inputs on page:`, allInputs.length);
+        console.log(`${chartPrefix}: Elements with 'run' in class:`, allClassesWithRun.length);
+        console.log(`${chartPrefix}: Elements with 'param' in class:`, allClassesWithParam.length);
+        
+        // Check a few examples
+        if (allClassesWithRun.length > 0) {
+            console.log(`${chartPrefix}: First 'run' class element:`, allClassesWithRun[0].className);
+        }
+        if (allClassesWithParam.length > 0) {
+            console.log(`${chartPrefix}: First 'param' class element:`, allClassesWithParam[0].className);
+        }
+        
+        // Check for elements with mode-date-picker attribute using different methods
+        const modeDatePickerElements1 = document.querySelectorAll('[mode-date-picker]');
+        const modeDatePickerElements2 = document.querySelectorAll('*[mode-date-picker]');
+        const modeDatePickerElements3 = document.querySelectorAll('div[mode-date-picker]');
+        
+        console.log(`${chartPrefix}: [mode-date-picker]:`, modeDatePickerElements1.length);
+        console.log(`${chartPrefix}: *[mode-date-picker]:`, modeDatePickerElements2.length);
+        console.log(`${chartPrefix}: div[mode-date-picker]:`, modeDatePickerElements3.length);
         
         // First, check for container elements
         const runParamsHeader = document.querySelector('.run-parameters-header-container');
@@ -653,7 +683,7 @@ window.ChartLibrary = (function() {
         console.log(`${chartPrefix}: Container check - run-parameters:`, !!runParams);
         
         // Check for elements with mode-date-picker attribute
-        const modeDatePickerElements = document.querySelectorAll('[mode-date-picker]');
+        const modeDatePickerElements = modeDatePickerElements1;
         console.log(`${chartPrefix}: Elements with mode-date-picker attribute:`, modeDatePickerElements.length);
         
         // Target the exact IDs visible in the HTML inspection
