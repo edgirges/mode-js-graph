@@ -65,22 +65,21 @@
     function generateHTML() {
         console.log('Budget vs Spend: Checking if HTML needs to be generated...');
         
-        // Check if the chart container already exists
+        // Check if the chart container already exists and has content
         const existingContainer = document.querySelector(`.${CONFIG.htmlConfig.containerClass}`);
         
         if (existingContainer) {
-            console.log('Budget vs Spend: HTML container already exists, skipping generation');
-            return true;
-        }
-        
-        console.log('Budget vs Spend: Generating HTML dynamically...');
-        
-        // Find a good place to inject the chart
-        const targetContainer = document.querySelector('body') || document.querySelector('.mode-grid.container');
-        
-        if (!targetContainer) {
-            console.error('Budget vs Spend: No suitable container found for HTML injection');
-            return false;
+            // Check if it already has content (canvas element means it's populated)
+            const hasContent = existingContainer.querySelector(`#${CONFIG.canvasId}`);
+            
+            if (hasContent) {
+                console.log('Budget vs Spend: HTML container already exists with content, skipping generation');
+                return true;
+            } else {
+                console.log('Budget vs Spend: Empty container found, populating with content...');
+            }
+        } else {
+            console.log('Budget vs Spend: No container found, will create full HTML...');
         }
         
         // Try to inject into existing container first, fallback to full injection
@@ -646,15 +645,40 @@
             return false;
         }
         
-        // Then use the standard init
-        const standardInit = lib.createStandardInit(
-            CONFIG.canvasId,
-            CONFIG.togglesSelector,
-            createChart,
-            loadData
-        );
+        // Wait a moment for DOM to update after HTML injection
+        setTimeout(() => {
+            console.log('Budget vs Spend: Checking elements after HTML generation...');
+            const canvas = document.getElementById(CONFIG.canvasId);
+            const toggles = document.querySelector(CONFIG.togglesSelector);
+            
+            console.log('Budget vs Spend: Canvas found:', !!canvas);
+            console.log('Budget vs Spend: Toggles found:', !!toggles);
+            console.log('Budget vs Spend: Chart defined:', typeof Chart !== 'undefined');
+            console.log('Budget vs Spend: Datasets available:', typeof datasets !== 'undefined');
+            
+            if (!canvas || !toggles) {
+                console.error('Budget vs Spend: Required elements not found after HTML generation');
+                return;
+            }
+            
+            // Create chart and load data directly
+            if (typeof Chart !== 'undefined') {
+                createChart();
+                console.log('Budget vs Spend: Chart created');
+                
+                if (typeof datasets !== 'undefined') {
+                    loadData();
+                    console.log('Budget vs Spend: Data loaded');
+                } else {
+                    console.log('Budget vs Spend: Datasets not ready, polling...');
+                    lib.pollForData(loadData);
+                }
+            } else {
+                console.error('Budget vs Spend: Chart.js not available');
+            }
+        }, 50);
         
-        return standardInit();
+        return true; // Return true to stop the retry loop
     }
 
     const attemptInit = lib.createStandardAttemptInit(customInit);
