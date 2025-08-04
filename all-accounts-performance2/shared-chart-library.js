@@ -900,40 +900,54 @@ window.ChartLibrary = (function() {
                 console.log(`${chartPrefix}: 🚨 Checking ${datasetKeys.length} datasets for parameter hints...`);
                 console.log(`${chartPrefix}: 🚨 Dataset keys:`, datasetKeys);
                 
+                // Sample first few datasets for logging, then check all for parameters
+                const samplesToLog = Math.min(3, datasetKeys.length);
+                const runIds = new Set();
+                
                 datasetKeys.forEach((key, index) => {
                     const dataset = window.datasets[key];
-                    console.log(`${chartPrefix}: 🚨 Dataset ${index} (${key}):`, {
-                        hasReportQueryUrl: !!dataset?.reportQueryUrl,
-                        hasReportDataUrl: !!dataset?.reportDataUrl,
-                        queryName: dataset?.queryName
-                    });
                     
-                    if (dataset && dataset.reportQueryUrl) {
-                        console.log(`${chartPrefix}: 🚨 Analyzing URL:`, dataset.reportQueryUrl);
+                    // Log details for first few datasets
+                    if (index < samplesToLog) {
+                        console.log(`${chartPrefix}: 🚨 Dataset ${index} (${key}):`, {
+                            hasReportQueryUrl: !!dataset?.reportQueryUrl,
+                            hasReportDataUrl: !!dataset?.reportDataUrl,
+                            queryName: dataset?.queryName
+                        });
                         
+                        if (dataset?.reportQueryUrl) {
+                            console.log(`${chartPrefix}: 🚨 Sample URL:`, dataset.reportQueryUrl);
+                        }
+                    }
+                    
+                    // Extract run ID from all datasets to check for patterns
+                    if (dataset?.reportQueryUrl) {
+                        const runMatch = dataset.reportQueryUrl.match(/\/runs\/([^\/]+)/);
+                        if (runMatch) {
+                            runIds.add(runMatch[1]);
+                        }
+                    }
+                    
+                    // Check URL parameters in all datasets
+                    if (dataset && dataset.reportQueryUrl) {
                         try {
                             const url = new URL(dataset.reportQueryUrl);
-                            console.log(`${chartPrefix}: 🚨 URL search params:`, url.search);
-                            
                             const urlParams = url.searchParams;
                             const startParam = urlParams.get('start_date') || urlParams.get('start');
                             const endParam = urlParams.get('end_date') || urlParams.get('end');
                             
-                            console.log(`${chartPrefix}: 🚨 Extracted from URL - start:`, startParam, 'end:', endParam);
-                            
                             if (startParam && endParam) {
-                                console.log(`${chartPrefix}: 🚨 ✅ BREAKTHROUGH! Found dates in dataset URL:`, startParam, endParam);
+                                console.log(`${chartPrefix}: 🚨 ✅ BREAKTHROUGH! Found dates in dataset ${index} URL:`, startParam, endParam);
                                 startDate = startParam;
                                 endDate = endParam;
                             }
                         } catch (e) {
-                            console.log(`${chartPrefix}: 🚨 URL parsing failed:`, e.message);
+                            // URL parsing failed
                         }
                     }
                     
-                    // Also check reportDataUrl
+                    // Check reportDataUrl parameters in all datasets
                     if (dataset && dataset.reportDataUrl) {
-                        console.log(`${chartPrefix}: 🚨 Also checking reportDataUrl:`, dataset.reportDataUrl);
                         try {
                             const url = new URL(dataset.reportDataUrl);
                             const urlParams = url.searchParams;
@@ -941,12 +955,38 @@ window.ChartLibrary = (function() {
                             const endParam = urlParams.get('end_date') || urlParams.get('end');
                             
                             if (startParam && endParam) {
-                                console.log(`${chartPrefix}: 🚨 ✅ Found dates in reportDataUrl:`, startParam, endParam);
+                                console.log(`${chartPrefix}: 🚨 ✅ Found dates in dataset ${index} reportDataUrl:`, startParam, endParam);
                                 startDate = startParam;
                                 endDate = endParam;
                             }
                         } catch (e) {
-                            console.log(`${chartPrefix}: 🚨 reportDataUrl parsing failed:`, e.message);
+                            // URL parsing failed
+                        }
+                    }
+                });
+                
+                console.log(`${chartPrefix}: 🚨 Found ${runIds.size} unique run IDs:`, Array.from(runIds));
+                
+                // Try to decode run IDs or look for date patterns
+                Array.from(runIds).forEach(runId => {
+                    console.log(`${chartPrefix}: 🚨 Analyzing run ID: ${runId}`);
+                    
+                    // Check if run ID contains encoded dates
+                    if (runId.length > 10) {
+                        try {
+                            // Try hex decode
+                            const decoded = decodeURIComponent(runId);
+                            if (decoded !== runId) {
+                                console.log(`${chartPrefix}: 🚨 Decoded run ID:`, decoded);
+                            }
+                        } catch (e) {
+                            // Not URL encoded
+                        }
+                        
+                        // Look for date patterns in run ID
+                        const dateMatches = runId.match(/(\d{4})(\d{2})(\d{2})/g);
+                        if (dateMatches) {
+                            console.log(`${chartPrefix}: 🚨 Potential dates in run ID:`, dateMatches);
                         }
                     }
                 });
