@@ -639,37 +639,59 @@ window.ChartLibrary = (function() {
      * Find and connect to Mode's built-in date picker
      */
     function findModeDatePicker(chartPrefix) {
-        console.log(`${chartPrefix}: Looking for DOM date picker (fallback method)...`);
+        console.log(`${chartPrefix}: Basic element debugging...`);
         
-        // Try the exact structure from the HTML screenshots
-        // Method 1: Target exact IDs visible in screenshots
-        const startDateInput = document.getElementById('report_run_params_start_date');
-        const endDateInput = document.getElementById('report_run_params_end_date');
+        // Show what's actually on the page
+        console.log(`${chartPrefix}: document.body exists:`, !!document.body);
+        console.log(`${chartPrefix}: document.title:`, document.title);
         
-        if (startDateInput && endDateInput) {
-            console.log(`${chartPrefix}: Found exact Mode parameter inputs`);
-            return {
-                container: startDateInput.closest('form') || document.body,
-                startDateInput,
-                endDateInput
-            };
+        // Look for exact ID from screenshots
+        const reportStartElement = document.getElementById('report_run_params_start_date');
+        console.log(`${chartPrefix}: getElementById('report_run_params_start_date'):`, !!reportStartElement);
+        
+        if (reportStartElement) {
+            console.log(`${chartPrefix}: Start element details:`, {
+                tagName: reportStartElement.tagName,
+                type: reportStartElement.type,
+                value: reportStartElement.value,
+                name: reportStartElement.name
+            });
         }
         
-        // Method 2: Try to find by the structure visible in screenshots
-        const runParamsContainer = document.querySelector('.run-parameters-container');
-        if (runParamsContainer) {
-            const dateInputs = runParamsContainer.querySelectorAll('input[type="text"]');
-            if (dateInputs.length >= 2) {
-                console.log(`${chartPrefix}: Found date inputs in run-parameters-container`);
-                return {
-                    container: runParamsContainer,
-                    startDateInput: dateInputs[0],
-                    endDateInput: dateInputs[1]
-                };
-            }
+        // Look for run-parameters-container from screenshots
+        const runContainer = document.querySelector('.run-parameters-container');
+        console.log(`${chartPrefix}: .run-parameters-container found:`, !!runContainer);
+        
+        // Look for run-parameters-list from screenshots  
+        const runList = document.querySelector('.run-parameters-list');
+        console.log(`${chartPrefix}: .run-parameters-list found:`, !!runList);
+        
+        // Search for ANY element with "run" in the class name
+        const elementsWithRun = document.querySelectorAll('[class*="run"]');
+        console.log(`${chartPrefix}: Elements with 'run' in class:`, elementsWithRun.length);
+        
+        if (elementsWithRun.length > 0) {
+            console.log(`${chartPrefix}: First element with 'run':`, {
+                tagName: elementsWithRun[0].tagName,
+                className: elementsWithRun[0].className,
+                id: elementsWithRun[0].id
+            });
         }
         
-        console.log(`${chartPrefix}: DOM date picker not found`);
+        // Search for elements with mode-date-picker attribute
+        const modeDateElements = document.querySelectorAll('[mode-date-picker]');
+        console.log(`${chartPrefix}: Elements with mode-date-picker:`, modeDateElements.length);
+        
+        // Search ALL divs and show first few with classes
+        const allDivs = document.querySelectorAll('div[class]');
+        console.log(`${chartPrefix}: Total divs with classes:`, allDivs.length);
+        
+        if (allDivs.length > 0) {
+            console.log(`${chartPrefix}: First 3 div classes:`, 
+                Array.from(allDivs).slice(0, 3).map(div => div.className)
+            );
+        }
+        
         return null;
     }
 
