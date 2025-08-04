@@ -670,37 +670,60 @@ window.ChartLibrary = (function() {
         ];
         
         let startFromWindow = null, endFromWindow = null;
+        let foundGlobals = [];
         
         possibleGlobals.forEach(globalName => {
             const globalObj = window[globalName];
             if (globalObj && typeof globalObj === 'object') {
+                foundGlobals.push(globalName);
                 const start = globalObj.start_date || globalObj.start || globalObj.startDate;
                 const end = globalObj.end_date || globalObj.end || globalObj.endDate;
-                if (start && end && !start.includes('{{') && !end.includes('{{')) {
-                    console.log(`${chartPrefix}: 3️⃣ Found valid params in window.${globalName}:`, start, end);
-                    startFromWindow = start;
-                    endFromWindow = end;
+                
+                if (start && end) {
+                    if (start.includes('{{') || end.includes('{{')) {
+                        console.log(`${chartPrefix}: 3️⃣ Found ${globalName} but contains unprocessed Liquid:`, { start, end });
+                    } else {
+                        console.log(`${chartPrefix}: 3️⃣ ✅ VALID params in window.${globalName}:`, start, end);
+                        startFromWindow = start;
+                        endFromWindow = end;
+                    }
+                } else {
+                    console.log(`${chartPrefix}: 3️⃣ Found ${globalName} but no valid dates:`, globalObj);
                 }
             }
         });
         
+        if (foundGlobals.length === 0) {
+            console.log(`${chartPrefix}: 3️⃣ No window globals found from:`, possibleGlobals);
+        }
+        
         // Method 4: Local/Session Storage
         const storageKeys = ['modeParams', 'reportParams', 'start_date', 'end_date'];
+        let foundStorage = [];
+        
         storageKeys.forEach(key => {
-            const stored = localStorage.getItem(key) || sessionStorage.getItem(key);
-            if (stored) {
-                console.log(`${chartPrefix}: 4️⃣ Found in storage ${key}:`, stored);
-            }
+            const local = localStorage.getItem(key);
+            const session = sessionStorage.getItem(key);
+            if (local) foundStorage.push(`localStorage.${key}: ${local}`);
+            if (session) foundStorage.push(`sessionStorage.${key}: ${session}`);
         });
         
+        if (foundStorage.length > 0) {
+            console.log(`${chartPrefix}: 4️⃣ Found in storage:`, foundStorage);
+        } else {
+            console.log(`${chartPrefix}: 4️⃣ No storage data found`);
+        }
+        
         // Method 5: PostMessage listener (listen for parent messages)
+        console.log(`${chartPrefix}: 5️⃣ Setting up PostMessage listener...`);
         let postMessageParams = null;
         const messageHandler = (event) => {
+            console.log(`${chartPrefix}: 5️⃣ PostMessage received:`, event.origin, event.data);
             if (event.data && typeof event.data === 'object') {
                 const start = event.data.start_date || event.data.start;
                 const end = event.data.end_date || event.data.end;
                 if (start && end) {
-                    console.log(`${chartPrefix}: 5️⃣ PostMessage params:`, start, end);
+                    console.log(`${chartPrefix}: 5️⃣ ✅ PostMessage params:`, start, end);
                     postMessageParams = { start, end };
                     onDateRangeChange({ startDate: start, endDate: end });
                 }
@@ -709,12 +732,21 @@ window.ChartLibrary = (function() {
         window.addEventListener('message', messageHandler);
         
         // Method 6: Check for Mode-specific objects
-        const modeObjects = ['Mode', 'mode', 'ModeAnalytics', 'modeanalytics'];
+        const modeObjects = ['Mode', 'mode', 'ModeAnalytics', 'modeanalytics', 'datasets'];
+        let foundModeObjects = [];
+        
         modeObjects.forEach(objName => {
             if (window[objName]) {
-                console.log(`${chartPrefix}: 6️⃣ Found Mode object:`, objName, Object.keys(window[objName]));
+                const keys = Object.keys(window[objName]).slice(0, 5); // First 5 keys
+                foundModeObjects.push(`${objName}: [${keys.join(', ')}]`);
             }
         });
+        
+        if (foundModeObjects.length > 0) {
+            console.log(`${chartPrefix}: 6️⃣ Found Mode objects:`, foundModeObjects);
+        } else {
+            console.log(`${chartPrefix}: 6️⃣ No Mode objects found`);
+        }
         
         // Method 7: Document data attributes and meta tags
         const metaTags = document.querySelectorAll('meta[name*="start"], meta[name*="end"], meta[name*="date"]');
