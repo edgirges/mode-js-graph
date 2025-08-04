@@ -639,130 +639,54 @@ window.ChartLibrary = (function() {
      * Find and connect to Mode's built-in date picker
      */
     function findModeDatePicker(chartPrefix) {
-        console.log(`${chartPrefix}: Looking for Mode date picker elements...`);
+        console.log(`${chartPrefix}: Looking for Mode date picker...`);
         
-        // Debug: Show all potential containers
-        console.log(`${chartPrefix}: Document ready state:`, document.readyState);
-        console.log(`${chartPrefix}: Body elements:`, document.body ? document.body.children.length : 'No body');
+        // Target the exact structure from the HTML inspection
+        const runParamsList = document.querySelector('.run-parameters-list');
         
-        // Try multiple possible selectors for Mode's date picker
-        const possibleSelectors = [
-            '.run-parameters-list',
-            '.run-parameters',
-            '.parameters-list', 
-            '.mode-parameters',
-            '.report-parameters',
-            '[class*="parameter"]',
-            '[class*="date"]',
-            'input[type="date"]',
-            'input[type="text"][placeholder*="date"]'
-        ];
+        if (!runParamsList) {
+            console.log(`${chartPrefix}: .run-parameters-list not found`);
+            return null;
+        }
         
-        console.log(`${chartPrefix}: Searching for Mode date picker with multiple selectors...`);
+        console.log(`${chartPrefix}: Found .run-parameters-list container`);
         
-        let runParamsList = null;
-        let foundSelector = null;
+        // Target the specific input IDs that Mode uses
+        const startDateInput = document.getElementById('report_run_params_start_date');
+        const endDateInput = document.getElementById('report_run_params_end_date');
         
-        for (let selector of possibleSelectors) {
-            const element = document.querySelector(selector);
-            if (element) {
-                runParamsList = element.closest('div') || element;
-                foundSelector = selector;
-                console.log(`${chartPrefix}: Found element with selector "${selector}":`, element);
-                break;
+        console.log(`${chartPrefix}: Start date input (report_run_params_start_date):`, !!startDateInput);
+        console.log(`${chartPrefix}: End date input (report_run_params_end_date):`, !!endDateInput);
+        
+        // If exact IDs not found, try the mode-datepicker class
+        let fallbackStartInput = null;
+        let fallbackEndInput = null;
+        
+        if (!startDateInput || !endDateInput) {
+            const datepickerInputs = runParamsList.querySelectorAll('input.mode-datepicker');
+            console.log(`${chartPrefix}: Found ${datepickerInputs.length} inputs with .mode-datepicker class`);
+            
+            if (datepickerInputs.length >= 2) {
+                fallbackStartInput = datepickerInputs[0];
+                fallbackEndInput = datepickerInputs[1];
+                console.log(`${chartPrefix}: Using .mode-datepicker inputs as fallback`);
             }
         }
         
-        if (!runParamsList) {
-            console.warn(`${chartPrefix}: Mode date picker container not found with any selector`);
-            
-            // Debug: Show what IS available
-            const allInputs = document.querySelectorAll('input');
-            const allDivs = document.querySelectorAll('div[class*="param"], div[class*="date"], div[class*="run"]');
-            
-            console.log(`${chartPrefix}: Available inputs:`, allInputs.length);
-            allInputs.forEach((input, i) => {
-                if (i < 5) { // Show first 5
-                    console.log(`${chartPrefix}: Input ${i}:`, {
-                        type: input.type,
-                        name: input.name,
-                        id: input.id,
-                        className: input.className,
-                        placeholder: input.placeholder
-                    });
-                }
-            });
-            
-            console.log(`${chartPrefix}: Available parameter-like divs:`, allDivs.length);
-            allDivs.forEach((div, i) => {
-                if (i < 3) { // Show first 3
-                    console.log(`${chartPrefix}: Div ${i}:`, {
-                        className: div.className,
-                        id: div.id,
-                        textContent: div.textContent?.substring(0, 50)
-                    });
-                }
-            });
-            
+        const finalStartInput = startDateInput || fallbackStartInput;
+        const finalEndInput = endDateInput || fallbackEndInput;
+        
+        if (!finalStartInput || !finalEndInput) {
+            console.log(`${chartPrefix}: Could not find both date inputs`);
             return null;
         }
         
-        console.log(`${chartPrefix}: Found date picker container using selector: "${foundSelector}"`);
-        console.log(`${chartPrefix}: Container element:`, runParamsList);
-
-        // Look for date input elements within the container
-        const dateInputs = runParamsList.querySelectorAll('input[type="text"]');
-        console.log(`${chartPrefix}: Found ${dateInputs.length} text inputs in run-parameters-list`);
+        console.log(`${chartPrefix}: Successfully found Mode date picker inputs`);
         
-        // Look for specific date picker elements
-        const startDateInput = runParamsList.querySelector('input[name*="start"], input[name*="from"], input[name*="begin"]') ||
-                              runParamsList.querySelector('input[placeholder*="start"], input[placeholder*="from"]') ||
-                              runParamsList.querySelector('input[id*="start"], input[id*="from"]');
-        
-        const endDateInput = runParamsList.querySelector('input[name*="end"], input[name*="to"], input[name*="until"]') ||
-                            runParamsList.querySelector('input[placeholder*="end"], input[placeholder*="to"]') ||
-                            runParamsList.querySelector('input[id*="end"], input[id*="to"]');
-
-        console.log(`${chartPrefix}: Start date input found:`, !!startDateInput);
-        console.log(`${chartPrefix}: End date input found:`, !!endDateInput);
-
-        if (startDateInput) {
-            console.log(`${chartPrefix}: Start date input details:`, {
-                name: startDateInput.name,
-                id: startDateInput.id,
-                placeholder: startDateInput.placeholder,
-                value: startDateInput.value
-            });
-        }
-
-        if (endDateInput) {
-            console.log(`${chartPrefix}: End date input details:`, {
-                name: endDateInput.name,
-                id: endDateInput.id,
-                placeholder: endDateInput.placeholder,
-                value: endDateInput.value
-            });
-        }
-
-        // If we can't find specific start/end inputs, try to get the first two date inputs
-        if (!startDateInput && !endDateInput && dateInputs.length >= 2) {
-            console.log(`${chartPrefix}: Using first two text inputs as date range`);
-            return {
-                container: runParamsList,
-                startDateInput: dateInputs[0],
-                endDateInput: dateInputs[1]
-            };
-        }
-
-        if (!startDateInput || !endDateInput) {
-            console.warn(`${chartPrefix}: Could not find both start and end date inputs`);
-            return null;
-        }
-
         return {
             container: runParamsList,
-            startDateInput,
-            endDateInput
+            startDateInput: finalStartInput,
+            endDateInput: finalEndInput
         };
     }
 
