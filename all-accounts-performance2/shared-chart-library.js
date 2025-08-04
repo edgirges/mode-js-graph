@@ -658,12 +658,16 @@ window.ChartLibrary = (function() {
         
         console.log(`${chartPrefix}: URL params - start:`, startFromUrl, 'end:', endFromUrl);
         
-        // Method 2: Check window._MODE_PARAMS (if set in HTML)
-        const modeParams = window._MODE_PARAMS || {};
+        // Method 2: Check window.MODE_CHART_PARAMS (Liquid templating from Mode)
+        const modeParams = window.MODE_CHART_PARAMS || window._MODE_PARAMS || {};
         const startFromWindow = modeParams.start_date || modeParams.start;
         const endFromWindow = modeParams.end_date || modeParams.end;
         
         console.log(`${chartPrefix}: Window params - start:`, startFromWindow, 'end:', endFromWindow);
+        
+        if (window.MODE_CHART_PARAMS) {
+            console.log(`${chartPrefix}: Raw MODE_CHART_PARAMS:`, window.MODE_CHART_PARAMS);
+        }
         
         // Method 3: Try to find DOM elements (fallback)
         let domDatePicker = null;

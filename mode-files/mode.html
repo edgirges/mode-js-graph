@@ -277,6 +277,19 @@
       
       <!-- Chart Specific Custom JS -->
       
+      <!-- MODE PARAMETERS - Liquid templating processed server-side -->
+      <script>
+          // Mode processes {{ parameter }} before sending to iframe
+          window.MODE_CHART_PARAMS = {
+              start_date: '{{ start_date }}',
+              end_date: '{{ end_date }}',
+              // Add any other parameters you have in your {% form %}
+              debug: true
+          };
+          
+          console.log('Mode parameters loaded:', window.MODE_CHART_PARAMS);
+      </script>
+      
       <!-- SHARED LIBRARY - Load this FIRST before any individual charts -->
       <script>
           const sharedLibraryScript = document.createElement('script');

@@ -79,8 +79,27 @@ all-accounts-performance2/
 
 ### Mode Parameter Integration
 
-- `setupModeDatePicker()` - Gets parameters via URL query strings, window.\_MODE_PARAMS, or DOM fallback
+- `setupModeDatePicker()` - Gets parameters via URL query strings, window.MODE_CHART_PARAMS (Liquid templating), or DOM fallback
 - `filterDataByDateRange()` - Filters data by actual start/end dates
+
+**How to Connect to Mode Parameters:**
+
+```html
+<!-- In Mode's HTML Editor -->
+<script>
+  // Liquid templating - Mode processes {{ }} server-side before iframe loads
+  window.MODE_CHART_PARAMS = {
+    start_date: "{{ start_date }}", // Becomes actual date value
+    end_date: "{{ end_date }}", // Becomes actual date value
+  };
+</script>
+```
+
+This works because:
+
+- ✅ Mode processes `{{ parameter }}` **before** sending HTML to iframe
+- ✅ No cross-origin issues (values are "baked in" at server-side)
+- ✅ Charts can safely access `window.MODE_CHART_PARAMS`
 
 ### HTML Generator
 
@@ -195,7 +214,7 @@ Total:                  ~85KB with zero duplication
 The Budget vs Spend chart now works with:
 
 - ✅ **Smart HTML generation** - Only container div needed in mode.html!
-- ✅ **Mode parameter integration** - Uses URL params, window.\_MODE_PARAMS, or DOM fallback
+- ✅ **Mode parameter integration** - Uses Liquid templating (window.MODE_CHART_PARAMS), URL params, or DOM fallback
 - ✅ **All controls work** - zoom, metric toggles, select/deselect all
 - ✅ **Data processing** - Same exact behavior as original
 - ✅ **All exports available** on `window.BudgetSpendChart`
