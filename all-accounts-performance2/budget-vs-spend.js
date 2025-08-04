@@ -354,8 +354,38 @@
     // CHART-SPECIFIC DATASET CREATION
     // =============================================================================
 
+    function filterByTimeRange(range) {
+        if (!processedData.labels) return processedData;
+        
+        let daysToShow;
+        
+        switch (range) {
+            case '7D':
+                daysToShow = 7;
+                break;
+            case '30D':
+                daysToShow = 30;
+                break;
+            case '90D':
+                daysToShow = 90;
+                break;
+            case 'ALL':
+            default:
+                return processedData;
+        }
+        
+        const startIndex = Math.max(0, processedData.labels.length - daysToShow);
+        
+        return {
+            labels: processedData.labels.slice(startIndex),
+            budget: processedData.budget.slice(startIndex),
+            spend: processedData.spend.slice(startIndex),
+            spend_pct: processedData.spend_pct.slice(startIndex)
+        };
+    }
+
     function createDatasets() {
-        const filteredData = lib.filterByTimeRange(processedData, dynamicMetrics, currentTimeRange);
+        const filteredData = filterByTimeRange(currentTimeRange);
         
         return dynamicMetrics.map(metric => {
             const data = filteredData[metric.id] || [];
@@ -384,6 +414,9 @@
                 dataset.tension = 0.1;
                 dataset.pointRadius = 3;
                 dataset.pointHoverRadius = 6;
+                dataset.pointHoverBackgroundColor = metric.color;
+                dataset.pointHoverBorderColor = '#ffffff';
+                dataset.pointHoverBorderWidth = 2;
             }
             
             return dataset;
@@ -391,11 +424,15 @@
     }
 
     function updateChart() {
-        if (!chart) return;
+        if (!chart || !processedData.labels) return;
 
-        chart.data.datasets = createDatasets();
+        const datasets = createDatasets();
+        const filteredData = filterByTimeRange(currentTimeRange);
+
+        chart.data.labels = filteredData.labels;
+        chart.data.datasets = datasets;
         
-        // Show/hide axes based on visible metrics
+        // Update y-axis visibility based on active metrics
         const hasBarMetrics = dynamicMetrics.filter(m => m.type === 'bar' && m.visible).length > 0;
         const hasLineMetrics = dynamicMetrics.filter(m => m.type === 'line' && m.visible).length > 0;
         
