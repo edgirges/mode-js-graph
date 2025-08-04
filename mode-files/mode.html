@@ -294,14 +294,23 @@
       <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
       
       <!-- Chart Specific Custom JS -->
-      <!-- Budget vs Spend Performance Chart -->
+      
+      <!-- SHARED LIBRARY - Load this FIRST before any individual charts -->
       <script>
-          const budgetSpendScript = document.createElement('script');
-          budgetSpendScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/budget%20vs%20spend%20performance/index.js?v=' + new Date().getTime();
-          budgetSpendScript.onload = function() {
-              console.log('Budget vs Spend chart script loaded');
+          const sharedLibraryScript = document.createElement('script');
+          sharedLibraryScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance2/shared-chart-library.js?v=' + new Date().getTime();
+          sharedLibraryScript.onload = function() {
+              console.log('Shared Chart Library loaded');
+              
+              // Load Budget vs Spend chart AFTER shared library is loaded
+              const budgetSpendScript = document.createElement('script');
+              budgetSpendScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance2/budget-vs-spend.js?v=' + new Date().getTime();
+              budgetSpendScript.onload = function() {
+                  console.log('Budget vs Spend chart script loaded');
+              };
+              document.head.appendChild(budgetSpendScript);
           };
-          document.head.appendChild(budgetSpendScript);
+          document.head.appendChild(sharedLibraryScript);
       </script>
       
       <!-- Daily BW Spend Categories Chart -->
