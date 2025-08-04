@@ -641,8 +641,23 @@ window.ChartLibrary = (function() {
     function findModeDatePicker(chartPrefix) {
         console.log(`${chartPrefix}: Looking for Mode date picker...`);
         
+        // First, check for container elements
+        const runParamsHeader = document.querySelector('.run-parameters-header-container');
+        const runParamsList = document.querySelector('.run-parameters-list');
+        const runParamsContainer = document.querySelector('.run-parameters-container');
+        const runParams = document.querySelector('.run-parameters');
+        
+        console.log(`${chartPrefix}: Container check - header-container:`, !!runParamsHeader);
+        console.log(`${chartPrefix}: Container check - list:`, !!runParamsList);
+        console.log(`${chartPrefix}: Container check - container:`, !!runParamsContainer);
+        console.log(`${chartPrefix}: Container check - run-parameters:`, !!runParams);
+        
+        // Check for elements with mode-date-picker attribute
+        const modeDatePickerElements = document.querySelectorAll('[mode-date-picker]');
+        console.log(`${chartPrefix}: Elements with mode-date-picker attribute:`, modeDatePickerElements.length);
+        
         // Target the exact IDs visible in the HTML inspection
-        const startDateInput = document.getElementById('report_run_params_start_date');
+        let startDateInput = document.getElementById('report_run_params_start_date');
         let endDateInput = null;
         
         // Look for common end date ID patterns
@@ -654,11 +669,56 @@ window.ChartLibrary = (function() {
         
         for (const id of endDateIds) {
             endDateInput = document.getElementById(id);
-            if (endDateInput) break;
+            if (endDateInput) {
+                console.log(`${chartPrefix}: Found end date input with ID: ${id}`);
+                break;
+            }
         }
         
         console.log(`${chartPrefix}: Start date input (report_run_params_start_date):`, !!startDateInput);
         console.log(`${chartPrefix}: End date input found:`, !!endDateInput);
+        
+                 // If direct ID lookup failed, try using mode-date-picker attribute
+         if ((!startDateInput || !endDateInput) && modeDatePickerElements.length > 0) {
+             console.log(`${chartPrefix}: Using mode-date-picker attribute for missing inputs...`);
+             
+             // Look for inputs within elements that have mode-date-picker attribute
+             for (let i = 0; i < modeDatePickerElements.length; i++) {
+                 const element = modeDatePickerElements[i];
+                 console.log(`${chartPrefix}: Checking mode-date-picker element ${i}:`, element.tagName, element.getAttribute('mode-date-picker'));
+                 
+                 let input = null;
+                 
+                 // Check if the element itself is an input
+                 if (element.tagName === 'INPUT') {
+                     input = element;
+                 } else {
+                     // Look for input inside the element
+                     input = element.querySelector('input[type="text"]') || 
+                            element.querySelector('input.mode-datepicker') ||
+                            element.querySelector('input');
+                 }
+                              
+                 if (input) {
+                     console.log(`${chartPrefix}: Found input in mode-date-picker element:`, {
+                         id: input.id,
+                         name: input.name, 
+                         type: input.type,
+                         className: input.className
+                     });
+                     
+                     if (!startDateInput) {
+                         startDateInput = input;
+                         console.log(`${chartPrefix}: Using as start date input`);
+                     } else if (!endDateInput) {
+                         endDateInput = input;
+                         console.log(`${chartPrefix}: Using as end date input`);
+                     }
+                 } else {
+                     console.log(`${chartPrefix}: No input found in this mode-date-picker element`);
+                 }
+             }
+         }
         
         // If we found the start date input, find its container and look for other date inputs
         if (startDateInput && !endDateInput) {
