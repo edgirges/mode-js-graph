@@ -742,7 +742,7 @@ window.ChartLibrary = (function() {
         };
         window.addEventListener('message', messageHandler);
         
-        // AGGRESSIVELY request parameters from parent
+        // Request parameters from parent
         try {
             console.log(`${chartPrefix}: 5️⃣ Requesting params from parent...`);
             window.parent.postMessage({ 
@@ -750,19 +750,6 @@ window.ChartLibrary = (function() {
                 request: ['start_date', 'end_date'],
                 from: 'chart_iframe'
             }, '*');
-            
-            // Try multiple parent origins
-            const possibleOrigins = ['https://app.mode.com', 'https://mode.com', '*'];
-            possibleOrigins.forEach(origin => {
-                try {
-                    window.parent.postMessage({ 
-                        type: 'GET_DATE_PARAMS',
-                        chartId: 'budget-vs-spend'
-                    }, origin);
-                } catch (e) {
-                    console.log(`${chartPrefix}: 5️⃣ PostMessage to ${origin} failed:`, e.message);
-                }
-            });
         } catch (e) {
             console.log(`${chartPrefix}: 5️⃣ PostMessage request failed:`, e.message);
         }
@@ -871,10 +858,37 @@ window.ChartLibrary = (function() {
             console.log(`${chartPrefix}: 🚨 Parent globals access failed:`, e.message);
         }
         
-        // Try name/frameElement access
+        // Try name/frameElement access + parse window.name for parameters
         try {
             console.log(`${chartPrefix}: 🚨 window.name:`, window.name);
             console.log(`${chartPrefix}: 🚨 frameElement:`, window.frameElement);
+            
+            // Try to extract parameters from window.name if it contains JSON or URL params
+            if (window.name && window.name !== 'mode-embed-frame') {
+                try {
+                    // Try parsing as JSON
+                    const nameParams = JSON.parse(window.name);
+                    if (nameParams.start_date && nameParams.end_date) {
+                        console.log(`${chartPrefix}: 🚨 ✅ Found dates in window.name JSON:`, nameParams.start_date, nameParams.end_date);
+                        startDate = nameParams.start_date;
+                        endDate = nameParams.end_date;
+                    }
+                } catch (e) {
+                    // Try parsing as URL params
+                    try {
+                        const nameParams = new URLSearchParams(window.name);
+                        const nameStart = nameParams.get('start_date') || nameParams.get('start');
+                        const nameEnd = nameParams.get('end_date') || nameParams.get('end');
+                        if (nameStart && nameEnd) {
+                            console.log(`${chartPrefix}: 🚨 ✅ Found dates in window.name params:`, nameStart, nameEnd);
+                            startDate = nameStart;
+                            endDate = nameEnd;
+                        }
+                    } catch (e2) {
+                        console.log(`${chartPrefix}: 🚨 window.name not parseable as params`);
+                    }
+                }
+            }
         } catch (e) {
             console.log(`${chartPrefix}: 🚨 Frame element access blocked:`, e.message);
         }
@@ -882,30 +896,62 @@ window.ChartLibrary = (function() {
         // Check for Mode-specific APIs in datasets
         try {
             if (window.datasets && typeof window.datasets === 'object') {
-                // Check if datasets has any parameter info
                 const datasetKeys = Object.keys(window.datasets);
-                console.log(`${chartPrefix}: 🚨 Checking datasets object for parameter hints...`);
+                console.log(`${chartPrefix}: 🚨 Checking ${datasetKeys.length} datasets for parameter hints...`);
+                console.log(`${chartPrefix}: 🚨 Dataset keys:`, datasetKeys);
                 
-                datasetKeys.forEach(key => {
+                datasetKeys.forEach((key, index) => {
                     const dataset = window.datasets[key];
+                    console.log(`${chartPrefix}: 🚨 Dataset ${index} (${key}):`, {
+                        hasReportQueryUrl: !!dataset?.reportQueryUrl,
+                        hasReportDataUrl: !!dataset?.reportDataUrl,
+                        queryName: dataset?.queryName
+                    });
+                    
                     if (dataset && dataset.reportQueryUrl) {
-                        // Extract parameters from query URL
+                        console.log(`${chartPrefix}: 🚨 Analyzing URL:`, dataset.reportQueryUrl);
+                        
                         try {
                             const url = new URL(dataset.reportQueryUrl);
+                            console.log(`${chartPrefix}: 🚨 URL search params:`, url.search);
+                            
+                            const urlParams = url.searchParams;
+                            const startParam = urlParams.get('start_date') || urlParams.get('start');
+                            const endParam = urlParams.get('end_date') || urlParams.get('end');
+                            
+                            console.log(`${chartPrefix}: 🚨 Extracted from URL - start:`, startParam, 'end:', endParam);
+                            
+                            if (startParam && endParam) {
+                                console.log(`${chartPrefix}: 🚨 ✅ BREAKTHROUGH! Found dates in dataset URL:`, startParam, endParam);
+                                startDate = startParam;
+                                endDate = endParam;
+                            }
+                        } catch (e) {
+                            console.log(`${chartPrefix}: 🚨 URL parsing failed:`, e.message);
+                        }
+                    }
+                    
+                    // Also check reportDataUrl
+                    if (dataset && dataset.reportDataUrl) {
+                        console.log(`${chartPrefix}: 🚨 Also checking reportDataUrl:`, dataset.reportDataUrl);
+                        try {
+                            const url = new URL(dataset.reportDataUrl);
                             const urlParams = url.searchParams;
                             const startParam = urlParams.get('start_date') || urlParams.get('start');
                             const endParam = urlParams.get('end_date') || urlParams.get('end');
                             
                             if (startParam && endParam) {
-                                console.log(`${chartPrefix}: 🚨 ✅ Found dates in dataset URL:`, startParam, endParam);
+                                console.log(`${chartPrefix}: 🚨 ✅ Found dates in reportDataUrl:`, startParam, endParam);
                                 startDate = startParam;
                                 endDate = endParam;
                             }
                         } catch (e) {
-                            // URL parsing failed
+                            console.log(`${chartPrefix}: 🚨 reportDataUrl parsing failed:`, e.message);
                         }
                     }
                 });
+            } else {
+                console.log(`${chartPrefix}: 🚨 No datasets object found`);
             }
         } catch (e) {
             console.log(`${chartPrefix}: 🚨 Dataset URL extraction failed:`, e.message);
