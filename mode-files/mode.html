@@ -43,12 +43,10 @@
           <div class="chart-header budget-spend-header">
               <h2 class="chart-title budget-spend-title">Daily BW Budget V. Spend / Spend Pct</h2>
               <div class="chart-controls budget-spend-controls">
-                  <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('7D')">7D</button>
-                  <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('30D')">30D</button>
-                  <button class="control-btn active" onclick="BudgetSpendChart.switchTimeRange('90D')">90D</button>
-                  <button class="control-btn" onclick="BudgetSpendChart.switchTimeRange('ALL')">All</button>
+                  <!-- Date range now controlled by Mode's built-in date picker above -->
                   <button class="control-btn" onclick="BudgetSpendChart.toggleZoom()">Zoom</button>
                   <button class="control-btn" onclick="BudgetSpendChart.resetZoom()">Reset</button>
+                  <span style="color: #666; font-size: 12px; margin-left: 10px;">Use the date picker above to filter data</span>
               </div>
           </div>
           <div class="chart-canvas budget-spend-canvas">

@@ -36,10 +36,11 @@
     let chart;
     let rawData = [];
     let processedData = {};
-    let currentTimeRange = CONFIG.defaultTimeRange;
+    let currentDateRange = { startDate: null, endDate: null }; // Using Mode date picker instead of time range
     let isZoomEnabled = { value: false }; // Using object for reference
     let dynamicMetrics = [];
     let columnMapping = {};
+    let modeDatePicker = null;
 
     // =============================================================================
     // CHART-SPECIFIC METRIC DEFINITIONS
@@ -354,38 +355,27 @@
     // CHART-SPECIFIC DATASET CREATION
     // =============================================================================
 
-    function filterByTimeRange(range) {
-        if (!processedData.labels) return processedData;
-        
-        let daysToShow;
-        
-        switch (range) {
-            case '7D':
-                daysToShow = 7;
-                break;
-            case '30D':
-                daysToShow = 30;
-                break;
-            case '90D':
-                daysToShow = 90;
-                break;
-            case 'ALL':
-            default:
-                return processedData;
+    function filterByDateRange() {
+        // Use Mode date picker for filtering, fallback to last 30 days if no range set
+        if (currentDateRange.startDate && currentDateRange.endDate) {
+            console.log('Budget vs Spend: Using Mode date picker range:', currentDateRange);
+            return lib.filterDataByDateRange(processedData, currentDateRange.startDate, currentDateRange.endDate, 'Budget vs Spend');
+        } else {
+            console.log('Budget vs Spend: No date range set, using last 30 days as default');
+            // Default to last 30 days if no date range is set
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            
+            const defaultStart = thirtyDaysAgo.toISOString().split('T')[0];
+            const defaultEnd = today.toISOString().split('T')[0];
+            
+            return lib.filterDataByDateRange(processedData, defaultStart, defaultEnd, 'Budget vs Spend');
         }
-        
-        const startIndex = Math.max(0, processedData.labels.length - daysToShow);
-        
-        return {
-            labels: processedData.labels.slice(startIndex),
-            budget: processedData.budget.slice(startIndex),
-            spend: processedData.spend.slice(startIndex),
-            spend_pct: processedData.spend_pct.slice(startIndex)
-        };
     }
 
     function createDatasets() {
-        const filteredData = filterByTimeRange(currentTimeRange);
+        const filteredData = filterByDateRange();
         
         return dynamicMetrics.map(metric => {
             const data = filteredData[metric.id] || [];
@@ -427,7 +417,7 @@
         if (!chart || !processedData.labels) return;
 
         const datasets = createDatasets();
-        const filteredData = filterByTimeRange(currentTimeRange);
+        const filteredData = filterByDateRange();
 
         chart.data.labels = filteredData.labels;
         chart.data.datasets = datasets;
@@ -464,6 +454,7 @@
                 createMetricToggles();
                 processData();
                 console.log('Budget vs Spend: Processed data:', processedData);
+                setupDatePicker();
                 updateChart();
             } else {
                 console.warn('Budget vs Spend: No metrics extracted from dataset');
@@ -491,16 +482,31 @@
         lib.createStandardMetricToggles(config, dynamicMetrics, toggleMetric);
     }
 
+        // =============================================================================
+    // MODE DATE PICKER INTEGRATION
     // =============================================================================
-    // INITIALIZATION USING SHARED LIBRARY
-    // =============================================================================
-    
-    const switchTimeRange = lib.createStandardSwitchTimeRange(
-        CONFIG.controlsSelector,
-        (timeRange) => { currentTimeRange = timeRange; },
-        processData,
-        updateChart
-    );
+
+    function onDateRangeChange(dateRange) {
+        console.log('Budget vs Spend: Date range changed to:', dateRange);
+        currentDateRange = dateRange;
+        updateChart();
+    }
+
+    function setupDatePicker() {
+        console.log('Budget vs Spend: Setting up Mode date picker...');
+        modeDatePicker = lib.setupModeDatePicker('Budget vs Spend', onDateRangeChange, 30);
+        
+        if (modeDatePicker) {
+            // Get initial date range and trigger first update
+            const initialRange = modeDatePicker.getCurrentDateRange();
+            if (initialRange.startDate && initialRange.endDate) {
+                currentDateRange = initialRange;
+                console.log('Budget vs Spend: Initial date range set to:', currentDateRange);
+            }
+        } else {
+            console.warn('Budget vs Spend: Could not set up Mode date picker, using default date range');
+        }
+    }
     
     function toggleZoom() {
         isZoomEnabled.value = !isZoomEnabled.value;
@@ -558,7 +564,15 @@
 
     lib.createStandardExport('BudgetSpendChart', {
         loadData,
-        switchTimeRange,
+        setDateRange: (startDate, endDate) => {
+            if (modeDatePicker) {
+                modeDatePicker.setDateRange(startDate, endDate);
+            } else {
+                currentDateRange = { startDate, endDate };
+                updateChart();
+            }
+        },
+        getCurrentDateRange: () => currentDateRange,
         toggleZoom,
         resetZoom,
         toggleMetric,
