@@ -582,24 +582,48 @@
     function setupDatePicker() {
         console.log('Budget vs Spend: Setting up Mode parameter integration...');
         
+        // First, check for Liquid-templated URL parameters (the correct approach)
+        const currentScript = document.currentScript || Array.from(document.scripts).pop();
+        if (currentScript && currentScript.src) {
+            console.log('Budget vs Spend: Checking script URL for parameters:', currentScript.src);
+            
+            try {
+                const url = new URL(currentScript.src);
+                const startParam = url.searchParams.get('start');
+                const endParam = url.searchParams.get('end');
+                
+                if (startParam && endParam && startParam !== '{{ start_date }}' && endParam !== '{{ end_date }}') {
+                    console.log('Budget vs Spend: ✅ Found Liquid-templated parameters in URL:', startParam, endParam);
+                    currentDateRange = { startDate: startParam, endDate: endParam };
+                    console.log('Budget vs Spend: Using Liquid parameters:', currentDateRange);
+                    return; // Success - use these parameters
+                } else if (startParam === '{{ start_date }}' || endParam === '{{ end_date }}') {
+                    console.log('Budget vs Spend: ⚠️  Liquid templating not processed - saw literal template strings');
+                } else {
+                    console.log('Budget vs Spend: No URL parameters found in script src');
+                }
+            } catch (error) {
+                console.log('Budget vs Spend: Error parsing script URL:', error.message);
+            }
+        }
+        
+        // Fallback: Try the comprehensive detection as backup
         try {
-            // Try to set up Mode parameter integration (URL params, window params, or DOM)
             modeDatePicker = lib.setupModeDatePicker('Budget vs Spend', onDateRangeChange, 30);
             
             if (modeDatePicker) {
-                // Get initial date range and trigger first update
                 const initialRange = modeDatePicker.getCurrentDateRange();
                 if (initialRange.startDate && initialRange.endDate) {
                     currentDateRange = initialRange;
-                    console.log('Budget vs Spend: Using Mode parameters:', currentDateRange);
-                    return; // Early return, parameters handled
+                    console.log('Budget vs Spend: Using fallback parameters:', currentDateRange);
+                    return;
                 }
             }
         } catch (error) {
-            console.log('Budget vs Spend: Parameter setup failed, using defaults:', error.message);
+            console.log('Budget vs Spend: Fallback parameter setup failed:', error.message);
         }
         
-        console.log('Budget vs Spend: No Mode parameters available, using default 30-day range');
+        console.log('Budget vs Spend: No parameters available, using default 30-day range');
         // Chart will work with default 30-day range - this is normal and expected
     }
     

@@ -277,17 +277,31 @@
       
       <!-- Chart Specific Custom JS -->
       
-      <!-- MODE PARAMETERS - Liquid templating processed server-side -->
+      <!-- LIQUID TEMPLATING DEBUG -->
+      <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace;">
+          <strong>🔍 Liquid Templating Debug:</strong><br>
+          start_date = <span style="color: blue;">{{ start_date }}</span><br>
+          end_date = <span style="color: blue;">{{ end_date }}</span><br>
+          <em>If you see literal {{ }} above, Liquid templating is not working</em>
+      </div>
+      
       <script>
-          // Mode processes {{ parameter }} before sending to iframe
+          // Test if Mode processes Liquid templating
+          console.log('=== LIQUID TEMPLATING TEST ===');
+          console.log('start_date from Liquid: {{ start_date }}');
+          console.log('end_date from Liquid: {{ end_date }}');
+          
+          // Test the new URL parameter approach
+          const testUrl = 'https://example.com/script.js?start={{ start_date | url_encode }}&end={{ end_date | url_encode }}';
+          console.log('Test URL with Liquid: ' + testUrl);
+          
           window.MODE_CHART_PARAMS = {
               start_date: '{{ start_date }}',
               end_date: '{{ end_date }}',
-              // Add any other parameters you have in your {% form %}
               debug: true
           };
           
-          console.log('Mode parameters loaded:', window.MODE_CHART_PARAMS);
+          console.log('Mode parameters object:', window.MODE_CHART_PARAMS);
       </script>
       
       <!-- SHARED LIBRARY - Load this FIRST before any individual charts -->
@@ -297,11 +311,11 @@
           sharedLibraryScript.onload = function() {
               console.log('Shared Chart Library loaded');
               
-              // Load Budget vs Spend chart AFTER shared library is loaded
+              // Load Budget vs Spend chart with Liquid-templated parameters
               const budgetSpendScript = document.createElement('script');
-              budgetSpendScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance2/budget-vs-spend.js?v=' + new Date().getTime();
+              budgetSpendScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance2/budget-vs-spend.js?start={{ start_date | url_encode }}&end={{ end_date | url_encode }}&v=' + new Date().getTime();
               budgetSpendScript.onload = function() {
-                  console.log('Budget vs Spend chart script loaded');
+                  console.log('Budget vs Spend chart script loaded with parameters');
               };
               document.head.appendChild(budgetSpendScript);
           };
