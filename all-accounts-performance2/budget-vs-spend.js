@@ -411,18 +411,26 @@
 
     function loadData() {
         try {
+            console.log('Budget vs Spend: Loading data...');
             const extractedMetrics = CONFIG.getMetrics();
+            console.log('Budget vs Spend: Extracted metrics:', extractedMetrics);
 
             if (extractedMetrics.length > 0) {
-                const filteredMetrics = CONFIG.displayMetrics.filter(metric => extractedMetrics.includes(metric));
-
-                createDynamicMetrics(filteredMetrics);
+                createDynamicMetrics(extractedMetrics);
+                console.log('Budget vs Spend: Dynamic metrics created:', dynamicMetrics);
                 rawData = lib.loadDatasetContent(CONFIG, 'Budget vs Spend');
-                processData();
+                console.log('Budget vs Spend: Raw data loaded:', rawData.length, 'rows');
+                if (rawData.length > 0) {
+                    console.log('Budget vs Spend: First row sample:', rawData[0]);
+                    console.log('Budget vs Spend: Available columns:', Object.keys(rawData[0]));
+                }
                 createMetricToggles();
+                processData();
+                console.log('Budget vs Spend: Processed data:', processedData);
                 updateChart();
             } else {
                 console.warn('Budget vs Spend: No metrics extracted from dataset');
+                console.log('Budget vs Spend: Available datasets:', typeof datasets !== 'undefined' ? Object.keys(datasets) : 'datasets undefined');
             }
         } catch (error) {
             console.error('Budget vs Spend: Error loading data:', error);
@@ -433,7 +441,13 @@
     // UI CONTROLS USING SHARED LIBRARY
     // =============================================================================
 
+    let toggleMetric;
+
     function createMetricToggles() {
+        // Create toggle function using shared library
+        toggleMetric = lib.createStandardToggleMetric(dynamicMetrics, updateChart);
+        
+        // Create metric toggles using shared library
         const config = Object.assign({}, CONFIG, {
             updateChart: updateChart
         });
@@ -443,16 +457,54 @@
     // =============================================================================
     // INITIALIZATION USING SHARED LIBRARY
     // =============================================================================
-
-    const toggleMetric = lib.createStandardToggleMetric(dynamicMetrics, updateChart);
+    
     const switchTimeRange = lib.createStandardSwitchTimeRange(
         CONFIG.controlsSelector,
         (timeRange) => { currentTimeRange = timeRange; },
         processData,
         updateChart
     );
-    const toggleZoom = lib.createStandardToggleZoom(chart, isZoomEnabled);
-    const resetZoom = lib.createStandardResetZoom(chart, CONFIG.controlsSelector, isZoomEnabled);
+    
+    function toggleZoom() {
+        isZoomEnabled.value = !isZoomEnabled.value;
+
+        const btn = event.target;
+        btn.classList.toggle('active', isZoomEnabled.value);
+        btn.textContent = isZoomEnabled.value ? 'Zoom ON' : 'Zoom';
+
+        if (chart && chart.options.plugins.zoom) {
+            chart.options.plugins.zoom.zoom.wheel.enabled = isZoomEnabled.value;
+            chart.options.plugins.zoom.zoom.pinch.enabled = isZoomEnabled.value;
+        }
+        
+        if (chart) {
+            chart.update('none');
+        }
+    }
+
+    function resetZoom() {
+        if (chart && chart.resetZoom) {
+            chart.resetZoom();
+        }
+
+        document.querySelectorAll(`${CONFIG.controlsSelector} .control-btn`)
+            .forEach(btn => {
+                if (btn.textContent.includes('Zoom')) {
+                    btn.classList.remove('active');
+                    btn.textContent = 'Zoom';
+                    isZoomEnabled.value = false;
+                    
+                    if (chart && chart.options.plugins.zoom) {
+                        chart.options.plugins.zoom.zoom.wheel.enabled = false;
+                        chart.options.plugins.zoom.zoom.pinch.enabled = false;
+                    }
+                }
+            }); 
+
+        if (chart) {
+            chart.update('none');
+        }
+    }
 
     const init = lib.createStandardInit(
         CONFIG.canvasId,
