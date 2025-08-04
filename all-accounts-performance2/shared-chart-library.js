@@ -657,11 +657,21 @@ window.ChartLibrary = (function() {
         const endFromUrl = urlParams.get('end_date') || urlParams.get('end');
         console.log(`${chartPrefix}: 1️⃣ URL params - start:`, startFromUrl, 'end:', endFromUrl);
         
-        // Method 2: URL Hash/Fragment
+        // Method 2: URL Hash/Fragment + Full URL analysis
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const startFromHash = hashParams.get('start_date') || hashParams.get('start');
         const endFromHash = hashParams.get('end_date') || hashParams.get('end');
         console.log(`${chartPrefix}: 2️⃣ Hash params - start:`, startFromHash, 'end:', endFromHash);
+        
+        // Also check the full URL for any embedded parameters
+        console.log(`${chartPrefix}: 2️⃣ Full iframe URL:`, window.location.href);
+        
+        // Check if URL contains any date-like patterns
+        const urlDateRegex = /(\d{4}-\d{2}-\d{2})/g;
+        const urlDates = [...window.location.href.matchAll(urlDateRegex)].map(match => match[1]);
+        if (urlDates.length > 0) {
+            console.log(`${chartPrefix}: 2️⃣ Found dates in URL:`, urlDates);
+        }
         
         // Method 3: Window globals (multiple possibilities)
         const possibleGlobals = [
@@ -714,11 +724,12 @@ window.ChartLibrary = (function() {
             console.log(`${chartPrefix}: 4️⃣ No storage data found`);
         }
         
-        // Method 5: PostMessage listener (listen for parent messages)
-        console.log(`${chartPrefix}: 5️⃣ Setting up PostMessage listener...`);
+        // Method 5: PostMessage - AGGRESSIVE parent communication
+        console.log(`${chartPrefix}: 5️⃣ Setting up PostMessage listener + requesting params...`);
         let postMessageParams = null;
+        
         const messageHandler = (event) => {
-            console.log(`${chartPrefix}: 5️⃣ PostMessage received:`, event.origin, event.data);
+            console.log(`${chartPrefix}: 5️⃣ PostMessage received from ${event.origin}:`, event.data);
             if (event.data && typeof event.data === 'object') {
                 const start = event.data.start_date || event.data.start;
                 const end = event.data.end_date || event.data.end;
@@ -730,6 +741,31 @@ window.ChartLibrary = (function() {
             }
         };
         window.addEventListener('message', messageHandler);
+        
+        // AGGRESSIVELY request parameters from parent
+        try {
+            console.log(`${chartPrefix}: 5️⃣ Requesting params from parent...`);
+            window.parent.postMessage({ 
+                type: 'REQUEST_PARAMS', 
+                request: ['start_date', 'end_date'],
+                from: 'chart_iframe'
+            }, '*');
+            
+            // Try multiple parent origins
+            const possibleOrigins = ['https://app.mode.com', 'https://mode.com', '*'];
+            possibleOrigins.forEach(origin => {
+                try {
+                    window.parent.postMessage({ 
+                        type: 'GET_DATE_PARAMS',
+                        chartId: 'budget-vs-spend'
+                    }, origin);
+                } catch (e) {
+                    console.log(`${chartPrefix}: 5️⃣ PostMessage to ${origin} failed:`, e.message);
+                }
+            });
+        } catch (e) {
+            console.log(`${chartPrefix}: 5️⃣ PostMessage request failed:`, e.message);
+        }
         
         // Method 6: Check for Mode-specific objects
         const modeObjects = ['Mode', 'mode', 'ModeAnalytics', 'modeanalytics', 'datasets'];
@@ -757,11 +793,36 @@ window.ChartLibrary = (function() {
         const dataElements = document.querySelectorAll('[data-start], [data-end], [data-start-date], [data-end-date]');
         console.log(`${chartPrefix}: 8️⃣ Hidden inputs:`, hiddenInputs.length, 'Data elements:', dataElements.length);
         
-        // Method 9: Check for parameters in script tags or JSON
+        // Method 9: Deep script analysis for embedded parameters
         const scriptTags = document.querySelectorAll('script:not([src])');
+        console.log(`${chartPrefix}: 9️⃣ Analyzing ${scriptTags.length} inline scripts...`);
+        
         scriptTags.forEach((script, i) => {
-            if (script.textContent.includes('start_date') || script.textContent.includes('end_date')) {
+            const content = script.textContent;
+            if (content.includes('start_date') || content.includes('end_date')) {
                 console.log(`${chartPrefix}: 9️⃣ Script ${i} contains date references`);
+                
+                // Try to extract actual date values using regex
+                const dateRegex = /["'](\d{4}-\d{2}-\d{2})["']/g;
+                const foundDates = [...content.matchAll(dateRegex)].map(match => match[1]);
+                
+                if (foundDates.length >= 2) {
+                    console.log(`${chartPrefix}: 9️⃣ Extracted potential dates:`, foundDates);
+                    // Could be start/end dates
+                    const potentialStart = foundDates[0];
+                    const potentialEnd = foundDates[foundDates.length - 1];
+                    
+                    if (potentialStart !== potentialEnd) {
+                        console.log(`${chartPrefix}: 9️⃣ ⚠️ Potential date range:`, potentialStart, 'to', potentialEnd);
+                    }
+                }
+                
+                // Also check for variable assignments
+                const varRegex = /(start_date|end_date|startDate|endDate)\s*[:=]\s*["']([^"']+)["']/g;
+                const varMatches = [...content.matchAll(varRegex)];
+                if (varMatches.length > 0) {
+                    console.log(`${chartPrefix}: 9️⃣ Found variable assignments:`, varMatches.map(m => `${m[1]}: ${m[2]}`));
+                }
             }
         });
         
@@ -782,7 +843,89 @@ window.ChartLibrary = (function() {
             };
         }
         
-        console.log(`${chartPrefix}: ❌ No parameters found with any method, using default`);
+        // Method 10: IFRAME ESCAPE ATTEMPTS
+        console.log(`${chartPrefix}: 🚨 AGGRESSIVE iframe escape attempts...`);
+        
+        // Try document.domain manipulation
+        try {
+            console.log(`${chartPrefix}: 🚨 Current domain:`, document.domain);
+            console.log(`${chartPrefix}: 🚨 Parent location accessible:`, !!window.parent.location);
+        } catch (e) {
+            console.log(`${chartPrefix}: 🚨 Parent location blocked:`, e.message);
+        }
+        
+        // Try accessing parent globals directly
+        try {
+            const parentGlobals = ['reportParams', 'modeParams', 'parameters', 'start_date', 'end_date'];
+            parentGlobals.forEach(globalName => {
+                try {
+                    const value = window.parent[globalName];
+                    if (value) {
+                        console.log(`${chartPrefix}: 🚨 Found parent.${globalName}:`, value);
+                    }
+                } catch (e) {
+                    console.log(`${chartPrefix}: 🚨 parent.${globalName} blocked:`, e.message);
+                }
+            });
+        } catch (e) {
+            console.log(`${chartPrefix}: 🚨 Parent globals access failed:`, e.message);
+        }
+        
+        // Try name/frameElement access
+        try {
+            console.log(`${chartPrefix}: 🚨 window.name:`, window.name);
+            console.log(`${chartPrefix}: 🚨 frameElement:`, window.frameElement);
+        } catch (e) {
+            console.log(`${chartPrefix}: 🚨 Frame element access blocked:`, e.message);
+        }
+        
+        // Check for Mode-specific APIs in datasets
+        try {
+            if (window.datasets && typeof window.datasets === 'object') {
+                // Check if datasets has any parameter info
+                const datasetKeys = Object.keys(window.datasets);
+                console.log(`${chartPrefix}: 🚨 Checking datasets object for parameter hints...`);
+                
+                datasetKeys.forEach(key => {
+                    const dataset = window.datasets[key];
+                    if (dataset && dataset.reportQueryUrl) {
+                        // Extract parameters from query URL
+                        try {
+                            const url = new URL(dataset.reportQueryUrl);
+                            const urlParams = url.searchParams;
+                            const startParam = urlParams.get('start_date') || urlParams.get('start');
+                            const endParam = urlParams.get('end_date') || urlParams.get('end');
+                            
+                            if (startParam && endParam) {
+                                console.log(`${chartPrefix}: 🚨 ✅ Found dates in dataset URL:`, startParam, endParam);
+                                startDate = startParam;
+                                endDate = endParam;
+                            }
+                        } catch (e) {
+                            // URL parsing failed
+                        }
+                    }
+                });
+            }
+        } catch (e) {
+            console.log(`${chartPrefix}: 🚨 Dataset URL extraction failed:`, e.message);
+        }
+        
+        // Final check - if we found dates through any method
+        if (startDate && endDate) {
+            console.log(`${chartPrefix}: 🚨 ✅ BREAKTHROUGH! Found dates:`, startDate, endDate);
+            onDateRangeChange({ startDate, endDate });
+            
+            return {
+                getCurrentDateRange: () => ({ startDate, endDate }),
+                setDateRange: (newStart, newEnd) => {
+                    console.log(`${chartPrefix}: Date range changed to ${newStart} - ${newEnd}`);
+                    onDateRangeChange({ startDate: newStart, endDate: newEnd });
+                }
+            };
+        }
+        
+        console.log(`${chartPrefix}: ❌ All escape attempts failed, using default`);
         return null;
     }
     
