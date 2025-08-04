@@ -639,59 +639,74 @@ window.ChartLibrary = (function() {
      * Find and connect to Mode's built-in date picker
      */
     function findModeDatePicker(chartPrefix) {
-        console.log(`${chartPrefix}: Basic element debugging...`);
+        console.log(`${chartPrefix}: Checking iframe vs parent window...`);
         
-        // Show what's actually on the page
-        console.log(`${chartPrefix}: document.body exists:`, !!document.body);
-        console.log(`${chartPrefix}: document.title:`, document.title);
+        // Check if we're in an iframe
+        const isInIframe = window !== window.parent;
+        console.log(`${chartPrefix}: Running in iframe:`, isInIframe);
+        console.log(`${chartPrefix}: Current window title:`, document.title);
         
-        // Look for exact ID from screenshots
-        const reportStartElement = document.getElementById('report_run_params_start_date');
-        console.log(`${chartPrefix}: getElementById('report_run_params_start_date'):`, !!reportStartElement);
-        
-        if (reportStartElement) {
-            console.log(`${chartPrefix}: Start element details:`, {
-                tagName: reportStartElement.tagName,
-                type: reportStartElement.type,
-                value: reportStartElement.value,
-                name: reportStartElement.name
-            });
+        if (isInIframe) {
+            console.log(`${chartPrefix}: Parent window title:`, window.parent.document.title);
+            
+            try {
+                // Try to access parent document (where parameters should be)
+                const parentDoc = window.parent.document;
+                
+                // Look for parameters in parent document
+                const startDateInput = parentDoc.getElementById('report_run_params_start_date');
+                const endDateInput = parentDoc.getElementById('report_run_params_end_date');
+                
+                console.log(`${chartPrefix}: Parent - start input found:`, !!startDateInput);
+                console.log(`${chartPrefix}: Parent - end input found:`, !!endDateInput);
+                
+                if (startDateInput) {
+                    console.log(`${chartPrefix}: Start input value:`, startDateInput.value);
+                }
+                if (endDateInput) {
+                    console.log(`${chartPrefix}: End input value:`, endDateInput.value);
+                }
+                
+                // Look for containers in parent
+                const runContainer = parentDoc.querySelector('.run-parameters-container');
+                const runList = parentDoc.querySelector('.run-parameters-list');
+                
+                console.log(`${chartPrefix}: Parent - .run-parameters-container:`, !!runContainer);
+                console.log(`${chartPrefix}: Parent - .run-parameters-list:`, !!runList);
+                
+                if (startDateInput && endDateInput) {
+                    console.log(`${chartPrefix}: Found parameters in parent window!`);
+                    return {
+                        container: runContainer || runList || parentDoc.body,
+                        startDateInput,
+                        endDateInput,
+                        isParentWindow: true
+                    };
+                }
+                
+            } catch (error) {
+                console.log(`${chartPrefix}: Cannot access parent window (cross-origin):`, error.message);
+            }
         }
         
-        // Look for run-parameters-container from screenshots
-        const runContainer = document.querySelector('.run-parameters-container');
-        console.log(`${chartPrefix}: .run-parameters-container found:`, !!runContainer);
+        // Fallback: Look in current document
+        console.log(`${chartPrefix}: Looking in current document as fallback...`);
+        const startDateInput = document.getElementById('report_run_params_start_date');
+        const endDateInput = document.getElementById('report_run_params_end_date');
         
-        // Look for run-parameters-list from screenshots  
-        const runList = document.querySelector('.run-parameters-list');
-        console.log(`${chartPrefix}: .run-parameters-list found:`, !!runList);
+        console.log(`${chartPrefix}: Current - start input found:`, !!startDateInput);
+        console.log(`${chartPrefix}: Current - end input found:`, !!endDateInput);
         
-        // Search for ANY element with "run" in the class name
-        const elementsWithRun = document.querySelectorAll('[class*="run"]');
-        console.log(`${chartPrefix}: Elements with 'run' in class:`, elementsWithRun.length);
-        
-        if (elementsWithRun.length > 0) {
-            console.log(`${chartPrefix}: First element with 'run':`, {
-                tagName: elementsWithRun[0].tagName,
-                className: elementsWithRun[0].className,
-                id: elementsWithRun[0].id
-            });
+        if (startDateInput && endDateInput) {
+            return {
+                container: document.body,
+                startDateInput,
+                endDateInput,
+                isParentWindow: false
+            };
         }
         
-        // Search for elements with mode-date-picker attribute
-        const modeDateElements = document.querySelectorAll('[mode-date-picker]');
-        console.log(`${chartPrefix}: Elements with mode-date-picker:`, modeDateElements.length);
-        
-        // Search ALL divs and show first few with classes
-        const allDivs = document.querySelectorAll('div[class]');
-        console.log(`${chartPrefix}: Total divs with classes:`, allDivs.length);
-        
-        if (allDivs.length > 0) {
-            console.log(`${chartPrefix}: First 3 div classes:`, 
-                Array.from(allDivs).slice(0, 3).map(div => div.className)
-            );
-        }
-        
+        console.log(`${chartPrefix}: No parameters found in current or parent window`);
         return null;
     }
 
