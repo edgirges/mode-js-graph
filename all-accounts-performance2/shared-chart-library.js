@@ -646,55 +646,101 @@ window.ChartLibrary = (function() {
     }
 
     /**
-     * Set up Mode parameter integration (URL params + DOM fallback)
+     * Comprehensive Mode parameter detection - try EVERY possible approach
      */
     function setupModeDatePicker(chartPrefix, onDateRangeChange, defaultDays = 30) {
-        console.log(`${chartPrefix}: Setting up Mode parameter integration...`);
+        console.log(`${chartPrefix}: 🔍 COMPREHENSIVE Mode parameter detection...`);
         
-        // Method 1: Check URL parameters (Mode passes params via query string)
+        // Method 1: URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const startFromUrl = urlParams.get('start_date') || urlParams.get('start');
         const endFromUrl = urlParams.get('end_date') || urlParams.get('end');
+        console.log(`${chartPrefix}: 1️⃣ URL params - start:`, startFromUrl, 'end:', endFromUrl);
         
-        console.log(`${chartPrefix}: URL params - start:`, startFromUrl, 'end:', endFromUrl);
+        // Method 2: URL Hash/Fragment
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const startFromHash = hashParams.get('start_date') || hashParams.get('start');
+        const endFromHash = hashParams.get('end_date') || hashParams.get('end');
+        console.log(`${chartPrefix}: 2️⃣ Hash params - start:`, startFromHash, 'end:', endFromHash);
         
-        // Method 2: Check window.MODE_CHART_PARAMS (Liquid templating from Mode)
-        const modeParams = window.MODE_CHART_PARAMS || window._MODE_PARAMS || {};
-        let startFromWindow = modeParams.start_date || modeParams.start;
-        let endFromWindow = modeParams.end_date || modeParams.end;
+        // Method 3: Window globals (multiple possibilities)
+        const possibleGlobals = [
+            'MODE_CHART_PARAMS', '_MODE_PARAMS', 'MODE_PARAMS', 'modeParams', 
+            'reportParams', 'chartParams', 'parameters', 'PARAMETERS'
+        ];
         
-        // Check if Liquid templating was processed (if not, values will be literal {{ start_date }})
-        if (startFromWindow && startFromWindow.includes('{{')) {
-            console.log(`${chartPrefix}: Liquid templating not processed, ignoring template strings`);
-            startFromWindow = null;
-            endFromWindow = null;
-        }
+        let startFromWindow = null, endFromWindow = null;
         
-        console.log(`${chartPrefix}: Window params - start:`, startFromWindow, 'end:', endFromWindow);
+        possibleGlobals.forEach(globalName => {
+            const globalObj = window[globalName];
+            if (globalObj && typeof globalObj === 'object') {
+                const start = globalObj.start_date || globalObj.start || globalObj.startDate;
+                const end = globalObj.end_date || globalObj.end || globalObj.endDate;
+                if (start && end && !start.includes('{{') && !end.includes('{{')) {
+                    console.log(`${chartPrefix}: 3️⃣ Found valid params in window.${globalName}:`, start, end);
+                    startFromWindow = start;
+                    endFromWindow = end;
+                }
+            }
+        });
         
-        if (window.MODE_CHART_PARAMS) {
-            console.log(`${chartPrefix}: Raw MODE_CHART_PARAMS:`, window.MODE_CHART_PARAMS);
-        }
+        // Method 4: Local/Session Storage
+        const storageKeys = ['modeParams', 'reportParams', 'start_date', 'end_date'];
+        storageKeys.forEach(key => {
+            const stored = localStorage.getItem(key) || sessionStorage.getItem(key);
+            if (stored) {
+                console.log(`${chartPrefix}: 4️⃣ Found in storage ${key}:`, stored);
+            }
+        });
         
-        // Method 3: Try to find DOM elements (fallback)
-        let domDatePicker = null;
-        const datePicker = findModeDatePicker(chartPrefix);
-        if (datePicker) {
-            console.log(`${chartPrefix}: Found DOM date picker elements`);
-            domDatePicker = setupDatePickerLogic(datePicker, chartPrefix, onDateRangeChange, defaultDays);
-        }
+        // Method 5: PostMessage listener (listen for parent messages)
+        let postMessageParams = null;
+        const messageHandler = (event) => {
+            if (event.data && typeof event.data === 'object') {
+                const start = event.data.start_date || event.data.start;
+                const end = event.data.end_date || event.data.end;
+                if (start && end) {
+                    console.log(`${chartPrefix}: 5️⃣ PostMessage params:`, start, end);
+                    postMessageParams = { start, end };
+                    onDateRangeChange({ startDate: start, endDate: end });
+                }
+            }
+        };
+        window.addEventListener('message', messageHandler);
         
-        // Use the first available method
-        const startDate = startFromUrl || startFromWindow;
-        const endDate = endFromUrl || endFromWindow;
+        // Method 6: Check for Mode-specific objects
+        const modeObjects = ['Mode', 'mode', 'ModeAnalytics', 'modeanalytics'];
+        modeObjects.forEach(objName => {
+            if (window[objName]) {
+                console.log(`${chartPrefix}: 6️⃣ Found Mode object:`, objName, Object.keys(window[objName]));
+            }
+        });
+        
+        // Method 7: Document data attributes and meta tags
+        const metaTags = document.querySelectorAll('meta[name*="start"], meta[name*="end"], meta[name*="date"]');
+        console.log(`${chartPrefix}: 7️⃣ Meta tags with date info:`, metaTags.length);
+        
+        // Method 8: Hidden inputs or data attributes
+        const hiddenInputs = document.querySelectorAll('input[type="hidden"][name*="date"]');
+        const dataElements = document.querySelectorAll('[data-start], [data-end], [data-start-date], [data-end-date]');
+        console.log(`${chartPrefix}: 8️⃣ Hidden inputs:`, hiddenInputs.length, 'Data elements:', dataElements.length);
+        
+        // Method 9: Check for parameters in script tags or JSON
+        const scriptTags = document.querySelectorAll('script:not([src])');
+        scriptTags.forEach((script, i) => {
+            if (script.textContent.includes('start_date') || script.textContent.includes('end_date')) {
+                console.log(`${chartPrefix}: 9️⃣ Script ${i} contains date references`);
+            }
+        });
+        
+        // Use the first working method
+        let startDate = startFromUrl || startFromHash || startFromWindow;
+        let endDate = endFromUrl || endFromHash || endFromWindow;
         
         if (startDate && endDate) {
-            console.log(`${chartPrefix}: Using Mode parameters - start: ${startDate}, end: ${endDate}`);
-            
-            // Trigger initial date range
+            console.log(`${chartPrefix}: ✅ Using parameters - start: ${startDate}, end: ${endDate}`);
             onDateRangeChange({ startDate, endDate });
             
-            // Return a simple interface for external API
             return {
                 getCurrentDateRange: () => ({ startDate, endDate }),
                 setDateRange: (newStart, newEnd) => {
@@ -702,13 +748,10 @@ window.ChartLibrary = (function() {
                     onDateRangeChange({ startDate: newStart, endDate: newEnd });
                 }
             };
-        } else if (domDatePicker) {
-            console.log(`${chartPrefix}: Using DOM date picker`);
-            return domDatePicker;
-        } else {
-            console.log(`${chartPrefix}: No Mode parameters found, using default date range`);
-            return null;
         }
+        
+        console.log(`${chartPrefix}: ❌ No parameters found with any method, using default`);
+        return null;
     }
     
     /**
