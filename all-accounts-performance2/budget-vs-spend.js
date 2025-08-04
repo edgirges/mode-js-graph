@@ -580,9 +580,9 @@
     }
 
     function setupDatePicker() {
-        console.log('Budget vs Spend: Setting up Mode date picker...');
+        console.log('Budget vs Spend: Setting up Mode parameter integration...');
         
-        // Try to set up the date picker (may return null if not found immediately)
+        // Try to set up Mode parameter integration (URL params, window params, or DOM)
         modeDatePicker = lib.setupModeDatePicker('Budget vs Spend', onDateRangeChange, 30);
         
         if (modeDatePicker) {
@@ -590,12 +590,13 @@
             const initialRange = modeDatePicker.getCurrentDateRange();
             if (initialRange.startDate && initialRange.endDate) {
                 currentDateRange = initialRange;
-                console.log('Budget vs Spend: Initial date range set to:', currentDateRange);
+                console.log('Budget vs Spend: Using Mode parameters:', currentDateRange);
+                return; // Early return, parameters handled
             }
-        } else {
-            console.log('Budget vs Spend: Mode date picker not available (may connect later), using default date range');
-            // Chart will work with default 30-day range until/unless date picker is found
         }
+        
+        console.log('Budget vs Spend: No Mode parameters available, using default 30-day range');
+        // Chart will work with default 30-day range
     }
     
     function toggleZoom() {

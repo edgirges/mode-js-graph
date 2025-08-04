@@ -10,7 +10,7 @@ This folder contains the new **shared library architecture** for Mode Analytics 
 
 1. ✅ Created shared library with all common functionality (`shared-chart-library.js`)
 2. ✅ Created Budget vs Spend chart using shared library (`budget-vs-spend.js`)
-3. ✅ Integrated Mode's built-in date picker functionality
+3. ✅ Integrated Mode's parameter system (URL params + window.\_MODE_PARAMS)
 4. ✅ Added smart HTML generator - **95% less static HTML needed!**
 
 **RESULTS ACHIEVED:**
@@ -77,9 +77,9 @@ all-accounts-performance2/
 - `getStandardTimeScale()` - Time axis configuration with date adapters
 - `getStandardZoomConfig()` - Zoom plugin configuration
 
-### Mode Date Picker Integration
+### Mode Parameter Integration
 
-- `setupModeDatePicker()` - Hooks into Mode's built-in date picker
+- `setupModeDatePicker()` - Gets parameters via URL query strings, window.\_MODE_PARAMS, or DOM fallback
 - `filterDataByDateRange()` - Filters data by actual start/end dates
 
 ### HTML Generator
@@ -195,7 +195,7 @@ Total:                  ~85KB with zero duplication
 The Budget vs Spend chart now works with:
 
 - ✅ **Smart HTML generation** - Only container div needed in mode.html!
-- ✅ **Mode date picker integration** - Uses Mode's built-in date picker
+- ✅ **Mode parameter integration** - Uses URL params, window.\_MODE_PARAMS, or DOM fallback
 - ✅ **All controls work** - zoom, metric toggles, select/deselect all
 - ✅ **Data processing** - Same exact behavior as original
 - ✅ **All exports available** on `window.BudgetSpendChart`
