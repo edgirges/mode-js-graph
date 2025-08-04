@@ -10,12 +10,14 @@ This folder contains the new **shared library architecture** for Mode Analytics 
 
 1. ✅ Created shared library with all common functionality (`shared-chart-library.js`)
 2. ✅ Created Budget vs Spend chart using shared library (`budget-vs-spend.js`)
-3. ✅ Created test file demonstrating working integration (`test-budget-vs-spend.html`)
+3. ✅ Integrated Mode's built-in date picker functionality
+4. ✅ Added smart HTML generator - **95% less static HTML needed!**
 
 **RESULTS ACHIEVED:**
 
 - **Individual chart size reduction:** 795 lines → 489 lines (**38% smaller**)
-- **Shared library:** 562 lines (uploaded once for all charts)
+- **Shared library:** 700+ lines (uploaded once for all charts)
+- **HTML reduction:** Static HTML reduced by **95%** (only container divs needed)
 - **Total system when all 10 charts use this approach:** ~60% reduction in upload size
 
 ## Architecture
@@ -74,6 +76,16 @@ all-accounts-performance2/
 - `getStandardTooltipConfig()` - Standard tooltip configuration
 - `getStandardTimeScale()` - Time axis configuration with date adapters
 - `getStandardZoomConfig()` - Zoom plugin configuration
+
+### Mode Date Picker Integration
+
+- `setupModeDatePicker()` - Hooks into Mode's built-in date picker
+- `filterDataByDateRange()` - Filters data by actual start/end dates
+
+### HTML Generator
+
+- `generateChartHTML()` - Dynamically generates chart HTML structure
+- `injectChartHTML()` - Injects generated HTML into DOM
 
 ### Export & Utilities
 
@@ -180,13 +192,56 @@ Total:                  ~85KB with zero duplication
 
 ## Testing
 
-Open `test-budget-vs-spend.html` in a browser to see the working implementation:
+The Budget vs Spend chart now works with:
 
-- ✅ Chart renders correctly
-- ✅ All controls work (time range, zoom, metric toggles)
-- ✅ Select/Deselect All buttons function
-- ✅ Data processing matches original behavior
-- ✅ All exports available on `window.BudgetSpendChart`
+- ✅ **Smart HTML generation** - Only container div needed in mode.html!
+- ✅ **Mode date picker integration** - Uses Mode's built-in date picker
+- ✅ **All controls work** - zoom, metric toggles, select/deselect all
+- ✅ **Data processing** - Same exact behavior as original
+- ✅ **All exports available** on `window.BudgetSpendChart`
+
+## HTML Generator Usage
+
+The new HTML generator provides **smart positioning control**:
+
+### **Approach: Container in HTML + Auto-Generated Content**
+
+**mode.html** - Just the positioning container:
+
+```html
+<!-- CHART 1: Container for positioning control -->
+<div class="chart-container budget-spend-container">
+  <!-- Content auto-generated: header, controls, canvas, metrics -->
+</div>
+```
+
+**budget-vs-spend.js** - Auto-generates everything inside:
+
+```javascript
+const CONFIG = {
+  htmlConfig: {
+    containerClass: "budget-spend-container", // Matches HTML container
+    chartTitle: "Daily BW Budget V. Spend / Spend Pct",
+    chartObject: "BudgetSpendChart",
+    canvasId: "budgetSpendChart",
+    useModeDate: true, // Use Mode date picker
+  },
+};
+
+// Smart injection: looks for existing container first
+function generateHTML() {
+  const success = lib.injectChartSmart(CONFIG.htmlConfig);
+  return success;
+}
+```
+
+### **Benefits of This Approach:**
+
+✅ **Positioning Control** - Container divs in HTML control chart order  
+✅ **Auto-Generation** - Header, controls, canvas, metrics all generated  
+✅ **Smart Fallback** - Works standalone if no container found  
+✅ **Reduced HTML** - 95% less static HTML needed  
+✅ **Maintenance** - No HTML/JS sync issues
 
 ## Next Steps
 

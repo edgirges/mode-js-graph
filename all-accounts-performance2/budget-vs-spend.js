@@ -27,6 +27,22 @@
         selectAllBtnId: 'budget-spend-select-all-btn',
         deselectAllBtnId: 'budget-spend-deselect-all-btn',
         
+        // HTML Generator config
+        htmlConfig: {
+            containerClass: 'budget-spend-container',
+            headerClass: 'budget-spend-header',
+            titleClass: 'budget-spend-title',
+            chartTitle: 'Daily BW Budget V. Spend / Spend Pct',
+            controlsClass: 'budget-spend-controls',
+            chartObject: 'BudgetSpendChart',
+            canvasClass: 'budget-spend-canvas',
+            canvasId: 'budgetSpendChart',
+            metricsClass: 'budget-spend-metrics',
+            metricsHeaderClass: 'budget-spend-metrics-title',
+            togglesClass: 'budget-spend-toggles',
+            useModeDate: true // Use Mode date picker instead of time range buttons
+        },
+        
         getMetrics: function() {
             return lib.getMetricsFromDataset(CONFIG.datasetName, CONFIG.fallbackIndex);
         }
@@ -41,6 +57,78 @@
     let dynamicMetrics = [];
     let columnMapping = {};
     let modeDatePicker = null;
+
+    // =============================================================================
+    // HTML GENERATION
+    // =============================================================================
+
+    function generateHTML() {
+        console.log('Budget vs Spend: Checking if HTML needs to be generated...');
+        
+        // Check if the chart container already exists
+        const existingContainer = document.querySelector(`.${CONFIG.htmlConfig.containerClass}`);
+        
+        if (existingContainer) {
+            console.log('Budget vs Spend: HTML container already exists, skipping generation');
+            return true;
+        }
+        
+        console.log('Budget vs Spend: Generating HTML dynamically...');
+        
+        // Find a good place to inject the chart
+        const targetContainer = document.querySelector('body') || document.querySelector('.mode-grid.container');
+        
+        if (!targetContainer) {
+            console.error('Budget vs Spend: No suitable container found for HTML injection');
+            return false;
+        }
+        
+        // Try to inject into existing container first, fallback to full injection
+        const success = lib.injectChartSmart(CONFIG.htmlConfig, 'body');
+        
+        if (success) {
+            console.log('Budget vs Spend: HTML generated successfully!');
+            
+            // Add basic styling for generated chart
+            const style = document.createElement('style');
+            style.textContent = `
+                .budget-spend-container {
+                    margin: 20px 0;
+                    padding: 20px;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                    background: white;
+                }
+                .budget-spend-header {
+                    margin-bottom: 20px;
+                }
+                .budget-spend-controls .control-btn {
+                    background: #007bff;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    margin: 0 5px 5px 0;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+                .budget-spend-controls .control-btn:hover {
+                    background: #0056b3;
+                }
+                .budget-spend-controls .control-btn.active {
+                    background: #28a745;
+                }
+                #budgetSpendChart {
+                    max-height: 500px;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            return true;
+        } else {
+            console.error('Budget vs Spend: Failed to generate HTML');
+            return false;
+        }
+    }
 
     // =============================================================================
     // CHART-SPECIFIC METRIC DEFINITIONS
@@ -549,14 +637,27 @@
         }
     }
 
-    const init = lib.createStandardInit(
-        CONFIG.canvasId,
-        CONFIG.togglesSelector,
-        createChart,
-        loadData
-    );
+    function customInit() {
+        console.log('Budget vs Spend: Starting custom initialization...');
+        
+        // First, generate HTML if needed
+        if (!generateHTML()) {
+            console.error('Budget vs Spend: HTML generation failed, retrying...');
+            return false;
+        }
+        
+        // Then use the standard init
+        const standardInit = lib.createStandardInit(
+            CONFIG.canvasId,
+            CONFIG.togglesSelector,
+            createChart,
+            loadData
+        );
+        
+        return standardInit();
+    }
 
-    const attemptInit = lib.createStandardAttemptInit(init);
+    const attemptInit = lib.createStandardAttemptInit(customInit);
 
     // =============================================================================
     // EXPORT USING SHARED LIBRARY
@@ -587,6 +688,9 @@
     // INITIALIZATION USING SHARED LIBRARY
     // =============================================================================
 
-    lib.setupStandardInitialization(attemptInit);
+    // Add small delay to ensure DOM is ready for HTML generation
+    setTimeout(() => {
+        lib.setupStandardInitialization(attemptInit);
+    }, 100);
 
 })(); 

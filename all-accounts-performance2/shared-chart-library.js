@@ -463,6 +463,122 @@ window.ChartLibrary = (function() {
     }
 
     // =============================================================================
+    // HTML GENERATOR
+    // =============================================================================
+
+    /**
+     * Generate chart content HTML structure (everything INSIDE the container)
+     */
+    function generateChartContentHTML(config) {
+        console.log(`Generating chart content for: ${config.chartTitle}`);
+        
+        const contentHTML = `
+            <div class="chart-header ${config.headerClass}">
+                <h2 class="chart-title ${config.titleClass}">${config.chartTitle}</h2>
+                <div class="chart-controls ${config.controlsClass}">
+                    ${config.useModeDate ? 
+                        `<!-- Date range controlled by Mode's built-in date picker above -->
+                         <span style="color: #666; font-size: 12px; margin-right: 10px;">Use the date picker above to filter data</span>` :
+                        `<button class="control-btn" onclick="${config.chartObject}.switchTimeRange('7D')">7D</button>
+                         <button class="control-btn" onclick="${config.chartObject}.switchTimeRange('30D')">30D</button>
+                         <button class="control-btn active" onclick="${config.chartObject}.switchTimeRange('90D')">90D</button>
+                         <button class="control-btn" onclick="${config.chartObject}.switchTimeRange('ALL')">All</button>`
+                    }
+                    <button class="control-btn" onclick="${config.chartObject}.toggleZoom()">Zoom</button>
+                    <button class="control-btn" onclick="${config.chartObject}.resetZoom()">Reset</button>
+                </div>
+            </div>
+            <div class="chart-canvas ${config.canvasClass}">
+                <canvas id="${config.canvasId}"></canvas>
+            </div>
+            <div class="metric-controls ${config.metricsClass}">
+                <h3 class="metric-controls-title ${config.metricsHeaderClass}">Metrics</h3>
+                <div class="metric-toggles ${config.togglesClass}">
+                    <!-- Metric toggles will be dynamically generated -->
+                </div>
+            </div>
+        `;
+        
+        console.log(`Chart content HTML generated for ${config.chartTitle}`);
+        return contentHTML;
+    }
+
+    /**
+     * Generate full chart HTML structure (including container) - for standalone use
+     */
+    function generateChartHTML(config) {
+        console.log(`Generating full chart HTML for: ${config.chartTitle}`);
+        
+        const containerHTML = `
+            <div class="chart-container ${config.containerClass}">
+                ${generateChartContentHTML(config)}
+            </div>
+        `;
+        
+        console.log(`Full chart HTML generated for ${config.chartTitle}`);
+        return containerHTML;
+    }
+
+    /**
+     * Inject chart content into an existing container div
+     */
+    function injectChartContent(config) {
+        console.log(`Looking for existing container: .${config.containerClass}`);
+        
+        // Look for the existing container div
+        const containerElement = document.querySelector(`.${config.containerClass}`);
+        
+        if (containerElement) {
+            console.log(`Found existing container, injecting content...`);
+            const contentHTML = generateChartContentHTML(config);
+            containerElement.innerHTML = contentHTML;
+            console.log(`Chart content injected into .${config.containerClass}`);
+            return true;
+        } else {
+            console.warn(`Container .${config.containerClass} not found`);
+            return false;
+        }
+    }
+
+    /**
+     * Inject full chart HTML into a target container (fallback for standalone use)
+     */
+    function injectChartHTML(config, targetSelector = 'body') {
+        const html = generateChartHTML(config);
+        const targetElement = document.querySelector(targetSelector);
+        
+        if (targetElement) {
+            if (config.replaceContent) {
+                targetElement.innerHTML = html;
+            } else {
+                targetElement.insertAdjacentHTML('beforeend', html);
+            }
+            console.log(`Full chart HTML injected into ${targetSelector}`);
+            return true;
+        } else {
+            console.error(`Target element ${targetSelector} not found for chart injection`);
+            return false;
+        }
+    }
+
+    /**
+     * Smart injection - tries existing container first, then falls back to full injection
+     */
+    function injectChartSmart(config, fallbackTarget = 'body') {
+        console.log(`Smart injection for ${config.chartTitle}...`);
+        
+        // First try to inject into existing container
+        if (injectChartContent(config)) {
+            console.log(`✅ Used existing container for ${config.chartTitle}`);
+            return true;
+        }
+        
+        // Fallback to full injection
+        console.log(`⚠️ No existing container found, using fallback injection...`);
+        return injectChartHTML(config, fallbackTarget);
+    }
+
+    // =============================================================================
     // EXPORT HELPERS
     // =============================================================================
 
@@ -755,6 +871,13 @@ window.ChartLibrary = (function() {
         // Mode Date Picker Integration
         setupModeDatePicker,
         filterDataByDateRange,
+        
+        // HTML Generator
+        generateChartHTML,
+        generateChartContentHTML,
+        injectChartHTML,
+        injectChartContent,
+        injectChartSmart,
         
         // Utility
         pollForData
