@@ -654,6 +654,37 @@ window.ChartLibrary = (function() {
         console.log(`${chartPrefix}: Elements with 'run' in class:`, allClassesWithRun.length);
         console.log(`${chartPrefix}: Elements with 'param' in class:`, allClassesWithParam.length);
         
+        // Since we have 61 inputs, let's see what they actually are
+        console.log(`${chartPrefix}: Checking actual input elements on page...`);
+        for (let i = 0; i < Math.min(10, allInputs.length); i++) {
+            const input = allInputs[i];
+            console.log(`${chartPrefix}: Input ${i}:`, {
+                id: input.id,
+                name: input.name,
+                type: input.type,
+                className: input.className,
+                placeholder: input.placeholder,
+                value: input.value?.substring(0, 20) // First 20 chars
+            });
+        }
+        
+        // Look for any input that might be date-related
+        const dateRelatedInputs = Array.from(allInputs).filter(input => 
+            input.id?.includes('date') || 
+            input.name?.includes('date') || 
+            input.className?.includes('date') ||
+            input.placeholder?.includes('date') ||
+            input.type === 'date'
+        );
+        console.log(`${chartPrefix}: Date-related inputs found:`, dateRelatedInputs.length);
+        dateRelatedInputs.forEach((input, i) => {
+            console.log(`${chartPrefix}: Date input ${i}:`, {
+                id: input.id,
+                name: input.name,
+                className: input.className
+            });
+        });
+        
         // Check a few examples
         if (allClassesWithRun.length > 0) {
             console.log(`${chartPrefix}: First 'run' class element:`, allClassesWithRun[0].className);
