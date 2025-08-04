@@ -639,74 +639,9 @@ window.ChartLibrary = (function() {
      * Find and connect to Mode's built-in date picker
      */
     function findModeDatePicker(chartPrefix) {
-        console.log(`${chartPrefix}: Checking iframe vs parent window...`);
-        
-        // Check if we're in an iframe
-        const isInIframe = window !== window.parent;
-        console.log(`${chartPrefix}: Running in iframe:`, isInIframe);
-        console.log(`${chartPrefix}: Current window title:`, document.title);
-        
-        if (isInIframe) {
-            console.log(`${chartPrefix}: Parent window title:`, window.parent.document.title);
-            
-            try {
-                // Try to access parent document (where parameters should be)
-                const parentDoc = window.parent.document;
-                
-                // Look for parameters in parent document
-                const startDateInput = parentDoc.getElementById('report_run_params_start_date');
-                const endDateInput = parentDoc.getElementById('report_run_params_end_date');
-                
-                console.log(`${chartPrefix}: Parent - start input found:`, !!startDateInput);
-                console.log(`${chartPrefix}: Parent - end input found:`, !!endDateInput);
-                
-                if (startDateInput) {
-                    console.log(`${chartPrefix}: Start input value:`, startDateInput.value);
-                }
-                if (endDateInput) {
-                    console.log(`${chartPrefix}: End input value:`, endDateInput.value);
-                }
-                
-                // Look for containers in parent
-                const runContainer = parentDoc.querySelector('.run-parameters-container');
-                const runList = parentDoc.querySelector('.run-parameters-list');
-                
-                console.log(`${chartPrefix}: Parent - .run-parameters-container:`, !!runContainer);
-                console.log(`${chartPrefix}: Parent - .run-parameters-list:`, !!runList);
-                
-                if (startDateInput && endDateInput) {
-                    console.log(`${chartPrefix}: Found parameters in parent window!`);
-                    return {
-                        container: runContainer || runList || parentDoc.body,
-                        startDateInput,
-                        endDateInput,
-                        isParentWindow: true
-                    };
-                }
-                
-            } catch (error) {
-                console.log(`${chartPrefix}: Cannot access parent window (cross-origin):`, error.message);
-            }
-        }
-        
-        // Fallback: Look in current document
-        console.log(`${chartPrefix}: Looking in current document as fallback...`);
-        const startDateInput = document.getElementById('report_run_params_start_date');
-        const endDateInput = document.getElementById('report_run_params_end_date');
-        
-        console.log(`${chartPrefix}: Current - start input found:`, !!startDateInput);
-        console.log(`${chartPrefix}: Current - end input found:`, !!endDateInput);
-        
-        if (startDateInput && endDateInput) {
-            return {
-                container: document.body,
-                startDateInput,
-                endDateInput,
-                isParentWindow: false
-            };
-        }
-        
-        console.log(`${chartPrefix}: No parameters found in current or parent window`);
+        console.log(`${chartPrefix}: Skipping DOM search (not accessible due to iframe isolation)`);
+        // We're in an iframe and cannot access parent window due to CORS
+        // Return null to rely on URL params and window._MODE_PARAMS only
         return null;
     }
 

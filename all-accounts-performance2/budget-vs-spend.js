@@ -582,21 +582,25 @@
     function setupDatePicker() {
         console.log('Budget vs Spend: Setting up Mode parameter integration...');
         
-        // Try to set up Mode parameter integration (URL params, window params, or DOM)
-        modeDatePicker = lib.setupModeDatePicker('Budget vs Spend', onDateRangeChange, 30);
-        
-        if (modeDatePicker) {
-            // Get initial date range and trigger first update
-            const initialRange = modeDatePicker.getCurrentDateRange();
-            if (initialRange.startDate && initialRange.endDate) {
-                currentDateRange = initialRange;
-                console.log('Budget vs Spend: Using Mode parameters:', currentDateRange);
-                return; // Early return, parameters handled
+        try {
+            // Try to set up Mode parameter integration (URL params, window params, or DOM)
+            modeDatePicker = lib.setupModeDatePicker('Budget vs Spend', onDateRangeChange, 30);
+            
+            if (modeDatePicker) {
+                // Get initial date range and trigger first update
+                const initialRange = modeDatePicker.getCurrentDateRange();
+                if (initialRange.startDate && initialRange.endDate) {
+                    currentDateRange = initialRange;
+                    console.log('Budget vs Spend: Using Mode parameters:', currentDateRange);
+                    return; // Early return, parameters handled
+                }
             }
+        } catch (error) {
+            console.log('Budget vs Spend: Parameter setup failed, using defaults:', error.message);
         }
         
         console.log('Budget vs Spend: No Mode parameters available, using default 30-day range');
-        // Chart will work with default 30-day range
+        // Chart will work with default 30-day range - this is normal and expected
     }
     
     function toggleZoom() {
