@@ -660,8 +660,15 @@ window.ChartLibrary = (function() {
         
         // Method 2: Check window.MODE_CHART_PARAMS (Liquid templating from Mode)
         const modeParams = window.MODE_CHART_PARAMS || window._MODE_PARAMS || {};
-        const startFromWindow = modeParams.start_date || modeParams.start;
-        const endFromWindow = modeParams.end_date || modeParams.end;
+        let startFromWindow = modeParams.start_date || modeParams.start;
+        let endFromWindow = modeParams.end_date || modeParams.end;
+        
+        // Check if Liquid templating was processed (if not, values will be literal {{ start_date }})
+        if (startFromWindow && startFromWindow.includes('{{')) {
+            console.log(`${chartPrefix}: Liquid templating not processed, ignoring template strings`);
+            startFromWindow = null;
+            endFromWindow = null;
+        }
         
         console.log(`${chartPrefix}: Window params - start:`, startFromWindow, 'end:', endFromWindow);
         
