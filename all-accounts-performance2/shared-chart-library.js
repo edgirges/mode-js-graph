@@ -185,7 +185,7 @@ window.ChartLibrary = (function() {
             const chartPrefix = config.chartObject ? config.chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
             const checkboxId = `${chartPrefix}-metric-${metricId}`;
             
-            console.log(`Creating checkbox: ${checkboxId} for metric:`, metric.id, 'useIdReplacement:', !!config.useIdReplacement);
+            console.log(`Creating checkbox: ${checkboxId} for metric:`, metric.id, 'chartObject:', config.chartObject);
             
             div.innerHTML = `
                 <input type="checkbox" class="metric-checkbox" id="${checkboxId}" ${metric.visible ? 'checked' : ''}>
@@ -255,16 +255,13 @@ window.ChartLibrary = (function() {
             
             const checkbox = document.getElementById(checkboxId);
             
-            // Check for duplicates
+            // Check for duplicates  
             const allCheckboxes = document.querySelectorAll(`#${checkboxId}`);
             console.log(`SelectAll: ${checkboxId}, found:`, !!checkbox, 'duplicates:', allCheckboxes.length, 'metric:', metric.id);
             
             if (checkbox) {
-                const toggleDiv = checkbox.parentElement;
-                console.log(`SelectAll: Before - checkbox.checked:`, checkbox.checked, 'toggleDiv.classList:', toggleDiv.classList.toString());
                 checkbox.checked = true;
-                toggleDiv.classList.add('active');
-                console.log(`SelectAll: After - checkbox.checked:`, checkbox.checked, 'toggleDiv.classList:', toggleDiv.classList.toString());
+                checkbox.parentElement.classList.add('active');
             } else {
                 console.warn(`SelectAll: Could not find checkbox for ${checkboxId}`);
             }
@@ -292,11 +289,8 @@ window.ChartLibrary = (function() {
             console.log(`DeselectAll: ${checkboxId}, found:`, !!checkbox, 'duplicates:', allCheckboxes.length, 'metric:', metric.id);
             
             if (checkbox) {
-                const toggleDiv = checkbox.parentElement;
-                console.log(`DeselectAll: Before - checkbox.checked:`, checkbox.checked, 'toggleDiv.classList:', toggleDiv.classList.toString());
                 checkbox.checked = false;
-                toggleDiv.classList.remove('active');
-                console.log(`DeselectAll: After - checkbox.checked:`, checkbox.checked, 'toggleDiv.classList:', toggleDiv.classList.toString());
+                checkbox.parentElement.classList.remove('active');
             } else {
                 console.warn(`DeselectAll: Could not find checkbox for ${checkboxId}`);
             }
