@@ -291,67 +291,7 @@ window.ChartLibrary = (function() {
         updateChartFunction();
     }
 
-    // =============================================================================
-    // TIME RANGE CONTROLS
-    // =============================================================================
 
-    /**
-     * Standard time range switching function
-     */
-    function createStandardSwitchTimeRange(controlsSelector, updateCurrentTimeRange, processDataFunction, updateChartFunction) {
-        return function switchTimeRange(timeRange) {
-            updateCurrentTimeRange(timeRange);
-            
-            // Update button states
-            document.querySelectorAll(`${controlsSelector} .control-btn`)
-                .forEach(btn => {
-                    btn.classList.remove('active');
-                    const btnText = btn.textContent.trim();
-                    if (btnText === timeRange || (timeRange === 'ALL' && btnText === 'All')) {
-                        btn.classList.add('active');
-                    }
-                });
-
-            processDataFunction();
-            updateChartFunction();
-        };
-    }
-
-    /**
-     * Standard time range filtering function
-     */
-    function filterByTimeRange(processedData, dynamicMetrics, currentTimeRange) {
-        if (!processedData.labels) return processedData;
-        
-        let daysToShow;
-        
-        switch (currentTimeRange) {
-            case '7D':
-                daysToShow = 7;
-                break;
-            case '30D':
-                daysToShow = 30;
-                break;
-            case '90D':
-                daysToShow = 90;
-                break;
-            case 'ALL':
-            default:
-                return processedData;
-        }
-        
-        const startIndex = Math.max(0, processedData.labels.length - daysToShow);
-        
-        const filtered = {
-            labels: processedData.labels.slice(startIndex)
-        };
-
-        dynamicMetrics.forEach(metric => {
-            filtered[metric.id] = processedData[metric.id] ? processedData[metric.id].slice(startIndex) : [];
-        });
-        
-        return filtered;
-    }
 
     // =============================================================================
     // ZOOM CONTROLS
@@ -504,14 +444,7 @@ window.ChartLibrary = (function() {
             <div class="chart-header ${config.headerClass}">
                 <h2 class="chart-title ${config.titleClass}">${config.chartTitle}</h2>
                 <div class="chart-controls ${config.controlsClass}">
-                    ${config.useModeDate ? 
-                        `<!-- Date range controlled by custom date picker above -->
-                         <span style="color: #666; font-size: 12px; margin-right: 10px;">Use the date picker above to filter data</span>` :
-                        `<button class="control-btn" onclick="${config.chartObject}.switchTimeRange('7D')">7D</button>
-                         <button class="control-btn" onclick="${config.chartObject}.switchTimeRange('30D')">30D</button>
-                         <button class="control-btn active" onclick="${config.chartObject}.switchTimeRange('90D')">90D</button>
-                         <button class="control-btn" onclick="${config.chartObject}.switchTimeRange('ALL')">All</button>`
-                    }
+                    <!-- Date range controlled by custom date picker above -->
                     <button class="control-btn" onclick="${config.chartObject}.toggleZoom()">Zoom</button>
                     <button class="control-btn" onclick="${config.chartObject}.resetZoom()">Reset</button>
                 </div>
@@ -1341,9 +1274,7 @@ window.ChartLibrary = (function() {
         selectAllMetrics,
         deselectAllMetrics,
         
-        // Time Range
-        createStandardSwitchTimeRange,
-        filterByTimeRange,
+
         
         // Zoom
         createStandardToggleZoom,
