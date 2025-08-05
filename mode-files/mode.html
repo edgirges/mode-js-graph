@@ -1,3 +1,4 @@
+<!-- HTML Code for Mode Analytics Dashboard -->
 <style>
     .mode-grid.container,
     .mode-grid .row,
@@ -8,19 +9,16 @@
     /* Make the main chart container full width */
     .mode-grid.container {
       width: 100% !important;
-      /* Your original attempt, now more effective with other overrides */
       max-width: none !important;
       /* Crucial: Remove Mode's default max-width */
       padding-left: 15px !important;
-      /* Adjust or remove as needed for desired page padding */
       padding-right: 15px !important;
-      /* Adjust or remove as needed */
       margin-left: auto !important;
-      /* Keep it centered if you have padding */
       margin-right: auto !important;
-      /* Keep it centered if you have padding */
+      
     }
   </style>
+
   <div class="mode-header embed-hidden">
     <h1>{{ title }}</h1>
     <p>{{ description }}</p>
@@ -47,7 +45,7 @@
             </div>
         </div>
   
-  <!-- TESTING CUSTOM GRAPH WITHIN REPORT BEGIN-->
+  <!-- CUSTOM GRAPHS WITHIN REPORT BEGIN-->
   <script>
           //add stylesheet
           const link = document.createElement('link');
@@ -199,7 +197,7 @@
       <!-- <script src="https://raw.githubusercontent.com/yourusername/your-repo/main/index.js"></script> -->
   </body>
   
-  <!-- TESTING CUSTOM GRAPH WITHIN REPORT END-->
+  <!-- CUSTOM GRAPHS WITHIN REPORT END-->
   
   
   <div class="mode-grid container" style="width: 100% !important;">
