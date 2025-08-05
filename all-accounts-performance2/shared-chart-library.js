@@ -241,12 +241,16 @@ window.ChartLibrary = (function() {
             
             const checkbox = document.getElementById(`metric-${metricId}`);
             
-            console.log(`SelectAll: Looking for metric-${metricId}, found:`, !!checkbox, 'metric:', metric.id);
+            // Check for duplicates
+            const allCheckboxes = document.querySelectorAll(`#metric-${metricId}`);
+            console.log(`SelectAll: metric-${metricId}, found:`, !!checkbox, 'duplicates:', allCheckboxes.length, 'metric:', metric.id);
             
             if (checkbox) {
                 const toggleDiv = checkbox.parentElement;
+                console.log(`SelectAll: Before - checkbox.checked:`, checkbox.checked, 'toggleDiv.classList:', toggleDiv.classList.toString());
                 checkbox.checked = true;
                 toggleDiv.classList.add('active');
+                console.log(`SelectAll: After - checkbox.checked:`, checkbox.checked, 'toggleDiv.classList:', toggleDiv.classList.toString());
             } else {
                 console.warn(`SelectAll: Could not find checkbox for metric-${metricId}`);
             }
@@ -265,12 +269,16 @@ window.ChartLibrary = (function() {
             
             const checkbox = document.getElementById(`metric-${metricId}`);
             
-            console.log(`DeselectAll: Looking for metric-${metricId}, found:`, !!checkbox, 'metric:', metric.id);
+            // Check for duplicates
+            const allCheckboxes = document.querySelectorAll(`#metric-${metricId}`);
+            console.log(`DeselectAll: metric-${metricId}, found:`, !!checkbox, 'duplicates:', allCheckboxes.length, 'metric:', metric.id);
             
             if (checkbox) {
                 const toggleDiv = checkbox.parentElement;
+                console.log(`DeselectAll: Before - checkbox.checked:`, checkbox.checked, 'toggleDiv.classList:', toggleDiv.classList.toString());
                 checkbox.checked = false;
                 toggleDiv.classList.remove('active');
+                console.log(`DeselectAll: After - checkbox.checked:`, checkbox.checked, 'toggleDiv.classList:', toggleDiv.classList.toString());
             } else {
                 console.warn(`DeselectAll: Could not find checkbox for metric-${metricId}`);
             }
