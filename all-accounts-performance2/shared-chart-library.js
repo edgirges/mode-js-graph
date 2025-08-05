@@ -477,7 +477,7 @@ window.ChartLibrary = (function() {
                 <h2 class="chart-title ${config.titleClass}">${config.chartTitle}</h2>
                 <div class="chart-controls ${config.controlsClass}">
                     ${config.useModeDate ? 
-                        `<!-- Date range controlled by Mode's built-in date picker above -->
+                        `<!-- Date range controlled by custom date picker above -->
                          <span style="color: #666; font-size: 12px; margin-right: 10px;">Use the date picker above to filter data</span>` :
                         `<button class="control-btn" onclick="${config.chartObject}.switchTimeRange('7D')">7D</button>
                          <button class="control-btn" onclick="${config.chartObject}.switchTimeRange('30D')">30D</button>
@@ -632,7 +632,171 @@ window.ChartLibrary = (function() {
     }
 
     // =============================================================================
-    // MODE DATE PICKER INTEGRATION
+    // CUSTOM DATE PICKER INTEGRATION
+    // =============================================================================
+
+    /**
+     * Global Custom Date Picker Manager
+     */
+    let globalDatePickerManager = {
+        registeredCharts: new Map(),
+        currentDateRange: { startDate: null, endDate: null },
+        initialized: false
+    };
+
+    /**
+     * Register a chart to use the custom date picker
+     */
+    function registerWithCustomDatePicker(chartId, onDateRangeChange, defaultDays = 30) {
+        console.log(`${chartId}: Registering with custom date picker`);
+        
+        // Store the chart's callback function
+        globalDatePickerManager.registeredCharts.set(chartId, {
+            onDateRangeChange: onDateRangeChange,
+            defaultDays: defaultDays
+        });
+        
+        // Initialize the date picker if not already done
+        if (!globalDatePickerManager.initialized) {
+            initializeCustomDatePicker();
+        }
+        
+        // If we already have a date range set, apply it to this chart
+        if (globalDatePickerManager.currentDateRange.startDate && globalDatePickerManager.currentDateRange.endDate) {
+            console.log(`${chartId}: Applying existing date range:`, globalDatePickerManager.currentDateRange);
+            onDateRangeChange(globalDatePickerManager.currentDateRange);
+        }
+        
+        return {
+            getCurrentDateRange: () => globalDatePickerManager.currentDateRange,
+            setDateRange: (startDate, endDate) => {
+                updateGlobalDateRange(startDate, endDate);
+            }
+        };
+    }
+
+    /**
+     * Initialize the custom date picker UI and event handlers
+     */
+    function initializeCustomDatePicker() {
+        if (globalDatePickerManager.initialized) return;
+        
+        console.log('🗓️ Initializing custom date picker...');
+        
+        // Wait for DOM to be ready
+        const initPicker = () => {
+            const startInput = document.getElementById('custom-start-date');
+            const endInput = document.getElementById('custom-end-date');
+            const applyButton = document.getElementById('apply-date-range');
+            const resetButton = document.getElementById('reset-date-range');
+            
+            if (!startInput || !endInput || !applyButton || !resetButton) {
+                console.log('Custom date picker elements not found, retrying...');
+                setTimeout(initPicker, 100);
+                return;
+            }
+            
+            console.log('✅ Custom date picker elements found, setting up...');
+            
+            // Set default values (last 30 days)
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today);
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            
+            const formatDate = (date) => date.toISOString().split('T')[0];
+            
+            startInput.value = formatDate(thirtyDaysAgo);
+            endInput.value = formatDate(today);
+            
+            // Set initial global date range
+            globalDatePickerManager.currentDateRange = {
+                startDate: formatDate(thirtyDaysAgo),
+                endDate: formatDate(today)
+            };
+            
+            // Apply button click handler
+            applyButton.addEventListener('click', () => {
+                const startDate = startInput.value;
+                const endDate = endInput.value;
+                
+                if (startDate && endDate) {
+                    if (new Date(startDate) <= new Date(endDate)) {
+                        updateGlobalDateRange(startDate, endDate);
+                    } else {
+                        alert('Start date must be before or equal to end date');
+                    }
+                } else {
+                    alert('Please select both start and end dates');
+                }
+            });
+            
+            // Reset button click handler
+            resetButton.addEventListener('click', () => {
+                const today = new Date();
+                const thirtyDaysAgo = new Date(today);
+                thirtyDaysAgo.setDate(today.getDate() - 30);
+                
+                startInput.value = formatDate(thirtyDaysAgo);
+                endInput.value = formatDate(today);
+                
+                updateGlobalDateRange(formatDate(thirtyDaysAgo), formatDate(today));
+            });
+            
+            // Auto-apply on input change (optional - can be removed if too aggressive)
+            const autoApply = () => {
+                const startDate = startInput.value;
+                const endDate = endInput.value;
+                
+                if (startDate && endDate && new Date(startDate) <= new Date(endDate)) {
+                    // Small delay to prevent rapid updates while user is typing
+                    clearTimeout(autoApply.timer);
+                    autoApply.timer = setTimeout(() => {
+                        updateGlobalDateRange(startDate, endDate);
+                    }, 500);
+                }
+            };
+            
+            startInput.addEventListener('change', autoApply);
+            endInput.addEventListener('change', autoApply);
+            
+            globalDatePickerManager.initialized = true;
+            console.log('✅ Custom date picker initialized with default 30-day range');
+        };
+        
+        // Start initialization
+        initPicker();
+    }
+
+    /**
+     * Update the global date range and notify all registered charts
+     */
+    function updateGlobalDateRange(startDate, endDate) {
+        console.log(`📅 Updating global date range: ${startDate} to ${endDate}`);
+        
+        globalDatePickerManager.currentDateRange = { startDate, endDate };
+        
+        // Notify all registered charts
+        globalDatePickerManager.registeredCharts.forEach((chartData, chartId) => {
+            console.log(`📊 Updating ${chartId} with new date range`);
+            try {
+                chartData.onDateRangeChange({ startDate, endDate });
+            } catch (error) {
+                console.error(`Error updating ${chartId}:`, error);
+            }
+        });
+        
+        // Update the UI inputs to match (in case this was called programmatically)
+        const startInput = document.getElementById('custom-start-date');
+        const endInput = document.getElementById('custom-end-date');
+        
+        if (startInput && endInput) {
+            startInput.value = startDate;
+            endInput.value = endDate;
+        }
+    }
+
+    // =============================================================================
+    // MODE DATE PICKER INTEGRATION (LEGACY - TO BE REMOVED)
     // =============================================================================
 
     /**
@@ -1170,7 +1334,10 @@ window.ChartLibrary = (function() {
         findDateColumn,
         normalizeDate,
         
-        // Mode Date Picker Integration
+        // Custom Date Picker Integration
+        registerWithCustomDatePicker,
+        
+        // Mode Date Picker Integration (Legacy)
         setupModeDatePicker,
         filterDataByDateRange,
         

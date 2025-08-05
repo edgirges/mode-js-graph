@@ -29,7 +29,7 @@
         
         // HTML Generator config
         htmlConfig: {
-            containerClass: 'budget-spend-container',
+            containerClass: 'budget-spend-container usesCustomDatePicker',
             headerClass: 'budget-spend-header',
             titleClass: 'budget-spend-title',
             chartTitle: 'Daily BW Budget V. Spend / Spend Pct',
@@ -40,7 +40,7 @@
             metricsClass: 'budget-spend-metrics',
             metricsHeaderClass: 'budget-spend-metrics-title',
             togglesClass: 'budget-spend-toggles',
-            useModeDate: true // Use Mode date picker instead of time range buttons
+            useModeDate: true // Use custom date picker instead of time range buttons
         },
         
         getMetrics: function() {
@@ -580,51 +580,23 @@
     }
 
     function setupDatePicker() {
-        console.log('Budget vs Spend: Setting up Mode parameter integration...');
+        console.log('Budget vs Spend: Setting up custom date picker integration...');
         
-        // First, check for Liquid-templated URL parameters (the correct approach)
-        const currentScript = document.currentScript || Array.from(document.scripts).pop();
-        if (currentScript && currentScript.src) {
-            console.log('Budget vs Spend: Checking script URL for parameters:', currentScript.src);
-            
-            try {
-                const url = new URL(currentScript.src);
-                const startParam = url.searchParams.get('start');
-                const endParam = url.searchParams.get('end');
-                
-                if (startParam && endParam && startParam !== '{{ start_date }}' && endParam !== '{{ end_date }}') {
-                    console.log('Budget vs Spend: ✅ Found Liquid-templated parameters in URL:', startParam, endParam);
-                    currentDateRange = { startDate: startParam, endDate: endParam };
-                    console.log('Budget vs Spend: Using Liquid parameters:', currentDateRange);
-                    return; // Success - use these parameters
-                } else if (startParam === '{{ start_date }}' || endParam === '{{ end_date }}') {
-                    console.log('Budget vs Spend: ⚠️  Liquid templating not processed - saw literal template strings');
-                } else {
-                    console.log('Budget vs Spend: No URL parameters found in script src');
-                }
-            } catch (error) {
-                console.log('Budget vs Spend: Error parsing script URL:', error.message);
-            }
-        }
-        
-        // Fallback: Try the comprehensive detection as backup
         try {
-            modeDatePicker = lib.setupModeDatePicker('Budget vs Spend', onDateRangeChange, 30);
+            // Register with the global custom date picker
+            modeDatePicker = lib.registerWithCustomDatePicker('Budget vs Spend', onDateRangeChange, 30);
             
-            if (modeDatePicker) {
-                const initialRange = modeDatePicker.getCurrentDateRange();
-                if (initialRange.startDate && initialRange.endDate) {
-                    currentDateRange = initialRange;
-                    console.log('Budget vs Spend: Using fallback parameters:', currentDateRange);
-                    return;
-                }
+            // Get the current date range from the picker (will be default 30 days initially)
+            const initialRange = modeDatePicker.getCurrentDateRange();
+            if (initialRange.startDate && initialRange.endDate) {
+                currentDateRange = initialRange;
+                console.log('Budget vs Spend: Using custom date picker range:', currentDateRange);
+            } else {
+                console.log('Budget vs Spend: Custom date picker not ready, using default 30-day range');
             }
         } catch (error) {
-            console.log('Budget vs Spend: Fallback parameter setup failed:', error.message);
+            console.log('Budget vs Spend: Custom date picker setup failed, using default 30-day range:', error.message);
         }
-        
-        console.log('Budget vs Spend: No parameters available, using default 30-day range');
-        // Chart will work with default 30-day range - this is normal and expected
     }
     
     function toggleZoom() {
