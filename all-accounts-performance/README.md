@@ -25,7 +25,7 @@ This folder contains the new **shared library architecture** for Mode Analytics 
 ### Files Structure
 
 ```
-all-accounts-performance2/
+all-accounts-performance/
 ├── shared-chart-library.js     # ✅ Contains ALL shared functionality (562 lines)
 ├── budget-vs-spend.js          # ✅ Chart-specific logic only (489 lines)
 ├── test-budget-vs-spend.html   # ✅ Working test demonstration
