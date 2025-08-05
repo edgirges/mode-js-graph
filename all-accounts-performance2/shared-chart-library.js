@@ -182,10 +182,11 @@ window.ChartLibrary = (function() {
                 metric.id.replace(/\s+/g, '-') : metric.id;
             
             // Create chart-specific checkbox ID to avoid conflicts
-            const chartPrefix = config.chartObject ? config.chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
+            const chartObject = config.chartObject || (config.htmlConfig && config.htmlConfig.chartObject);
+            const chartPrefix = chartObject ? chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
             const checkboxId = `${chartPrefix}-metric-${metricId}`;
             
-            console.log(`Creating checkbox: ${checkboxId} for metric:`, metric.id, 'chartObject:', config.chartObject, 'chartPrefix:', chartPrefix);
+            console.log(`Creating checkbox: ${checkboxId} for metric:`, metric.id, 'chartObject:', chartObject, 'chartPrefix:', chartPrefix);
             
             div.innerHTML = `
                 <input type="checkbox" class="metric-checkbox" id="${checkboxId}" ${metric.visible ? 'checked' : ''}>
@@ -227,7 +228,8 @@ window.ChartLibrary = (function() {
             const searchId = useIdReplacement ? metricId.replace(/\s+/g, '-') : metricId;
             
             // Create chart-specific checkbox ID to match creation
-            const chartPrefix = config && config.chartObject ? config.chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
+            const chartObject = config && (config.chartObject || (config.htmlConfig && config.htmlConfig.chartObject));
+            const chartPrefix = chartObject ? chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
             const checkboxId = `${chartPrefix}-metric-${searchId}`;
             
             const checkbox = document.getElementById(checkboxId);
@@ -250,7 +252,8 @@ window.ChartLibrary = (function() {
                 metric.id.replace(/\s+/g, '-') : metric.id;
             
             // Create chart-specific checkbox ID to match creation
-            const chartPrefix = config && config.chartObject ? config.chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
+            const chartObject = config && (config.chartObject || (config.htmlConfig && config.htmlConfig.chartObject));
+            const chartPrefix = chartObject ? chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
             const checkboxId = `${chartPrefix}-metric-${metricId}`;
             
             const checkbox = document.getElementById(checkboxId);
@@ -279,7 +282,8 @@ window.ChartLibrary = (function() {
                 metric.id.replace(/\s+/g, '-') : metric.id;
             
             // Create chart-specific checkbox ID to match creation
-            const chartPrefix = config && config.chartObject ? config.chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
+            const chartObject = config && (config.chartObject || (config.htmlConfig && config.htmlConfig.chartObject));
+            const chartPrefix = chartObject ? chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
             const checkboxId = `${chartPrefix}-metric-${metricId}`;
             
             const checkbox = document.getElementById(checkboxId);
