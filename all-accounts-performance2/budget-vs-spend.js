@@ -559,13 +559,13 @@
     let toggleMetric;
 
     function createMetricToggles() {
-        // Create toggle function using shared library
-        toggleMetric = lib.createStandardToggleMetric(dynamicMetrics, updateChart);
-        
         // Create metric toggles using shared library
         const config = Object.assign({}, CONFIG, {
             updateChart: updateChart
         });
+        
+        // Create toggle function using shared library
+        toggleMetric = lib.createStandardToggleMetric(dynamicMetrics, updateChart, config);
         lib.createStandardMetricToggles(config, dynamicMetrics, toggleMetric);
     }
 

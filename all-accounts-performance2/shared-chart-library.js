@@ -181,11 +181,15 @@ window.ChartLibrary = (function() {
             const metricId = config.useIdReplacement ? 
                 metric.id.replace(/\s+/g, '-') : metric.id;
             
-            console.log(`Creating checkbox: metric-${metricId} for metric:`, metric.id, 'useIdReplacement:', !!config.useIdReplacement);
+            // Create chart-specific checkbox ID to avoid conflicts
+            const chartPrefix = config.chartObject ? config.chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
+            const checkboxId = `${chartPrefix}-metric-${metricId}`;
+            
+            console.log(`Creating checkbox: ${checkboxId} for metric:`, metric.id, 'useIdReplacement:', !!config.useIdReplacement);
             
             div.innerHTML = `
-                <input type="checkbox" class="metric-checkbox" id="metric-${metricId}" ${metric.visible ? 'checked' : ''}>
-                <label for="metric-${metricId}" class="metric-label">
+                <input type="checkbox" class="metric-checkbox" id="${checkboxId}" ${metric.visible ? 'checked' : ''}>
+                <label for="${checkboxId}" class="metric-label">
                     <span class="metric-color" style="background-color: ${metric.color}"></span>
                     ${metric.name}
                 </label>
@@ -214,13 +218,19 @@ window.ChartLibrary = (function() {
     /**
      * Standard toggle metric function
      */
-    function createStandardToggleMetric(dynamicMetrics, updateChartFunction, useIdReplacement = false) {
+    function createStandardToggleMetric(dynamicMetrics, updateChartFunction, config = null) {
         return function toggleMetric(metricId, checkedState) {
             const metric = dynamicMetrics.find(m => m.id === metricId);
             if (!metric) return;
             
+            const useIdReplacement = config && config.useIdReplacement;
             const searchId = useIdReplacement ? metricId.replace(/\s+/g, '-') : metricId;
-            const checkbox = document.getElementById(`metric-${searchId}`);
+            
+            // Create chart-specific checkbox ID to match creation
+            const chartPrefix = config && config.chartObject ? config.chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
+            const checkboxId = `${chartPrefix}-metric-${searchId}`;
+            
+            const checkbox = document.getElementById(checkboxId);
             if (!checkbox) return;
             
             const toggleDiv = checkbox.parentElement;
@@ -239,11 +249,15 @@ window.ChartLibrary = (function() {
             const metricId = (config && config.useIdReplacement) ? 
                 metric.id.replace(/\s+/g, '-') : metric.id;
             
-            const checkbox = document.getElementById(`metric-${metricId}`);
+            // Create chart-specific checkbox ID to match creation
+            const chartPrefix = config && config.chartObject ? config.chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
+            const checkboxId = `${chartPrefix}-metric-${metricId}`;
+            
+            const checkbox = document.getElementById(checkboxId);
             
             // Check for duplicates
-            const allCheckboxes = document.querySelectorAll(`#metric-${metricId}`);
-            console.log(`SelectAll: metric-${metricId}, found:`, !!checkbox, 'duplicates:', allCheckboxes.length, 'metric:', metric.id);
+            const allCheckboxes = document.querySelectorAll(`#${checkboxId}`);
+            console.log(`SelectAll: ${checkboxId}, found:`, !!checkbox, 'duplicates:', allCheckboxes.length, 'metric:', metric.id);
             
             if (checkbox) {
                 const toggleDiv = checkbox.parentElement;
@@ -252,7 +266,7 @@ window.ChartLibrary = (function() {
                 toggleDiv.classList.add('active');
                 console.log(`SelectAll: After - checkbox.checked:`, checkbox.checked, 'toggleDiv.classList:', toggleDiv.classList.toString());
             } else {
-                console.warn(`SelectAll: Could not find checkbox for metric-${metricId}`);
+                console.warn(`SelectAll: Could not find checkbox for ${checkboxId}`);
             }
         });
         
@@ -267,11 +281,15 @@ window.ChartLibrary = (function() {
             const metricId = (config && config.useIdReplacement) ? 
                 metric.id.replace(/\s+/g, '-') : metric.id;
             
-            const checkbox = document.getElementById(`metric-${metricId}`);
+            // Create chart-specific checkbox ID to match creation
+            const chartPrefix = config && config.chartObject ? config.chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
+            const checkboxId = `${chartPrefix}-metric-${metricId}`;
+            
+            const checkbox = document.getElementById(checkboxId);
             
             // Check for duplicates
-            const allCheckboxes = document.querySelectorAll(`#metric-${metricId}`);
-            console.log(`DeselectAll: metric-${metricId}, found:`, !!checkbox, 'duplicates:', allCheckboxes.length, 'metric:', metric.id);
+            const allCheckboxes = document.querySelectorAll(`#${checkboxId}`);
+            console.log(`DeselectAll: ${checkboxId}, found:`, !!checkbox, 'duplicates:', allCheckboxes.length, 'metric:', metric.id);
             
             if (checkbox) {
                 const toggleDiv = checkbox.parentElement;
@@ -280,7 +298,7 @@ window.ChartLibrary = (function() {
                 toggleDiv.classList.remove('active');
                 console.log(`DeselectAll: After - checkbox.checked:`, checkbox.checked, 'toggleDiv.classList:', toggleDiv.classList.toString());
             } else {
-                console.warn(`DeselectAll: Could not find checkbox for metric-${metricId}`);
+                console.warn(`DeselectAll: Could not find checkbox for ${checkboxId}`);
             }
         });
         

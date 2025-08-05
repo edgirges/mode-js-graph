@@ -355,11 +355,11 @@
     let toggleMetric;
 
     function createMetricToggles() {
-        toggleMetric = lib.createStandardToggleMetric(dynamicMetrics, updateChart);
-        
         const config = Object.assign({}, CONFIG, {
             updateChart: updateChart
         });
+        
+        toggleMetric = lib.createStandardToggleMetric(dynamicMetrics, updateChart, config);
         lib.createStandardMetricToggles(config, dynamicMetrics, toggleMetric);
     }
 
