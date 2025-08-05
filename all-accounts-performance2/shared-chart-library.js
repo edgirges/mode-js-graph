@@ -156,13 +156,13 @@ window.ChartLibrary = (function() {
             selectAllBtn.id = config.selectAllBtnId;
             selectAllBtn.className = 'select-all-btn';
             selectAllBtn.textContent = 'Select All';
-            selectAllBtn.onclick = () => selectAllMetrics(dynamicMetrics, config.updateChart);
+            selectAllBtn.onclick = () => selectAllMetrics(dynamicMetrics, config.updateChart, config);
             
             const deselectAllBtn = document.createElement('button');
             deselectAllBtn.id = config.deselectAllBtnId;
             deselectAllBtn.className = 'deselect-all-btn';
             deselectAllBtn.textContent = 'Deselect All';
-            deselectAllBtn.onclick = () => deselectAllMetrics(dynamicMetrics, config.updateChart);
+            deselectAllBtn.onclick = () => deselectAllMetrics(dynamicMetrics, config.updateChart, config);
             
             const buttonsContainer = document.createElement('div');
             buttonsContainer.className = 'metrics-buttons-container';
@@ -229,12 +229,15 @@ window.ChartLibrary = (function() {
         };
     }
 
-    function selectAllMetrics(dynamicMetrics, updateChartFunction) {
+    function selectAllMetrics(dynamicMetrics, updateChartFunction, config = null) {
         dynamicMetrics.forEach(metric => {
             metric.visible = true;
-            const searchId = metric.id.replace(/\s+/g, '-');
-            let checkbox = document.getElementById(`metric-${metric.id}`) || 
-                         document.getElementById(`metric-${searchId}`);
+            
+            // Use the same ID logic as when creating toggles
+            const metricId = (config && config.useIdReplacement) ? 
+                metric.id.replace(/\s+/g, '-') : metric.id;
+            
+            const checkbox = document.getElementById(`metric-${metricId}`);
             
             if (checkbox) {
                 const toggleDiv = checkbox.parentElement;
@@ -246,12 +249,15 @@ window.ChartLibrary = (function() {
         updateChartFunction();
     }
 
-    function deselectAllMetrics(dynamicMetrics, updateChartFunction) {
+    function deselectAllMetrics(dynamicMetrics, updateChartFunction, config = null) {
         dynamicMetrics.forEach(metric => {
             metric.visible = false;
-            const searchId = metric.id.replace(/\s+/g, '-');
-            let checkbox = document.getElementById(`metric-${metric.id}`) || 
-                         document.getElementById(`metric-${searchId}`);
+            
+            // Use the same ID logic as when creating toggles
+            const metricId = (config && config.useIdReplacement) ? 
+                metric.id.replace(/\s+/g, '-') : metric.id;
+            
+            const checkbox = document.getElementById(`metric-${metricId}`);
             
             if (checkbox) {
                 const toggleDiv = checkbox.parentElement;
