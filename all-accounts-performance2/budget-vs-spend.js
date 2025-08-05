@@ -29,7 +29,7 @@
         
         // HTML Generator config
         htmlConfig: {
-            containerClass: 'budget-spend-container usesCustomDatePicker',
+            containerClass: 'budget-spend-container.usesCustomDatePicker',
             headerClass: 'budget-spend-header',
             titleClass: 'budget-spend-title',
             chartTitle: 'Daily BW Budget V. Spend / Spend Pct',
