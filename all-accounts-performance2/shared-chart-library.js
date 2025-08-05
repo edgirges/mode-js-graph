@@ -185,7 +185,7 @@ window.ChartLibrary = (function() {
             const chartPrefix = config.chartObject ? config.chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
             const checkboxId = `${chartPrefix}-metric-${metricId}`;
             
-            console.log(`Creating checkbox: ${checkboxId} for metric:`, metric.id, 'chartObject:', config.chartObject);
+            console.log(`Creating checkbox: ${checkboxId} for metric:`, metric.id, 'chartObject:', config.chartObject, 'chartPrefix:', chartPrefix);
             
             div.innerHTML = `
                 <input type="checkbox" class="metric-checkbox" id="${checkboxId}" ${metric.visible ? 'checked' : ''}>
