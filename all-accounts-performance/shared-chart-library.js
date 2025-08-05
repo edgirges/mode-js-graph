@@ -761,6 +761,59 @@ window.ChartLibrary = (function() {
 
 
     // =============================================================================
+    // DATE FILTERING FOR CHARTS
+    // =============================================================================
+
+    /**
+     * Filter data by date range for custom date picker
+     */
+    function filterDataByDateRange(processedData, startDate, endDate, chartPrefix) {
+        if (!processedData.labels || !startDate || !endDate) {
+            console.log(`${chartPrefix}: No date filtering - using all data`);
+            return processedData;
+        }
+
+        console.log(`${chartPrefix}: Filtering data from ${startDate} to ${endDate}`);
+
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        const filteredIndices = [];
+        processedData.labels.forEach((label, index) => {
+            const labelDate = new Date(label);
+            if (labelDate >= start && labelDate <= end) {
+                filteredIndices.push(index);
+            }
+        });
+
+        console.log(`${chartPrefix}: Found ${filteredIndices.length} data points in date range (out of ${processedData.labels.length} total)`);
+
+        if (filteredIndices.length === 0) {
+            console.warn(`${chartPrefix}: No data points found in selected date range`);
+            return { labels: [] };
+        }
+
+        // Create filtered data object
+        const filtered = {
+            labels: filteredIndices.map(i => processedData.labels[i])
+        };
+
+        // Filter all data arrays
+        Object.keys(processedData).forEach(key => {
+            if (key !== 'labels' && Array.isArray(processedData[key])) {
+                filtered[key] = filteredIndices.map(i => processedData[key][i]);
+            }
+        });
+
+        console.log(`${chartPrefix}: Filtered data:`, {
+            labels: filtered.labels.length,
+            dateRange: `${filtered.labels[0]} to ${filtered.labels[filtered.labels.length - 1]}`
+        });
+
+        return filtered;
+    }
+
+    // =============================================================================
     // PUBLIC API
     // =============================================================================
 
@@ -802,6 +855,7 @@ window.ChartLibrary = (function() {
         
         // Custom Date Picker Integration
         registerWithCustomDatePicker,
+        filterDataByDateRange,
         
 
         
