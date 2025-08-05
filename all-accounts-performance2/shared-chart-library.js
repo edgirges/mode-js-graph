@@ -181,6 +181,8 @@ window.ChartLibrary = (function() {
             const metricId = config.useIdReplacement ? 
                 metric.id.replace(/\s+/g, '-') : metric.id;
             
+            console.log(`Creating checkbox: metric-${metricId} for metric:`, metric.id, 'useIdReplacement:', !!config.useIdReplacement);
+            
             div.innerHTML = `
                 <input type="checkbox" class="metric-checkbox" id="metric-${metricId}" ${metric.visible ? 'checked' : ''}>
                 <label for="metric-${metricId}" class="metric-label">
@@ -239,10 +241,14 @@ window.ChartLibrary = (function() {
             
             const checkbox = document.getElementById(`metric-${metricId}`);
             
+            console.log(`SelectAll: Looking for metric-${metricId}, found:`, !!checkbox, 'metric:', metric.id);
+            
             if (checkbox) {
                 const toggleDiv = checkbox.parentElement;
                 checkbox.checked = true;
                 toggleDiv.classList.add('active');
+            } else {
+                console.warn(`SelectAll: Could not find checkbox for metric-${metricId}`);
             }
         });
         
@@ -259,10 +265,14 @@ window.ChartLibrary = (function() {
             
             const checkbox = document.getElementById(`metric-${metricId}`);
             
+            console.log(`DeselectAll: Looking for metric-${metricId}, found:`, !!checkbox, 'metric:', metric.id);
+            
             if (checkbox) {
                 const toggleDiv = checkbox.parentElement;
                 checkbox.checked = false;
                 toggleDiv.classList.remove('active');
+            } else {
+                console.warn(`DeselectAll: Could not find checkbox for metric-${metricId}`);
             }
         });
         
