@@ -186,7 +186,7 @@ window.ChartLibrary = (function() {
             const chartPrefix = chartObject ? chartObject.toLowerCase().replace(/chart$/, '') : 'chart';
             const checkboxId = `${chartPrefix}-metric-${metricId}`;
             
-            console.log(`Creating checkbox: ${checkboxId} for metric:`, metric.id, 'chartObject:', chartObject, 'chartPrefix:', chartPrefix);
+
             
             div.innerHTML = `
                 <input type="checkbox" class="metric-checkbox" id="${checkboxId}" ${metric.visible ? 'checked' : ''}>
@@ -258,15 +258,9 @@ window.ChartLibrary = (function() {
             
             const checkbox = document.getElementById(checkboxId);
             
-            // Check for duplicates  
-            const allCheckboxes = document.querySelectorAll(`#${checkboxId}`);
-            console.log(`SelectAll: ${checkboxId}, found:`, !!checkbox, 'duplicates:', allCheckboxes.length, 'metric:', metric.id);
-            
             if (checkbox) {
                 checkbox.checked = true;
                 checkbox.parentElement.classList.add('active');
-            } else {
-                console.warn(`SelectAll: Could not find checkbox for ${checkboxId}`);
             }
         });
         
@@ -288,15 +282,9 @@ window.ChartLibrary = (function() {
             
             const checkbox = document.getElementById(checkboxId);
             
-            // Check for duplicates
-            const allCheckboxes = document.querySelectorAll(`#${checkboxId}`);
-            console.log(`DeselectAll: ${checkboxId}, found:`, !!checkbox, 'duplicates:', allCheckboxes.length, 'metric:', metric.id);
-            
             if (checkbox) {
                 checkbox.checked = false;
                 checkbox.parentElement.classList.remove('active');
-            } else {
-                console.warn(`DeselectAll: Could not find checkbox for ${checkboxId}`);
             }
         });
         
