@@ -63,27 +63,8 @@
       </div>
       
           <!-- Chart 2: Daily BW Spend Categories -->
-      <div class="chart-container spend-categories-container">
-          <div class="chart-header spend-categories-header">
-              <h2 class="chart-title spend-categories-title">Daily BW Spend Categories</h2>
-              <div class="chart-controls spend-categories-controls">
-                  <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('7D')">7D</button>
-                  <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('30D')">30D</button>
-                  <button class="control-btn active" onclick="SpendCategoriesChart.switchTimeRange('90D')">90D</button>
-                  <button class="control-btn" onclick="SpendCategoriesChart.switchTimeRange('ALL')">All</button>
-                  <button class="control-btn" onclick="SpendCategoriesChart.toggleZoom()">Zoom</button>
-                  <button class="control-btn" onclick="SpendCategoriesChart.resetZoom()">Reset</button>
-              </div>
-          </div>
-          <div class="chart-canvas spend-categories-canvas">
-              <canvas id="spendCategoriesChart"></canvas>
-          </div>
-          <div class="metric-controls spend-categories-metrics">
-              <h3 class="metric-controls-title spend-categories-metrics-title">Metrics</h3>
-              <div class="metric-toggles spend-categories-toggles">
-                  <!-- Spend Categories metric toggles will be dynamically generated -->
-              </div>
-          </div>
+      <div class="chart-container spend-categories-container usesCustomDatePicker">
+          <!-- Content auto-generated: header, controls, canvas, metrics -->
       </div>
       
       
@@ -290,19 +271,18 @@
                     console.log('Budget vs Spend chart script loaded');
                 };
                 document.head.appendChild(budgetSpendScript);
+                
+                // Load Spend Categories chart AFTER shared library is loaded
+                const spendCategoriesScript = document.createElement('script');
+                spendCategoriesScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance2/spend-categories.js?v=' + new Date().getTime();
+                spendCategoriesScript.onload = function() {
+                    console.log('Spend Categories chart script loaded');
+                };
+                document.head.appendChild(spendCategoriesScript);
             };
             document.head.appendChild(sharedLibraryScript);
       </script>
-      
-      <!-- Daily BW Spend Categories Chart -->
-      <script>
-          const spendCategoriesScript = document.createElement('script');
-          spendCategoriesScript.src = 'https://edgirges.github.io/mode-js-graph/all-accounts-performance/daily%20bw%20spend%20categories%20/index2.js?v=' + new Date().getTime();
-          spendCategoriesScript.onload = function() {
-              console.log('Spend Categories chart script loaded');
-          };
-          document.head.appendChild(spendCategoriesScript);
-      </script>
+
       
       <script>
             const nonPaidVisitStatsScript = document.createElement('script');
