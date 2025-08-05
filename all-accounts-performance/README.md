@@ -4,6 +4,30 @@
 
 This repository contains a **shared library architecture** for Mode Analytics dashboard charts. All charts use a common shared library (`shared-chart-library.js`) with individual chart-specific files for unique functionality, eliminating code duplication and improving maintainability.
 
+## Problems Solved
+
+These custom charts were designed to address specific limitations in Mode's native multi-metric visualizations:
+
+### 📊 **Y-Axis Auto-Scaling Issues**
+
+- **Mode Problem**: Multi-metric charts in Mode did not automatically adjust Y-axis range for better visibility when metrics were toggled on/off
+- **Our Solution**: Dynamic Y-axis scaling that recalculates optimal range based on currently visible metrics
+
+### 🔘 **Metric Selection Efficiency**
+
+- **Mode Problem**: Selecting/deselecting multiple metrics was tedious, requiring individual clicks for each metric
+- **Our Solution**: "Select All" and "Deselect All" buttons for instant bulk metric control
+
+### 🎛️ **Customization & Flexibility**
+
+- **Mode Limitation**: Limited ability to customize chart behavior, styling, and interactions
+- **Our Solution**: Fully customizable charts that can be tailored for specific visualization needs while maintaining seamless integration with Mode reports
+
+### 🔗 **Mode Integration**
+
+- **Benefit**: Charts display alongside Mode's native charts and leverage Mode's data infrastructure
+- **Compatibility**: Does not interfere with Mode's native quick charts or date picker functionality
+
 ## Project Status: ✅ Complete & Production Ready
 
 All 9 dashboard charts have been refactored to use the shared library architecture with a global custom date picker system.
@@ -121,7 +145,7 @@ Charts are configured to load data by **SQL query name**. If you change a query 
 // In individual chart files - UPDATE THIS if query name changes
 const CONFIG = {
   datasetName: "Daily BW Budget vs Spend (channel filter does not apply)", // Must match Mode query name exactly
-  fallbackIndex: 0, // Backup - safe to change query order
+  fallbackIndex: 0,
 };
 ```
 
@@ -143,7 +167,7 @@ The chart loading follows this priority:
 // Chart configured for "Budget vs Spend" data
 const CONFIG = {
   datasetName: "Daily BW Budget vs Spend (channel filter does not apply)", // Query renamed in Mode
-  fallbackIndex: 5, // Index now points to "Campaign Performance" query
+  fallbackIndex: 5, // Index now points to "Campaign Performance" query if this is what is at index 5
 };
 // Result: Chart will load Campaign Performance data and display it as Budget vs Spend!
 ```
