@@ -13,7 +13,7 @@
     // =============================================================================
 
     const CONFIG = {
-        chartTitle: 'Daily BW Budget V. Spend / Spend Pct',
+        chartTitle: 'Daily BW Budget V. Spend / Spend Pc',
         datasetName: 'Daily BW Budget vs Spend (channel filter does not apply)',
         fallbackIndex: 0,
         defaultTimeRange: '90D',
