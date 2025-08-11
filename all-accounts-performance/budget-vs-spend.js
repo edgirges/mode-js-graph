@@ -306,10 +306,6 @@
                     mode: 'index'
                 },
                 plugins: {
-                    title: {
-                        display: true,
-                        text: CONFIG.htmlConfig.chartTitle
-                    },
                     legend: {
                         display: false
                     },
