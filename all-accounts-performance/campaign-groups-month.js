@@ -124,11 +124,11 @@
         
         // Colors for the campaign metrics
         const colors = {
-            'order_values_per_cg': '#007bff',
-            'order_values': '#28a745',
-            'visits': '#ffc107',
-            'total_spend': '#dc3545',
-            'impressions': '#6c757d'
+            'order_values_per_cg': '#a39fac',
+            'order_values': '#9bcdc8',
+            'visits': '#ecb40c',
+            'total_spend': '#34b464',
+            'impressions': '#6494bc'
         };
 
         dynamicMetrics = filteredMetrics.map((metric, index) => ({

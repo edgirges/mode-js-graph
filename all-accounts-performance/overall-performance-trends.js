@@ -123,19 +123,19 @@
             
             switch (metric) {
                 case 'TotalSpend':
-                    color = '#EF4444'; // Red
+                    color = '#34b464'; // Green
                     name = 'Total Spend';
                     break;
                 case 'Visits':
-                    color = '#3B82F6'; // Blue
+                    color = '#6494bc'; // Blue
                     name = 'Visits';
                     break;
                 case 'NewSiteVisitors':
-                    color = '#F59E0B'; // Orange/Yellow
+                    color = '#ecb40c'; // Amber/Yellow
                     name = 'New Site Visitors';
                     break;
                 case 'NewUsersReached':
-                    color = '#06B6D4'; // Light blue/cyan
+                    color = '#9bcdc8'; // Teal/Cyan
                     name = 'New Users Reached';
                     break;
                 default:

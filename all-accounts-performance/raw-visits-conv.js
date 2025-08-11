@@ -123,15 +123,15 @@
             
             switch(metric) {
                 case 'Raw Visits':
-                    color = '#F59E0B'; // Orange/Yellow
+                    color = '#ecb40c'; // Amber/Yellow
                     name = 'Raw Visits';
                     break;
                 case 'Raw Order Values':
-                    color = '#3B82F6'; // Blue
+                    color = '#6494bc'; // Blue
                     name = 'Raw Order Values';
                     break;
                 case 'Raw Conversions':
-                    color = '#10B981'; // Teal/Green
+                    color = '#34b464'; // Green
                     name = 'Raw Conversions';
                     break;
                 default:
