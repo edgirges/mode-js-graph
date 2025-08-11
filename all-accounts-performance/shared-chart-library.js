@@ -703,23 +703,6 @@ window.ChartLibrary = (function() {
                 updateGlobalDateRange(formatDate(thirtyDaysAgo), formatDate(today));
             });
             
-            // Auto-apply on input change (optional - can be removed if too aggressive)
-            const autoApply = () => {
-                const startDate = startInput.value;
-                const endDate = endInput.value;
-                
-                if (startDate && endDate && new Date(startDate) <= new Date(endDate)) {
-                    // Small delay to prevent rapid updates while user is typing
-                    clearTimeout(autoApply.timer);
-                    autoApply.timer = setTimeout(() => {
-                        updateGlobalDateRange(startDate, endDate);
-                    }, 500);
-                }
-            };
-            
-            startInput.addEventListener('change', autoApply);
-            endInput.addEventListener('change', autoApply);
-            
             globalDatePickerManager.initialized = true;
             console.log('✅ Custom date picker initialized with default 30-day range');
         };
