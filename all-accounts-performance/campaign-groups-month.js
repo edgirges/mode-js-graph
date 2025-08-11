@@ -201,10 +201,6 @@
                     intersect: false,
                 },
                 plugins: {
-                    title: {
-                        display: true,
-                        text: CONFIG.chartTitle
-                    },
                     legend: {
                         display: false
                     },
