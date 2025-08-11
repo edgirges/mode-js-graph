@@ -13,7 +13,6 @@
     // =============================================================================
 
     const CONFIG = {
-        chartTitle: 'RAW Visits and Conv (by Month)',
         datasetName: 'RAW Visits and Conv (by Month)',
         fallbackIndex: 23,
         defaultTimeRange: '90D',

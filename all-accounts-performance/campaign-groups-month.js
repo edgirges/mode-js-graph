@@ -13,7 +13,6 @@
     // =============================================================================
 
     const CONFIG = {
-        chartTitle: 'New Campaign Groups Starting each Month for that Month',
         datasetName: 'New Campaign Groups Starting each Month for that Month',
         fallbackIndex: 21,
         defaultTimeRange: '90D',

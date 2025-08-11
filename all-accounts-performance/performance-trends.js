@@ -13,7 +13,6 @@
     // =============================================================================
 
     const CONFIG = {
-        chartTitle: 'Performance Trends by Progressing Days in Current Year',
         datasetName: 'Performance Trends by Progressing Days in Current Year (Last Touch, NO filter applies)',
         fallbackIndex: 19,
         defaultTimeRange: '90D',

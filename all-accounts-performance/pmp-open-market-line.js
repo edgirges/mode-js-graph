@@ -13,7 +13,6 @@
     // =============================================================================
 
     const CONFIG = {
-        chartTitle: 'PMP v Open Market Impressions',
         datasetName: 'PMP vs OpenMarket Imps and Spend (Obj filter does not apply)',
         fallbackIndex: 5,
         defaultTimeRange: '90D',

@@ -13,7 +13,6 @@
     // =============================================================================
 
     const CONFIG = {
-        chartTitle: 'Non Paid Visits Stats',
         datasetName: 'Non Paid Visits STATs',
         fallbackIndex: 2,
         defaultTimeRange: '90D',

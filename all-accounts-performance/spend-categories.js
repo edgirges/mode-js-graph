@@ -13,7 +13,6 @@
     // =============================================================================
 
     const CONFIG = {
-        chartTitle: 'Daily BW Spend Categories',
         datasetName: 'Daily BW Budget vs Spend Ratio Count (channel filter does not apply)',
         fallbackIndex: 1,
         defaultTimeRange: '90D',
